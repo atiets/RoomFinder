@@ -1,0 +1,91 @@
+.home-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 20px;
+  width: auto;
+}
+
+.content-wrapper {
+  overflow: hidden;
+}
+
+.support-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background-color: #fffaf5;
+  border: 1px solid #f0e6da;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.support-image img {
+  max-width: 250px;
+  height: auto;
+}
+
+.support-info {
+  flex: 1;
+  text-align: center;
+  margin-left: 20px;
+}
+
+.support-info .icon {
+  font-size: 36px;
+  color: #000;
+  margin-bottom: 10px;
+}
+
+.support-info h3 {
+  font-size: 20px;
+  margin: 10px 0;
+  font-weight: bold;
+}
+
+.support-info p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.contact-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contact-btn {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-btn i {
+  margin-right: 8px;
+}
+
+.phone-btn {
+  background-color: #f44336;
+}
+
+.zalo-btn {
+  background-color: #2196f3;
+}
+
+.contact-btn:hover {
+  opacity: 0.9;
+}
+
+.home-link-phone {
+  color: white;
+  font-weight: bold;
+}

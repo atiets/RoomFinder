@@ -1,0 +1,188 @@
+.post-detail-container {
+  width: 100%;
+  height: auto;
+}
+
+.image-gallery {
+  position: relative;
+  width: 100%;
+  height: 30%;
+}
+
+.post-detail-image {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+}
+
+.prev-btn,
+.next-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.151);
+  border-radius: 50%;
+  color: white;
+  border: none;
+  padding: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 1;
+  transition: none;
+  /* Disable any transition */
+}
+
+.prev-btn:hover,
+.next-btn:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+  transform: translateY(-50%);
+  padding: 10px;
+  border: none;
+}
+
+.prev-btn {
+  left: 10px;
+}
+
+.next-btn {
+  right: 10px;
+}
+
+.container-content-detail {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  width: 100%;
+}
+
+.container-left {
+  flex: 2;
+}
+
+.container-cost {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.container-cost .room-post-price {
+  flex: 1 !important;
+  background-color: #7ecc5d;
+  font-family: Helvetica;
+  font-weight: 200;
+  color: #2a261a;
+  margin: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  pointer-events: none;
+}
+.container-cost .post-title {
+  flex: 6;
+  margin: 0;
+  padding: 0;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #3a6d2b;
+}
+
+.container-left .post-content {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 2 rem;
+  color: #555555;
+}
+
+.container-left .address-detail {
+  color: #2a261a;
+  pointer-events: none;
+  text-transform: none;
+}
+
+.container-right {
+  padding: 0;
+  margin: 0;
+  flex: 1;
+}
+
+.style-icon {
+  size: 1.2rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.container-left .container-table {
+  background-color: white;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 1rem;
+  border-radius: 25px;
+  overflow: hidden;
+  width: 95%;
+  margin-bottom: 20px;
+}
+
+.container-right .title-cell {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.container-right .card-info {
+  background-color: #c2f8ab;
+  border-radius: 25px;
+  width: 300px;
+}
+
+.card-info .container-contactinfo {
+  display: flex;
+  padding-bottom: 0.5rem;
+}
+
+.card-info .room-post-username {
+  font-family: "Times New Roman", Times, serif;
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #3a6d2b;
+}
+
+.card-info .room-post-button {
+  background-color: #7ecc5d;
+  border-color: #7ecc5d;
+  border-radius: 20px;
+  color: black;
+  font-size: 1rem;
+  font-weight: bold;
+  width: 100%;
+  margin-top: 0.5rem;
+  pointer-events: none;
+}
+
+.post-detail-container-comment {
+  width: 100%;
+  height: auto;
+  margin-top: 20px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.spinner {
+  border: 5px solid #f3f3f3; /* Màu nền của spinner */
+  border-top: 5px solid #1cb533; /* Màu của vòng tròn */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

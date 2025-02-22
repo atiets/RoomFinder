@@ -1,0 +1,52 @@
+.home-admin-nav-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-top: 50px;
+}
+
+.home-admin-nav-menu li {
+  display: flex; /* Để icon và text nằm ngang hàng */
+  align-items: center; /* Căn giữa icon và text theo chiều dọc */
+  padding: 12px 20px; /* Khoảng cách bên trong */
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  font-family: work-sans, sans-serif;
+  transition: background-color 0.3s ease;
+}
+
+.home-admin-nav-menu li:hover {
+  background-color: #f4f4f4;
+}
+
+.home-admin-nav-menu li.active {
+  background-color: #63ab45; /* Màu nền cho menu được chọn */
+  color: #fff;
+}
+
+.home-admin-nav-menu li .MuiSvgIcon-root,
+.submenu li .MuiSvgIcon-root {
+  margin-left: auto; /* Đẩy icon sát lề phải */
+  font-size: 20px; /* Kích thước icon */
+}
+.home-admin-nav-menu .submenu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.submenu li {
+  display: flex;
+  align-items: center;
+  padding: 10px 30px;
+  font-size: 15px;
+  font-family: work-sans, sans-serif;
+  transition: background-color 0.3s ease;
+}
+
+.submenu li.active {
+  background-color: #63ab45;
+  color: #fff;
+}

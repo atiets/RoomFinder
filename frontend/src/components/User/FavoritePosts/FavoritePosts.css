@@ -1,0 +1,15 @@
+.favorite-posts {
+  padding: 20px;
+}
+
+.favorites-list {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 20px !important;
+  justify-content: space-between !important;
+}
+
+.favorites-list .room-post {
+  flex: 0 0 calc(33.33% - 20px) !important;
+  box-sizing: border-box !important;
+}

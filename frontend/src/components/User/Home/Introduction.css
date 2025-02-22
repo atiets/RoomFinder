@@ -1,0 +1,173 @@
+.intro-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px;
+  background-color: white;
+  border-radius: 8px;
+}
+
+.intro-left {
+  flex: 1;
+  padding: 20px;
+}
+
+.intro-left h2 {
+  font-size: 32px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.intro-left p {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.feature-icon {
+  width: 40px;
+  height: 40px;
+  margin-right: 15px;
+  transition: transform 0.5s ease-in-out;
+}
+
+.feature-icon:hover {
+  transform: scale(1.1);
+}
+
+.feature-text h3 {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.feature-text p {
+  font-size: 14px;
+  color: #555;
+}
+
+.intro-right {
+  flex: 1;
+  padding: 20px;
+  position: relative;
+}
+
+.intro-image {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  border-radius: 8px;
+  transition: transform 0.3s ease-in-out;
+}
+
+.intro-image:hover {
+  transform: scale(1.1);
+}
+
+.introduction-intro-right-img {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background-color: rgba(0, 0, 0, 0.5);
+  bottom: -25px;
+  right: -25px;
+  border-radius: 15px;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.introduction-intro-right-img:hover {
+  transform: scale(1.1);
+}
+
+.introduction-intro-right-text {
+  position: absolute;
+  width: 200px;
+  height: 100px;
+  background-color: white;
+  bottom: -25px;
+  left: -25px;
+  border-radius: 10px;
+  padding: 10px 10px;
+  border: #63ab45 solid 1px;
+  transition:
+    transform 0.3s ease,
+    background-color 0.3s ease,
+    bottom 0.3s ease;
+}
+
+.introduction-intro-right-text:hover {
+  transform: scale(1.05);
+  bottom: -35px;
+}
+
+.img-intr-in-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+}
+
+.img-intr-in-img:hover {
+  transform: scale(1.1);
+}
+
+.introduction-border {
+  height: 80px;
+  width: 180px;
+  border-radius: 20px;
+  border: #ff8934 solid 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.intro-text-in-img {
+  font-size: 30px;
+  font-weight: bold;
+  color: #42702f;
+}
+
+.intro-text-in-img-content {
+  font-size: 18px;
+  font-weight: 500;
+  color: #666;
+}
+
+.intro-left .intro-left-title {
+  font-size: 36px;
+  font-weight: bolder;
+  color: #ff832a;
+  margin-bottom: 20px;
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+.intro-left-title-content {
+  font-size: 20px;
+  font-weight: 500;
+  color: #666;
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+.intro-left .intro-left-title1 {
+  font-size: 25px;
+  font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.intro-left .intro-left-content {
+  font-size: 14px;
+  font-family: work-sans, sans-serif;
+  font-weight: 300;
+  color: #666;
+}

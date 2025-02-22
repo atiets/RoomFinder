@@ -1,0 +1,211 @@
+.addreview-review-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Căn giữa theo chiều ngang */
+  margin-bottom: 20px; /* Tạo khoảng cách dưới tiêu đề */
+  text-align: center;
+}
+
+.add-review-post-title {
+  font-family:
+    work sans,
+    sans-serif;
+  font-size: 16px;
+  color: black;
+  font-weight: bold !important;
+  text-align: center;
+}
+
+.addreview-review-header .addreview-button {
+  margin-top: 10px; /* Khoảng cách giữa tiêu đề và nút */
+}
+.addreview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.addreview-form-container {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  font-family: "Arial", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Đảm bảo nội dung canh giữa */
+}
+
+.addreview-form-container h3 {
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Nhóm input */
+.addreview-form-group {
+  margin-bottom: 20px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Label */
+.addreview-form-group label {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #555;
+  margin-right: 20px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Input và Textarea */
+.addreview-input,
+.addreview-textarea {
+  flex-grow: 1;
+  padding: 10px;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-left: 10px;
+  box-sizing: border-box;
+}
+
+.addreview-textarea {
+  resize: none;
+  height: 100px;
+}
+
+/* Nút thêm đánh giá */
+.addreview-button {
+  background-color: #7ecc5d;
+  color: black;
+  font-size: 1.2rem;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.addreview-button:hover {
+  background-color: #118640;
+}
+
+/* Nút submit và nút đóng */
+.addreview-submit-button,
+.addreview-close-button {
+  width: 48%;
+  background-color: #28a745;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  margin: 10px 1%;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.addreview-submit-button:hover {
+  background-color: #218838;
+}
+
+.addreview-stars {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+
+.addreview-star {
+  margin: 0 5px;
+  transition:
+    fill 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.addreview-star:hover {
+  transform: scale(1.2); /* Phóng to khi hover */
+}
+
+.addreview-review-header {
+  text-align: center;
+}
+
+.addreview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.addreview-form-container {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 400px;
+  text-align: center;
+}
+
+.addreview-textarea {
+  width: 100%;
+  height: 80px;
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.addreview-buttons {
+  display: flex;
+  justify-content: space-between; /* Đặt khoảng cách giữa các nút */
+  margin-top: 20px; /* Khoảng cách từ phần nội dung phía trên */
+}
+
+.addreview-submit-button,
+.addreview-close-button {
+  flex: 1; /* Chia đều không gian */
+  margin: 0 5px; /* Khoảng cách giữa các nút */
+  padding: 10px 20px;
+  font-size: 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.addreview-submit-button {
+  background-color: #4caf50;
+  color: white;
+}
+
+.addreview-close-button {
+  background-color: #f44336;
+  color: white;
+}
+
+/* Thông báo lỗi */
+.addreview-error {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 5px;
+}

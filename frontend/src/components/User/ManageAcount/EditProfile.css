@@ -1,0 +1,71 @@
+.container-edit-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  width: 100%;
+  max-width: 600px;
+  background-color: white;
+  margin-top: 0.3rem;
+  border-radius: 15px;
+  margin-right: 0.3rem;
+  padding-top: 77px;
+}
+
+.container-edit-profile .user-info {
+  display: flex;
+  position: relative;
+  gap: 10px;
+  align-items: center;
+}
+
+.container-edit-profile .name-phone {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+.container-edit-profile .bio-textarea {
+  height: 120px;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-family: Arial, Helvetica, sans-serif;
+  resize: vertical;
+  margin-top: 10px;
+}
+
+.bio-textarea:focus {
+  border: 1px solid #1976d2 !important;
+}
+
+.avatar-upload {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+}
+
+.avatar-upload:hover {
+  background-color: rgba(255, 255, 255, 1);
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.update-profile-confirm-btn {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background-color: #7ecc5d !important;
+  color: #2a261a !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  text-transform: none !important;
+  text-decoration: none !important;
+  margin: 0.5rem !important;
+}

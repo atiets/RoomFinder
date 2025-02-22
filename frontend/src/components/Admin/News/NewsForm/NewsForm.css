@@ -1,0 +1,204 @@
+/* Container tổng thể của form */
+.news-form-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin: 20px auto;
+  padding: 15px;
+  background-color: #f4f4f9;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  max-width: 1200px;
+}
+
+/* Bố trí flex giữa phần tải ảnh bìa và form tin tức */
+.form-content {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Phần tải ảnh bìa (chiếm 1 phần) */
+.cover-upload {
+  margin-bottom: 30px;
+}
+
+/* Tiêu đề phần tải ảnh */
+.cover-title {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 10px;
+  font-family: "Arial", sans-serif;
+}
+
+/* Nút tải ảnh bìa */
+.cover-placeholder {
+  display: inline-block;
+  padding: 10px;
+  background-color: #efefef;
+  border: 2px dashed #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+  color: #777;
+  font-size: 14px;
+}
+
+/* Ẩn input file mặc định */
+.cover-placeholder input[type="file"] {
+  display: none;
+}
+
+/* Hiển thị preview ảnh */
+.image-preview {
+  margin-bottom: 15px;
+  position: relative;
+  width: 300px;
+  height: 300px;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+.image-preview .image-waiting {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+.image-preview .image-waiting img {
+  width: 64px;
+  height: auto;
+  opacity: 0.3;
+}
+
+.image-preview img {
+  /* position: absolute;
+  top: 0;
+  left: 0; */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Phần form chi tiết tin tức */
+.news-details-form {
+  flex: 5; /* Chiếm 5 phần chiều rộng của container */
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 100%; /* Đảm bảo chiều rộng chiếm hết không gian còn lại */
+}
+
+/* Tiêu đề form tin tức */
+.news-details-form > h2 {
+  font-size: 20px;
+  color: #333;
+  margin-bottom: 15px;
+  font-weight: bold;
+  font-family: "Arial", sans-serif;
+}
+
+/* Các label và input */
+.news-details-form label {
+  display: block;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.news-details-form input[type="text"],
+.news-details-form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 15px;
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+
+/* Các trường nhập liệu textarea */
+.news-details-form textarea {
+  resize: vertical;
+  min-height: 150 px;
+}
+
+.error-message {
+  color: #d9534f;
+  font-size: 14px;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+/* Nút thêm tin */
+.news-btn {
+  display: flex;
+  justify-content: center;
+}
+.submit-button {
+  display: inline-block;
+  width: 100%;
+  max-width: 150px;
+  padding: 12px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.3s;
+  font-family: Arial, sans-serif;
+}
+
+.submit-button:hover {
+  background-color: #0056b3;
+}
+
+/* Quill Editor Container */
+.quill-content {
+  margin-bottom: 15px; /* Add margin below the editor */
+  border: 1px solid #ddd; /* Add a border to the editor container */
+  border-radius: 4px; /* Round the corners for consistency */
+  padding: 10px;
+  background-color: #ffffff; /* Set the background color of the editor */
+  font-family: Arial, sans-serif; /* Set the font family */
+  font-size: 14px; /* Set the font size */
+  color: #333; /* Text color */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optional: adds light shadow around the editor */
+}
+
+/* Quill Editor content area */
+.ql-container {
+  border: none; /* Remove border from Quill's container */
+  padding: 0; /* Remove inner padding */
+}
+
+.ql-editor {
+  min-height: 150px; /* Set a minimum height for the content area */
+  padding: 10px; /* Add padding inside the editor */
+  font-family: Arial, sans-serif; /* Ensure text consistency with the form */
+  font-size: 14px;
+  color: #333;
+  background-color: #ffffff; /* Ensure a white background */
+  line-height: 1.6; /* Set line height for readability */
+}
+
+/* Quill Editor toolbar customization (if needed) */
+.ql-toolbar {
+  border: 1px solid #ddd; /* Border around toolbar */
+  border-radius: 4px;
+  background-color: #f4f4f9; /* Light background for the toolbar */
+  padding: 5px;
+}
+
+.error-message {
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+}

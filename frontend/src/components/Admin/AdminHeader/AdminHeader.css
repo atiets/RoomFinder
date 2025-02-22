@@ -1,0 +1,33 @@
+.admin-header {
+  background-color: #c2f8ab !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  border: #bbbbbb solid 1px !important;
+  z-index: 1200;
+}
+
+.admin-header + .content {
+  margin-top: 64px;
+}
+
+.admin-header-title {
+  font-size: 25px !important;
+  font-family:
+    work sans,
+    sans-serif !important;
+  color: black;
+  font-weight: bold !important;
+  flex-grow: 1;
+  text-align: left !important;
+}
+
+.admin-header-buttons button {
+  color: black;
+  font-family:
+    work sans,
+    sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+}

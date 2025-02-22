@@ -1,0 +1,136 @@
+/* General Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Arial", sans-serif;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #ffffff;
+  color: #333;
+}
+
+/* Main Container */
+.policy-container {
+  padding: 2rem 5%;
+  background-color: #f8f8f8;
+}
+
+/* Section Titles */
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  color: #4caf50; /* Xanh lá */
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  letter-spacing: 2px;
+  position: relative;
+}
+
+.section-title::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  width: 80px;
+  height: 4px;
+  background-color: #ff5722; /* Cam */
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+/* Policy Sections */
+.policy-section {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 3rem;
+  align-items: center;
+  gap: 2rem;
+}
+
+.policy-text {
+  flex: 1;
+  min-width: 300px;
+}
+
+.policy-text h2 {
+  font-size: 2rem;
+  color: #4caf50; /* Xanh lá */
+  margin-bottom: 1rem;
+}
+
+.policy-text p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin-bottom: 1rem;
+  color: #555;
+}
+
+.policy-text span {
+  color: #ff9800;
+  font-weight: bold;
+}
+
+.policy-image-container {
+  flex: 1;
+  text-align: center;
+}
+
+.policy-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
+}
+
+.policy-image:hover {
+  transform: scale(1.05);
+}
+
+/* Thank You Section */
+.thank-you {
+  text-align: center;
+  margin-top: 2rem;
+  padding: 2rem 1rem;
+  background-color: #4caf50; /* Xanh lá */
+  color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.thank-you h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.thank-you p {
+  font-size: 1.1rem;
+}
+
+/* Loading Spinner */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #ffffff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .policy-section {
+    flex-direction: column;
+  }
+
+  .section-title {
+    font-size: 2rem;
+  }
+
+  .policy-text h2 {
+    font-size: 1.8rem;
+  }
+}

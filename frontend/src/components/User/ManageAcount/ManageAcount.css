@@ -1,0 +1,61 @@
+.manageAcount-container {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+}
+
+.container-body {
+  display: flex;
+  flex: 1;
+  background-color: GhostWhite !important;
+  padding-left: 10rem;
+  padding-right: 10rem;
+}
+
+.sidebar {
+  width: 250px;
+  padding: 20px;
+  background-color: #f4f4f4;
+  height: 100%;
+  box-shadow: none;
+  border: none;
+}
+
+.user-info {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.nav-menu ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.nav-menu li {
+  margin: 10px 0;
+  cursor: pointer;
+  padding: 10px;
+  background-color: #fff;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.nav-menu li:hover {
+  background-color: #e0e0e0;
+}
+
+.content {
+  flex: 1;
+  padding: 15px;
+  background-color: #fff;
+  padding: 20px;
+  background-color: GhostWhite !important;
+  overflow-y: auto;
+}

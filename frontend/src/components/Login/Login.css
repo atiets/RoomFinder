@@ -1,0 +1,224 @@
+.form-main {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+}
+
+.form-main .form-content {
+  background: #000 url("../../assets/images/bgLogin.png") no-repeat center /
+    cover;
+  flex: 1;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9f9f9;
+  z-index: 1;
+  position: relative;
+}
+
+.form-wrapper {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  width: 100%;
+  max-width: 500px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  flex-grow: 1;
+}
+
+.form-wrapper .form-title {
+  text-transform: uppercase;
+  font-size: 28px;
+  color: #1abc9c;
+  margin-bottom: 30px;
+  font-family: "Arial", sans-serif;
+  font-weight: bold;
+  text-align: center;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.form-group {
+  position: relative;
+}
+
+.form-group:not(:last-child) {
+  margin-bottom: 1.5rem;
+}
+
+.form-wrapper label {
+  position: absolute;
+  top: -6px;
+  left: 10px;
+  z-index: 9;
+  font-size: 14px;
+  padding: 0 3px;
+  background-color: #f9f9f9;
+  color: #1abc9c;
+  width: max-content;
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  font-family: "Arial", sans-serif;
+}
+
+.form-wrapper input {
+  width: 100%;
+  padding: 20px 15px 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+  height: 45px;
+}
+
+.form-wrapper input:focus {
+  border-color: #4caf50;
+  outline: none;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+}
+
+.form-wrapper input.password {
+  padding-right: 57px;
+}
+
+.form-wrapper button {
+  background-color: #1abc9c;
+  color: #fff;
+  padding: 12px;
+  font-size: 18px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.form-wrapper button:hover {
+  background-color: #16a085;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.login-register {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  color: #333;
+}
+
+.login-register-link {
+  color: #4caf50;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.login-register-link:hover {
+  text-decoration: underline;
+}
+
+.form-wrapper .form-line {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.form-wrapper .form-line::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 100%;
+  height: 1px;
+  background-color: #ccc;
+}
+
+.form-wrapper .form-line p {
+  position: relative;
+  z-index: 2;
+  background-color: #f9f9f9;
+  width: max-content;
+  font-size: 16px;
+  font-family: "Arial", sans-serif;
+  padding: 0 10px;
+  text-transform: uppercase;
+  color: #ccc;
+}
+
+.form-wrapper .form-center {
+  display: flex;
+  justify-content: center;
+}
+
+.form-wrapper .toggle-password {
+  position: absolute;
+  width: 45px;
+  height: 45px;
+  top: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-left: 1px solid #ccc;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.form-wrapper .toggle-password span {
+  position: relative;
+  top: 2px;
+}
+
+@media screen and (max-width: 1199px) {
+  .input-container {
+    position: relative;
+  }
+
+  .error-message {
+    color: red;
+    font-size: 14px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+}
+
+@media screen and (max-width: 785px) {
+  .form-wrapper {
+    max-width: calc(100% - 30px);
+  }
+}
+
+.back-arrow {
+  position: absolute;
+  top: 10px;
+  left: 15px;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #1abc9c;
+  transition:
+    color 0.3s ease,
+    transform 0.3s ease !important;
+}
+
+.back-arrow :hover {
+  background-color: #0b4f41 !important;
+  transform: scale(1.2) !important;
+}
+
+.form-wrapper {
+  position: relative;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
