@@ -105,11 +105,14 @@ exports.getPostById = async (req, res) => {
       return res.status(400).json({ message: 'ID không hợp lệ' });
     }
 
-    const post = await Post.findById(req.params.id);
+    let post = await Post.findByIdAndUpdate(req.params.id,
+      { $inc: { views: 1 } },
+      { new: true }
+    );
     if (!post) {
       return res.status(404).json({ message: 'Bài đăng không tồn tại.' });
     }
-
+    console.log("views", post.views);
     res.status(200).json(post);
   } catch (error) {
     console.error('Lỗi khi lấy chi tiết bài đăng:', error);

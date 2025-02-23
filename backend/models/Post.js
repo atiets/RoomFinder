@@ -95,6 +95,10 @@ const postsSchema = new mongoose.Schema({
     type: Number,
     default: 7,
   },
+  views: {
+    type: Number,
+    default: 0,
+  },
 }, { timestamps: true });
 
 const Post = mongoose.model('Post', postsSchema);
