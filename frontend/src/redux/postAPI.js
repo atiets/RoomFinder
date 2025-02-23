@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 
-const API_URL = "https://befindrentalrooms-production.up.railway.app/v1/posts/";
+const API_URL = "http://localhost:8000/v1/posts/";
 
 export const createPost = async (postData, token) => {
   const response = await axios.post(API_URL, postData, {
@@ -54,6 +54,7 @@ export const getPostDetail = async (id) => {
   try {
     const response = await axios.get(`${API_URL}posts/${id}`);
     return response;
+    
   } catch (error) {
     console.error("Lỗi khi gọi API lấy chi tiết bài đăng:", error);
     throw error;

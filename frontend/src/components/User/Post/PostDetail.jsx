@@ -46,7 +46,7 @@ const PostDetail = ({ onToggleFavorite }) => {
   const { toggleFavorite } = useFavoriteToggle(user);
   const { reviews, loading, error } = useSelector((state) => state.reviews);
   let axiosJWT = axios.create({
-    baseURL: "https://befindrentalrooms-production.up.railway.app",
+    baseURL: "http://localhost:8000",
   });
 
   useEffect(() => {
@@ -55,6 +55,19 @@ const PostDetail = ({ onToggleFavorite }) => {
         const response = await getPostDetail(id);
         console.log("Response Data:", response);
         setPost(response.data);
+        if (!localStorage.getItem(`viewed_${id}`)) {
+          const timer = setTimeout(async () => {
+            try {
+              const updatedPostData = await getPostDetail(id);
+              setPost(updatedPostData);
+              localStorage.setItem(`viewed_${id}`, "true");
+            } catch (err) {
+              console.log("Lỗi cập nhật lượt xem", err);
+            }
+          }, 5000);
+  
+          return () => clearTimeout(timer);
+        }
       } catch (error) {
         console.error("Lỗi khi lấy chi tiết bài đăng:", error);
       }
@@ -171,6 +184,11 @@ const PostDetail = ({ onToggleFavorite }) => {
                   ? " Triệu/m²/tháng"
                   : ""}
             </Button>
+          </Box>
+          <Box className="view-count-container">
+          <Typography className="view-count">
+            👀 {post.views} lượt xem
+          </Typography>
           </Box>
           <Button startIcon={<RoomOutlinedIcon />} className="address-detail">
             {post.address.exactaddress} {post.address.ward}{" "}
