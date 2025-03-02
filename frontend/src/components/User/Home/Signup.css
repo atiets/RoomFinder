@@ -1,0 +1,256 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&display=swap');
+
+.footer-signup-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    padding: 2rem 1rem;
+    background-color: #ecf9e8;
+}
+
+.cta-box {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 700px;
+    width: 100%;
+}
+
+.cta-box h2 {
+    font-size: 2.25rem; 
+    font-family: 'Dancing Script', cursive; 
+    color: #2ec600;
+    text-align: center;
+    letter-spacing: 1.5px;
+    line-height: 1.6; 
+    font-weight: 700;
+    text-shadow: 2px 2px 5px rgba(46, 198, 0, 0.3);
+    transition: all 0.3s ease-in-out;
+}
+
+.cta-box h2 span {
+    color: #51a33d;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.cta-box h2:hover {
+    color: #28a745; 
+    text-shadow: 3px 3px 8px rgba(46, 198, 0, 0.5);
+    transform: scale(1.05);
+}
+
+.signups-container {
+    width: 100%;
+}
+
+.field-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.columns-input {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    min-width: 500px;
+}
+
+.control {
+    display: flex;
+    width: 40%;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.input {
+    width: fit-content;
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 5px;
+    outline: none;
+}
+
+.input:focus {
+    border-color: var(--color-51a33d);
+    box-shadow: 0 0 5px rgba(81, 163, 61, 0.5);
+}
+
+.button-submit {
+    display: flex;
+    background: linear-gradient(135deg, #FFD700, #FFC107); /* Màu vàng gradient */
+    color: black;
+    border: none;
+    padding: 12px 18px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 160px;
+    box-shadow: 0px 4px 8px rgba(255, 193, 7, 0.3);
+}
+
+.button-submit:hover {
+    background: linear-gradient(135deg, #FFC107, #FFA000); /* Màu vàng đậm hơn khi hover */
+    box-shadow: 0px 6px 12px rgba(255, 193, 7, 0.4);
+    transform: scale(1.05);
+}
+
+.button-submit:active {
+    transform: scale(0.98);
+    box-shadow: 0px 2px 6px rgba(255, 193, 7, 0.2);
+}
+
+.signups-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+.button-signup {
+    background: linear-gradient(135deg, #FFD700, #FFC107); /* Màu vàng sáng */
+    color: black;
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0px 4px 10px rgba(255, 193, 7, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.button-signup:hover {
+    background: linear-gradient(135deg, #FFC107, #FFA000); /* Màu vàng đậm hơn khi hover */
+    box-shadow: 0px 6px 14px rgba(255, 193, 7, 0.4);
+    transform: scale(1.05);
+}
+
+.button-signup:active {
+    transform: scale(0.98);
+    box-shadow: 0px 2px 6px rgba(255, 193, 7, 0.2);
+}
+
+.or-separator {
+    margin: 15px 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: #666;
+}
+
+.or-separator span {
+    background: white;
+    padding: 0 10px;
+    position: relative;
+}
+
+.or-separator span::before,
+.or-separator span::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 200px;
+    height: 1px;
+    background: #666;
+}
+
+.or-separator span::before {
+    left: -200px;
+}
+
+.or-separator span::after {
+    right: -200px;
+}
+
+.button-google-sign-in {
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 10px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+.button-google-sign-in:hover {
+    background-color: #f5f5f5;
+}
+
+.button-google-sign-in img {
+    width: 20px;
+    height: 20px;
+}
+
+.animated-arrow-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 10px;
+    position: relative;
+    animation: arrowMove 1.5s infinite ease-in-out;
+}
+
+.arrow-line {
+    width: 3px;
+    height: 40px;
+    background-color: #28a745; 
+    position: relative;
+    margin: auto;
+    margin-left: 320px;
+}
+
+.animated-arrow {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    animation: arrowMove 1.5s infinite ease-in-out;
+}
+
+.animated-arrow::before, 
+.animated-arrow::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 2px solid #28a745;
+    border-left: transparent;
+    border-top: transparent;
+    transform: rotate(45deg);
+}
+
+.animated-arrow::before {
+    top: 0;
+    left: 50%;
+    transform-origin: top left;
+}
+
+.animated-arrow::after {
+    left: 50%;
+    transform-origin: bottom right;
+}
+
+@keyframes arrowMove {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(10px); }
+    100% { transform: translateY(0); }
+}

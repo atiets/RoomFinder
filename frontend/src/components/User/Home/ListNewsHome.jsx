@@ -10,8 +10,9 @@ const ListNewsHome = () => {
   console.log(newsList);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const baseURL = "https://befindrentalrooms-production.up.railway.app";
   let axiosJWT = axios.create({
-    baseURL: "https://befindrentalrooms-production.up.railway.app",
+    baseURL,
   });
 
   useEffect(() => {
@@ -51,7 +52,7 @@ const ListNewsHome = () => {
                   <p className="home-news_image">
                     {newsList[0].imageUrl && (
                       <img
-                        src={`https://befindrentalrooms-production.up.railway.app${
+                        src={`${baseURL}${
                           newsList[0].imageUrl || "/placeholder.jpg"
                         }`}
                         alt={newsList[0].title}
@@ -71,7 +72,7 @@ const ListNewsHome = () => {
                     <p className="home-news_image">
                       {newsList[1].imageUrl && (
                         <img
-                          src={`https://befindrentalrooms-production.up.railway.app${
+                          src={`${baseURL}${
                             newsList[1].imageUrl || "/placeholder.jpg"
                           }`}
                           alt={newsList[1].title}
@@ -89,7 +90,7 @@ const ListNewsHome = () => {
                     <p className="home-news_image">
                       {newsList[2].imageUrl && (
                         <img
-                          src={`https://befindrentalrooms-production.up.railway.app${
+                          src={`${baseURL}${
                             newsList[2].imageUrl || "/placeholder.jpg"
                           }`}
                           alt={newsList[2].title}
