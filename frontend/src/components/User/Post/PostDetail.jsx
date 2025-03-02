@@ -191,7 +191,7 @@ const PostDetail = ({ onToggleFavorite }) => {
           </Typography>
           </Box>
           <Button startIcon={<RoomOutlinedIcon />} className="address-detail">
-            {post.address.exactaddress} {post.address.ward}{" "}
+            {post.address.exactaddress || "Địa chỉ chưa có"} {post.address.ward}{" "}
             {post.address.district} {post.address.province}
           </Button>
           <div dangerouslySetInnerHTML={{ __html: post.content }} />

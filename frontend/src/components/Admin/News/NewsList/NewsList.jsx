@@ -13,8 +13,9 @@ const NewsList = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const newsPerPage = 6;
+  const baseURL = "https://befindrentalrooms-production.up.railway.app";
   let axiosJWT = axios.create({
-    baseURL: "https://befindrentalrooms-production.up.railway.app",
+    baseURL,
   });
 
   // Fetch news from API
@@ -98,7 +99,7 @@ const NewsList = () => {
             <Link to={`/manage-news/${news._id}`} className="news-link">
               {news.imageUrl && (
                 <img
-                  src={`https://befindrentalrooms-production.up.railway.app${news.imageUrl || "/placeholder.jpg"}`}
+                  src={`${baseURL}${news.imageUrl || "/placeholder.jpg"}`}
                   alt={news.title}
                   className="news-image"
                 />
