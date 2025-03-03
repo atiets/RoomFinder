@@ -86,6 +86,15 @@ const Signup = () => {
                     </button>
                 </div>
             </div>
+            <section className="illustration-section">
+                <img 
+                    loading="lazy" 
+                    src="https://marketing-assets.wheniwork-production.com/2020/01/16143317/footer-group-illustration-optimized.svg" 
+                    alt="drawing of employees at work cheering and waving" 
+                    width="801" 
+                    height="265"
+                />
+            </section>
         </section>
     );
 };

@@ -53,6 +53,7 @@ const ListPostHome = ({ post = [], title, favorite }) => {
 
   const handleToggleFavorite = (postId, isFavorite) => {
     if (!user) {
+      console.log("Swal được gọi");
       Swal.fire({
         icon: "warning",
         title: "Chưa đăng nhập",
@@ -60,8 +61,14 @@ const ListPostHome = ({ post = [], title, favorite }) => {
         confirmButtonText: "Đăng nhập",
         showCancelButton: true,
       }).then((result) => {
+        console.log("Swal result:", result);
         if (result.isConfirmed) {
+          Swal.close(); 
+          console.log("Chuyển hướng đến trang đăng nhập");
           navigate("/login");
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+          console.log("Đã hủy");
+          setTimeout(() => Swal.close(), 0);
         }
       });
       return;
@@ -74,6 +81,7 @@ const ListPostHome = ({ post = [], title, favorite }) => {
             ? favorites.filter((fav) => fav._id !== postId)
             : [...favorites, { _id: postId }],
         );
+        Swal.close();
       })
       .catch((error) => console.error("Lỗi khi bật/tắt yêu thích:", error));
   };

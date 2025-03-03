@@ -23,8 +23,8 @@
 }
 
 .cta-box h2 {
-    font-size: 2.25rem; 
-    font-family: 'Dancing Script', cursive; 
+    font-size: 1.75em; 
+    font-family: 'Poppins', sans-serif; 
     color: #2ec600;
     text-align: center;
     letter-spacing: 1.5px;
@@ -85,7 +85,7 @@
 
 .button-submit {
     display: flex;
-    background: linear-gradient(135deg, #FFD700, #FFC107); /* Màu vàng gradient */
+    background: linear-gradient(135deg, #FFCC80, #FFA726); 
     color: black;
     border: none;
     padding: 12px 18px;
@@ -98,18 +98,18 @@
     align-items: center;
     gap: 10px;
     width: 160px;
-    box-shadow: 0px 4px 8px rgba(255, 193, 7, 0.3);
+    box-shadow: 0px 4px 8px rgba(255, 152, 0, 0.3);
 }
 
 .button-submit:hover {
-    background: linear-gradient(135deg, #FFC107, #FFA000); /* Màu vàng đậm hơn khi hover */
-    box-shadow: 0px 6px 12px rgba(255, 193, 7, 0.4);
+    background: linear-gradient(135deg, #FFA726, #FB8C00);
+    box-shadow: 0px 6px 12px rgba(255, 152, 0, 0.4);
     transform: scale(1.05);
 }
 
 .button-submit:active {
     transform: scale(0.98);
-    box-shadow: 0px 2px 6px rgba(255, 193, 7, 0.2);
+    box-shadow: 0px 2px 6px rgba(255, 152, 0, 0.2);
 }
 
 .signups-button {
@@ -121,7 +121,7 @@
 }
 
 .button-signup {
-    background: linear-gradient(135deg, #FFD700, #FFC107); /* Màu vàng sáng */
+    background: linear-gradient(135deg, #FFCC80, #FFA726);
     color: black;
     font-size: 1.2rem;
     font-weight: bold;
@@ -130,21 +130,21 @@
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease-in-out;
-    box-shadow: 0px 4px 10px rgba(255, 193, 7, 0.3);
+    box-shadow: 0px 4px 10px rgba(255, 152, 0, 0.3);
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
 .button-signup:hover {
-    background: linear-gradient(135deg, #FFC107, #FFA000); /* Màu vàng đậm hơn khi hover */
-    box-shadow: 0px 6px 14px rgba(255, 193, 7, 0.4);
+    background: linear-gradient(135deg, #FFA726, #FB8C00); 
+    box-shadow: 0px 6px 14px rgba(255, 152, 0, 0.4);
     transform: scale(1.05);
 }
 
 .button-signup:active {
     transform: scale(0.98);
-    box-shadow: 0px 2px 6px rgba(255, 193, 7, 0.2);
+    box-shadow: 0px 2px 6px rgba(255, 152, 0, 0.2);
 }
 
 .or-separator {
@@ -253,4 +253,14 @@
     0% { transform: translateY(0); }
     50% { transform: translateY(10px); }
     100% { transform: translateY(0); }
+}
+
+.illustration-section {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+.illustration-section img {
+    max-width: 100%;
+    height: auto;
 }

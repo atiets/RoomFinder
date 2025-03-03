@@ -54,7 +54,6 @@ const NewsDetail = () => {
 
   const handleDelete = async (newsId) => {
     try {
-      // Hiển thị hộp thoại xác nhận xóa tin tức bằng SweetAlert
       const result = await Swal.fire({
         title: "Bạn có chắc chắn muốn xóa tin tức này không?",
         text: "Hành động này không thể hoàn tác!",

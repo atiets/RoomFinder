@@ -43,7 +43,7 @@ const ListAllPost = ({ posts, handleTitleClick }) => {
       // Hiển thị thông báo và chuyển hướng
       Swal.fire({
         title: "Chưa đăng nhập",
-        text: "Vui lòng đăng nhập để thêm bài đăng vào yêu thích.",
+        text: "Vui lòng đăng nhập để thêm bài đăng vào danh sách yêu thích.",
         icon: "warning",
         showCancelButton: true,
         confirmButtonText: "Đăng nhập",
