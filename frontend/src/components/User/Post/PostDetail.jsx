@@ -45,6 +45,7 @@ const PostDetail = ({ onToggleFavorite }) => {
   const user = useSelector((state) => state.auth.login.currentUser);
   const { toggleFavorite } = useFavoriteToggle(user);
   const { reviews, loading, error } = useSelector((state) => state.reviews);
+  const [favoriteCount, setFavoriteCount] = useState(0);
   let axiosJWT = axios.create({
     baseURL: "http://localhost:8000",
   });
@@ -86,6 +87,7 @@ const PostDetail = ({ onToggleFavorite }) => {
           },
         });
         setFavorites(response.data.favorites);
+        setFavoriteCount(response.data.favorites.length);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách yêu thích:", error);
       }
@@ -130,11 +132,13 @@ const PostDetail = ({ onToggleFavorite }) => {
 
     try {
       await toggleFavorite(id, isFavorite);
-      setFavorites(
-        isFavorite
-          ? favorites.filter((fav) => fav._id !== id)
-          : [...favorites, { _id: id }],
-      );
+      if (isFavorite) {
+        setFavorites(favorites.filter((fav) => fav._id !== id));
+        setFavoriteCount((prev) => prev - 1);
+      } else {
+        setFavorites([...favorites, { _id: id }]);
+        setFavoriteCount((prev) => prev + 1);
+      }
     } catch (error) {
       console.error("Lỗi khi thay đổi trạng thái yêu thích:", error);
     }
@@ -253,9 +257,12 @@ const PostDetail = ({ onToggleFavorite }) => {
             </Button>
           </Card>
         </Box>
+        <Box className="favorite-container">
         <Button className="favorite-icon" onClick={handleToggleFavorite}>
           {isFavorite ? <Favorite color="error" /> : <FavoriteBorder />}
         </Button>
+        <Typography className="favorite-count">{favoriteCount}</Typography>
+      </Box>
       </Box>
       <div className="post-detail-container-comment">
         <AddReviewForm />
