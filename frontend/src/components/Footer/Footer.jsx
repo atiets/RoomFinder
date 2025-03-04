@@ -14,10 +14,14 @@ import {
 import { Box, Button, Typography } from "@mui/material";
 import React from "react";
 import "./Footer.css";
+import "./Signup.jsx";
+import Signup from "./Signup.jsx";
 
 const Footer = () => {
   return (
-    <Box className="footer">
+    <Box clasName="footer-container">
+      <Signup />
+      <Box className="footer">
       <Box className="footer-logo-description">
         <Typography variant="h6" className="footer-logo">
           PHÒNG TRỌ XINH
@@ -121,6 +125,7 @@ const Footer = () => {
           Chiểu, Thủ Đức, Hồ Chí Minh
         </Typography>
       </Box>
+    </Box>
     </Box>
   );
 };

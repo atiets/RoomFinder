@@ -11,7 +11,6 @@ import "./Home.css";
 import Introduction from "./Introduction";
 import Introduction2 from "./Introduction2";
 import ListNewsHome from "./ListNewsHome";
-import Signup from "./Signup";
 
 const Home = () => {
   document.title = "Phòng trọ xinh";
@@ -176,9 +175,6 @@ const Home = () => {
                 </button>
               </div>
             </div>
-          </div>
-          <div style={{ width: "100%", height: "auto" }}>
-            <Signup />
           </div>
           {user ? (
             <>
