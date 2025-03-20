@@ -1,3 +1,4 @@
+import ChatIcon from '@mui/icons-material/Chat';
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import {
   AppBar,
@@ -83,7 +84,7 @@ const Header = () => {
       navigate("/AddPost");
     }
   };
-  
+
   const handleConfirmLogin = () => {
     setOpenDialog(false);
     navigate("/login");
@@ -128,6 +129,11 @@ const Header = () => {
             <Button className="user-header-btn" onClick={handleAddPost}>
               Đăng tin mới
             </Button>
+            {currentUser && (
+              <Button className="user-header-btn" onClick={() => navigate("/chat")}>
+                <ChatIcon />
+              </Button>
+            )}
             <Button className="user-header-btn" onClick={handleNotificationClick}>
               <Badge badgeContent={unreadCount} color="error">
                 <NotificationsIcon />
@@ -139,7 +145,7 @@ const Header = () => {
           </Box>
         </Toolbar>
       </AppBar>
-  
+
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -184,7 +190,7 @@ const Header = () => {
           </>
         )}
       </Menu>
-  
+
       <Notification
         notifications={notifications}
         anchorEl={notificationsMenuAnchorEl}
@@ -194,7 +200,7 @@ const Header = () => {
         accessToken={accessToken}
         onUpdateUnreadCount={handleUpdateUnreadCount}
       />
-  
+
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>Xác Nhận</DialogTitle>
         <DialogContent>
@@ -212,7 +218,7 @@ const Header = () => {
         </DialogActions>
       </Dialog>
     </>
-  );  
+  );
 };
 
 export default Header;

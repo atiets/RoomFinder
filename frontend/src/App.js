@@ -18,20 +18,21 @@ import ForgotPassword from "./components/ForgotPassword/ForgotPassword ";
 import Login from "./components/Login/Login";
 import Register from "./components/Register/Register";
 import ResetPassword from "./components/ResetPassword/ResetPassword ";
+import AboutUs from "./components/User/AboutUs/AboutUs";
 import ChangePassword from "./components/User/ChangePassword/ChangePassword";
+import Chat from "./components/User/Chat/chat";
 import Header from "./components/User/Header/Header";
 import Home from "./components/User/Home/Home";
 import ManageAcount from "./components/User/ManageAcount/ManageAcount";
 import UpdatePost from "./components/User/ManageAcount/UpdatePost";
 import NewsDetailUser from "./components/User/News/NewsDetail/NewsDetailUser";
 import NewsListUser from "./components/User/News/NewsList/NewsListUser";
+import PolicyTerms from "./components/User/PolicyTerms/PolicyTerms";
 import AddPost from "./components/User/Post/AddPost";
 import PostDetail from "./components/User/Post/PostDetail";
 import PostsPage from "./components/User/Post/PostPage";
 import SearchPosts from "./components/User/Search/searchPosts";
 import SearchResultsPage from "./components/User/Search/searchResultPage";
-import AboutUs from "./components/User/AboutUs/AboutUs";
-import PolicyTerms from "./components/User/PolicyTerms/PolicyTerms";
 
 function App() {
   return (
@@ -278,6 +279,15 @@ function App() {
                   <AdminHeader />
                   <UserPosts />
                   <Footer />
+                </>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <>
+                  <Header />
+                  <Chat />
                 </>
               }
             />
