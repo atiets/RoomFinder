@@ -4,8 +4,15 @@ const User = require('../models/User');
 
 // Tạo đánh giá mới
 exports.createReview = async (req, res) => {
-    const { rating, comment } = req.body;
+    const { rating, comments, review_checks } = req.body;
     const { postId } = req.params;
+    // const mediaFiles = req.files || [];
+    const imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        imageUrls.push(file.path);
+      });
+    }
 
     try {
         // Tìm bài đăng
@@ -14,15 +21,18 @@ exports.createReview = async (req, res) => {
             return res.status(404).json({ message: 'Bài đăng không tồn tại' });
         }
 
+
         // Tạo đánh giá
         const review = new Review({
             post_id: postId,
             user_id: req.user.id, 
             rating,
-            comment,
+            comments,
+            review_checks,
+            media: { images: imageUrls}
         });
 
-        await review.save();
+        await review.save();    
 
         // Tìm chủ bài đăng
         const owner = await User.findById(post.contactInfo.user);
