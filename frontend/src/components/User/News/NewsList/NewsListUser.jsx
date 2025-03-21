@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
 import axios from "axios";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "./NewsListUser.css";
 
@@ -10,7 +10,7 @@ const NewsListUser = () => {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const newsPerPage = 6;
-  const baseURL = "https://befindrentalrooms-production.up.railway.app";
+  const baseURL = process.env.REACT_APP_BASE_URL_API;
   let axiosJWT = axios.create({
     baseURL,
   });

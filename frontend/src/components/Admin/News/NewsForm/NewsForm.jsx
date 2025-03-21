@@ -31,7 +31,7 @@ const NewsForm = () => {
   const currentUser = useSelector((state) => state.auth.login.currentUser);
   const accessToken = currentUser?.accessToken;
   let axiosJWT = axios.create({
-    baseURL: "https://befindrentalrooms-production.up.railway.app",
+    baseURL: process.env.REACT_APP_BASE_URL_API,
     withCredentials: true,
   });
   axiosJWT = createAxios(currentUser, dispatch);

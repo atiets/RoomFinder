@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
 import "./ListNewsHome.css";
@@ -10,7 +10,7 @@ const ListNewsHome = () => {
   console.log(newsList);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const baseURL = "https://befindrentalrooms-production.up.railway.app";
+  const baseURL = process.env.REACT_APP_BASE_URL_API;
   let axiosJWT = axios.create({
     baseURL,
   });

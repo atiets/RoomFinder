@@ -1,12 +1,12 @@
 import { Pagination } from "@mui/material";
+import axios from "axios";
 import React from "react";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import { useFavoriteToggle } from "../../../redux/postAPI";
 import RoomPost from "./RoomPost";
 import "./RoomPost.css";
-import { useFavoriteToggle } from "../../../redux/postAPI";
-import axios from "axios";
-import { useSelector } from "react-redux";
-import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom";
 
 const ListAllPost = ({ posts, handleTitleClick }) => {
   const [favorites, setFavorites] = React.useState([]);
@@ -16,7 +16,7 @@ const ListAllPost = ({ posts, handleTitleClick }) => {
   const navigate = useNavigate();
   const postsPerPage = 9;
   let axiosJWT = axios.create({
-    baseURL: "https://befindrentalrooms-production.up.railway.app",
+    baseURL: process.env.REACT_APP_BASE_URL_API,
   });
 
   const { toggleFavorite } = useFavoriteToggle(user);

@@ -7,7 +7,7 @@ import {
 } from "./notificationSlice";
 
 let axiosJWT = axios.create({
-  baseURL: "https://befindrentalrooms-production.up.railway.app",
+  baseURL: process.env.REACT_APP_BASE_URL_API,
 });
 
 export const fetchNotifications = async (token) => {
@@ -33,7 +33,7 @@ export const markNotificationAsRead = async (
   dispatch,
 ) => {
   axios.defaults.baseURL =
-    "https://befindrentalrooms-production.up.railway.app";
+  process.env.REACT_APP_BASE_URL_API;
   dispatch(markAsReadStart());
   try {
     console.log("Notification ID:", notificationId);

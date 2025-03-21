@@ -18,7 +18,7 @@ const AdminHeader = () => {
   const accessToken = currentUser?.accessToken;
   const id = currentUser?._id;
   let axiosJWT = axios.create({
-    baseURL: "https://befindrentalrooms-production.up.railway.app",
+    baseURL: process.env.REACT_APP_BASE_URL_API,
   });
   axiosJWT = createAxios(currentUser, dispatch, logoutSuccess);
 

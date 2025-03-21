@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
+import Swal from "sweetalert2";
+import { useFavoriteToggle } from "../../../redux/postAPI";
 import RoomPost from "../Post/RoomPost";
 import "./searchResultPage.css";
-import { useFavoriteToggle } from "../../../redux/postAPI";
-import axios from "axios";
-import { useSelector } from "react-redux";
-import Swal from "sweetalert2";
 
 const SearchResultsPage = () => {
   document.title = "Kết quả tìm kiếm";
@@ -18,7 +18,7 @@ const SearchResultsPage = () => {
   const [sortOption, setSortOption] = useState("default");
   const user = useSelector((state) => state.auth.login.currentUser);
   let axiosJWT = axios.create({
-    baseURL: "https://befindrentalrooms-production.up.railway.app",
+    baseURL: process.env.REACT_APP_BASE_URL_API,
   });
 
   const { toggleFavorite } = useFavoriteToggle(user);

@@ -1,9 +1,9 @@
 import axios from "axios";
+import { motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { motion } from "framer-motion";
 import RoomPost from "../Post/RoomPost";
 import "./FavoritePosts.css";
 
@@ -16,7 +16,7 @@ const FavoritePosts = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const newsPerPage = 2;
   let axiosJWT = axios.create({
-    baseURL: "https://befindrentalrooms-production.up.railway.app",
+    baseURL: process.env.REACT_APP_BASE_URL_API,
   });
 
   useEffect(() => {

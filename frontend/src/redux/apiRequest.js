@@ -17,6 +17,14 @@ import {
   registerSuccess,
 } from "./authSlice";
 import {
+  getNotificationsFailed,
+  getNotificationsStart,
+  getNotificationsSuccess,
+  markAsReadFailed,
+  markAsReadStart,
+  markAsReadSuccess,
+} from "./notificationSlice";
+import {
   deleteUserFailed,
   deleteUserStart,
   deleteUserSuccess,
@@ -24,23 +32,13 @@ import {
   getUsersSuccess,
   getUserStart,
 } from "./userSlice";
-import {
-  getNotificationsStart,
-  getNotificationsSuccess,
-  getNotificationsFailed,
-  markAsReadStart,
-  markAsReadSuccess,
-  markAsReadFailed,
-} from "./notificationSlice";
-
-const API_URL = "https://befindrentalrooms-production.up.railway.app";
 
 export const loginUser = async (user, dispatch, navigate, setErrorMessage) => {
-  axios.defaults.baseURL = API_URL;
+  axios.defaults.baseURL = process.env.REACT_APP_BASE_URL_API;
   dispatch(loginStart());
 
   try {
-    const res = await axios.post(`${API_URL}/v1/auth/login`, user);
+    const res = await axios.post(`${process.env.REACT_APP_BASE_URL_API}/v1/auth/login`, user);
     const userData = res.data;
 
     dispatch(loginSuccess(userData));
@@ -93,7 +91,7 @@ export const registerUser = async (
   navigate,
   setErrorMessage,
 ) => {
-  axios.defaults.baseURL = API_URL;
+  axios.defaults.baseURL = process.env.REACT_APP_BASE_URL_API;
   dispatch(registerStart());
 
   try {
@@ -149,7 +147,7 @@ export const getAllUsers = async (accessToken, dispatch, axiosJWT) => {
 };
 
 export const deleteUser = async (userId, accessToken, dispatch) => {
-  axios.defaults.baseURL = API_URL;
+  axios.defaults.baseURL = process.env.REACT_APP_BASE_URL_API;
   dispatch(deleteUserStart());
   try {
     await axios.delete(`/v1/user/${userId}`, {
@@ -171,7 +169,7 @@ export const deleteUser = async (userId, accessToken, dispatch) => {
 };
 
 export const logout = async (dispatch, id, navigate, accessToken, axiosJWT) => {
-  axiosJWT.defaults.baseURL = API_URL;
+  axiosJWT.defaults.baseURL = process.env.REACT_APP_BASE_URL_API;
   dispatch(logoutStart());
   try {
     const res = await axiosJWT.post(
@@ -205,7 +203,7 @@ export const logout = async (dispatch, id, navigate, accessToken, axiosJWT) => {
 };
 
 export const googleLogin = async (tokenId, dispatch, navigate) => {
-  axios.defaults.baseURL = API_URL;
+  axios.defaults.baseURL = process.env.REACT_APP_BASE_URL_API;
   dispatch(googleLoginStart());
 
   try {
@@ -245,7 +243,7 @@ export const resetPasswordRequest = async (
   setMessage,
   navigate,
 ) => {
-  axios.defaults.baseURL = API_URL
+  axios.defaults.baseURL = process.env.REACT_APP_BASE_URL_API
   try {
     const res = await axios.post("/v1/auth/forgot-password", userEmail);
     dispatch(forgotPasswordSuccess());
@@ -264,7 +262,7 @@ export const resetPassword = async (
   setMessage,
   navigate,
 ) => {
-  axios.defaults.baseURL = API_URL;
+  axios.defaults.baseURL = process.env.REACT_APP_BASE_URL_API;
   try {
     const res = await axios.post("/v1/auth/reset-password", passwordData);
     setMessage("Mật khẩu đã được thay đổi thành công.");
@@ -282,7 +280,7 @@ export const updateUserProfile = async (
   accessToken,
   dispatch,
 ) => {
-  axios.defaults.baseURL = API_URL;
+  axios.defaults.baseURL = process.env.REACT_APP_BASE_URL_API;
   dispatch(loginStart());
 
   try {
@@ -317,7 +315,7 @@ export const updateUserProfile = async (
 };
 
 export const getNotifications = async (accessToken, dispatch) => {
-  axios.defaults.baseURL = API_URL;
+  axios.defaults.baseURL = process.env.REACT_APP_BASE_URL_API;
   dispatch(getNotificationsStart());
   try {
     const response = await axios.get("/v1/user/notifications", {
@@ -344,7 +342,7 @@ export const markNotificationAsRead = async (
   accessToken,
   dispatch,
 ) => {
-  axios.defaults.baseURL = API_URL;
+  axios.defaults.baseURL = process.env.REACT_APP_BASE_URL_API;
   dispatch(markAsReadStart());
   try {
     const response = await axios.patch(
@@ -376,7 +374,7 @@ export const changePassword = async (
   dispatch,
   setMessage,
 ) => {
-  axios.defaults.baseURL = API_URL;
+  axios.defaults.baseURL = process.env.REACT_APP_BASE_URL_API;
 
   try {
     // Gửi yêu cầu thay đổi mật khẩu đến backend

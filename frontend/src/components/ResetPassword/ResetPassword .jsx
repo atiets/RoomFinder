@@ -1,7 +1,7 @@
-import { useState } from "react";
 import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
 
 // import './ResetPassword.css';
 const ResetPassword = () => {
@@ -13,7 +13,7 @@ const ResetPassword = () => {
   const { token } = useParams(); // Lấy token từ URL
   const navigate = useNavigate();
   let axiosJWT = axios.create({
-    baseURL: "https://befindrentalrooms-production.up.railway.app",
+    baseURL: process.env.REACT_APP_BASE_URL_API,
   });
   const handleResetPassword = async (e) => {
     e.preventDefault();

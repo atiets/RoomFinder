@@ -26,13 +26,13 @@ import { useSelector } from "react-redux";
 import { Navigate, useParams } from "react-router-dom";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
+import Swal from "sweetalert2";
 import { getPostDetail, useFavoriteToggle } from "../../../redux/postAPI";
 import AdminHeader from "../../Admin/AdminHeader/AdminHeader";
 import Header from "../Header/Header";
 import AddReviewForm from "../Review/ReviewForm/ReviewForm";
 import ReviewsList from "../Review/ReviewList/ReviewsList";
 import "./PostDetail.css";
-import Swal from "sweetalert2";
 
 const PostDetail = ({ onToggleFavorite }) => {
   document.title = "Chi tiết bài đăng";
@@ -47,7 +47,7 @@ const PostDetail = ({ onToggleFavorite }) => {
   const { reviews, loading, error } = useSelector((state) => state.reviews);
   const [favoriteCount, setFavoriteCount] = useState(0);
   let axiosJWT = axios.create({
-    baseURL: "http://localhost:8000",
+    baseURL: process.env.REACT_APP_BASE_URL_API,
   });
 
   useEffect(() => {

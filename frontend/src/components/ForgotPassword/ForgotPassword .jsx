@@ -1,6 +1,6 @@
-import { useState } from "react";
 import axios from "axios"; // Sử dụng axios để gọi API
-import { ToastContainer, toast } from "react-toastify";
+import { useState } from "react";
+import { ToastContainer } from "react-toastify";
 // import './ForgotPassword.css';
 
 const ForgotPassword = () => {
@@ -9,7 +9,7 @@ const ForgotPassword = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   let axiosJWT = axios.create({
-    baseURL: "https://befindrentalrooms-production.up.railway.app",
+    baseURL: process.env.REACT_APP_BASE_URL_API,
   });
   const handleForgotPassword = async (e) => {
     e.preventDefault();

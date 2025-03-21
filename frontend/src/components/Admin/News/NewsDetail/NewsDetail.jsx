@@ -17,7 +17,7 @@ const NewsDetail = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   let axiosJWT = axios.create({
-    baseURL: "https://befindrentalrooms-production.up.railway.app",
+    baseURL: process.env.REACT_APP_BASE_URL_API,
   });
 
   const handleEdit = () => {

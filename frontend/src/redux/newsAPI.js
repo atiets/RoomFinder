@@ -1,23 +1,22 @@
 import axios from "axios";
 import {
-  getNewsStart,
-  getNewsSuccess,
-  getNewsFailed,
-  getNewsByIdStart,
-  getNewsByIdSuccess,
-  getNewsByIdFailed,
+  createNewsFailed,
   createNewsStart,
   createNewsSuccess,
-  createNewsFailed,
-  updateNewsStart,
-  updateNewsSuccess,
-  updateNewsFailed,
+  deleteNewsFailed,
   deleteNewsStart,
   deleteNewsSuccess,
-  deleteNewsFailed,
+  getNewsByIdFailed,
+  getNewsByIdStart,
+  getNewsByIdSuccess,
+  getNewsFailed,
+  getNewsSuccess,
+  updateNewsFailed,
+  updateNewsStart,
+  updateNewsSuccess
 } from "./newsSlice";
 
-axios.defaults.baseURL = "https://befindrentalrooms-production.up.railway.app";
+axios.defaults.baseURL = process.env.REACT_APP_BASE_URL_API;
 
 export const getAllNews = async (accessToken, dispatch, axiosJWT) => {
   try {

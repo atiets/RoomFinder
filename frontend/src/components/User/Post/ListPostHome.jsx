@@ -5,11 +5,11 @@ import { useNavigate } from "react-router-dom";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
+import Swal from "sweetalert2";
 import arrowsIcon from "../../../assets/images/arrowIcon.png";
 import { useFavoriteToggle } from "../../../redux/postAPI";
 import "./ListPostHome.css";
 import RoomPost from "./RoomPost";
-import Swal from "sweetalert2";
 
 const ListPostHome = ({ post = [], title, favorite }) => {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ const ListPostHome = ({ post = [], title, favorite }) => {
   const user = useSelector((state) => state.auth.login.currentUser);
   const { toggleFavorite } = useFavoriteToggle(user);
   let axiosJWT = axios.create({
-    baseURL: "https://befindrentalrooms-production.up.railway.app",
+    baseURL: process.env.REACT_APP_BASE_URL_API,
   });
 
   useEffect(() => {
