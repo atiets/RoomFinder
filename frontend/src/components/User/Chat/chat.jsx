@@ -268,7 +268,6 @@ const Chat = () => {
                         ))}
                 </div>
                 <div className='chat-box-left-idea'>
-                    {/* Additional content for the selected chat */}
                 </div>
                 <div className='chat-box-left-footer'>
                     <input
