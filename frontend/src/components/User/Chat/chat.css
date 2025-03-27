@@ -170,12 +170,50 @@
 }
 .chat-box-left-idea{
     flex: 1;
-    background-color: green;
 }
-.chat-box-left-footer{
+
+.chat-box-left-footer {
     flex: 1;
-    background-color: purple;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    transition: all 0.3s ease;
 }
+
+.chat-box-left-input {
+    width: 100%;
+    height: 2rem;
+    border-radius: 15px;
+    border: 1px solid #ccc;
+    margin-right: 8px;
+    transition: all 0.3s ease;
+}
+
+.chat-box-left-input-container {
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.chat-box-left-footer-media {
+    display: flex;
+    justify-content: space-between;
+    margin-right: 8px;
+    transition: all 0.3s ease;
+}
+
+.chat-box-left-footer-media.hidden {
+    flex: 0;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.chat-box-left-footer-media.visible {
+    flex: 2;
+    opacity: 1;
+    visibility: visible;
+}
+
 /*chat gpt*/
 .message {
   max-width: 70%;

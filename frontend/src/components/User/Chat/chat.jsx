@@ -1,15 +1,31 @@
+import AddIcon from '@mui/icons-material/Add';
+import ChatIcon from '@mui/icons-material/Chat';
+import CloseIcon from '@mui/icons-material/Close';
+import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import SendIcon from '@mui/icons-material/Send';
 import SettingsIcon from '@mui/icons-material/Settings';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import { Avatar, Button, Checkbox, FormControl, Input, InputLabel, MenuItem, Select } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import avatar from '../../../assets/images/demo1.jpg';
-import demo from '../../../assets/images/demo2.jpg';
+import { useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom';
+import useSocket from '../../../hooks/useSocket';
+import { getConversationsByUser } from '../../../redux/chatApi';
 import './chat.css';
 
 const currentUser = "user_1";
 
 const Chat = () => {
+    const location = useLocation();
+
+    const post = location.state?.post;
+    const currentUser = useSelector((state) => state.auth.login.currentUser);
+    const id = currentUser?._id;
+    const token = currentUser?.accessToken;
+    const socket = useSocket(id);
+
     const [isHidden, setIsHidden] = useState(false);
     const [selectedMessages, setSelectedMessages] = useState([]);
     const [selectedChat, setSelectedChat] = useState(null);
@@ -17,101 +33,138 @@ const Chat = () => {
     const [pricePost, setPricePost] = useState('Giá');
     const [messagesChat, setMessagesChat] = useState([]);
     const [newMessage, setNewMessage] = useState("");
+    const [showIcons, setShowIcons] = useState(true);
+    const [messages, setMessages] = useState([]);
+    const [conversation, setConversation] = useState([]);
+
+    const mess = [
+        {
+            id: "1",
+            senderId: "user1",
+            receiverId: "user2",
+            content: "Chào bạn, bạn có khỏe không?",
+            timestamp: "2024-03-25T08:30:00Z"
+        },
+        {
+            id: "2",
+            senderId: "user2",
+            receiverId: "user1",
+            content: "Mình khỏe, còn bạn thế nào?",
+            timestamp: "2024-03-25T08:31:00Z"
+        },
+        {
+            id: "3",
+            senderId: "user1",
+            receiverId: "user2",
+            content: "Mình cũng khỏe, cảm ơn bạn!",
+            timestamp: "2024-03-25T08:32:00Z"
+        },
+        {
+            id: "4",
+            senderId: "user2",
+            receiverId: "user1",
+            content: "Tối nay có đi chơi không?",
+            timestamp: "2024-03-25T08:33:00Z"
+        },
+        {
+            id: "5",
+            senderId: "user1",
+            receiverId: "user2",
+            content: "Mình bận rồi, hôm khác nhé!",
+            timestamp: "2024-03-25T08:34:00Z"
+        }
+    ];
+
+    // Giả định id của người dùng hiện tại
+    const idd = "user1";
+
+    const getOtherParticipants = (conversations, currentUserId) => {
+        return conversations.map(chat => {
+            const otherParticipant = chat.participants.find(p => p._id !== currentUserId);
+
+            return {
+                ...chat, // Giữ nguyên tất cả thuộc tính khác của cuộc trò chuyện
+                conversationId: chat._id,
+                username: otherParticipant ? otherParticipant.username : "Unknown",
+                profilePic: otherParticipant?.profile?.picture || null
+            };
+        });
+    };
+
+    console.log("selectChat:", selectedChat);  // Kiểm tra cuộc trò chuyện đã chọn
+
 
     useEffect(() => {
-        const fetchMessages = async () => {
-            const response = {
-                chatId: "123",
-                messages: [
-                    { id: 1, senderId: "user_1", message: "Hello!", timestamp: "10:00 AM" },
-                    { id: 2, senderId: "user_2", message: "Hi!", timestamp: "10:02 AM" },
-                    { id: 3, senderId: "user_1", message: "How are you?", timestamp: "10:05 AM" }
-                ]
-            };
-            setMessagesChat(response.messages);
+        const fetchConversation = async () => {
+            try {
+                const response = await getConversationsByUser(id, token);
+                const formattedConversations = getOtherParticipants(response.data || [], id);
+                setConversation(formattedConversations); // Lưu dữ liệu đã chuẩn hóa
+            } catch (error) {
+                console.error("Lỗi khi lấy đoạn chat:", error);
+                setConversation([]);
+            }
         };
 
-        fetchMessages();
-    }, []);
+        fetchConversation();
+    }, [id, token]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on("receiveMessage", (message) => {
+            console.log("Received message:", message);
+            setMessages((prevMessages) => [...prevMessages, message]);
+        });
+
+        return () => {
+            socket.off("receiveMessage");
+        };
+    }, [socket]);
+
 
     const sendMessage = () => {
-        if (newMessage.trim() === "") return;
+        if (!newMessage.trim()) return; // Kiểm tra tin nhắn rỗng
 
-        const newMsg = {
-            id: messagesChat.length + 1,
-            senderId: currentUser,
-            message: newMessage,
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        const participants = selectedChat?.participants || []; // Đảm bảo luôn có mảng
+        console.log("Participants:", participants); // Kiểm tra dữ liệu
+
+        const otherParticipant = participants.length > 1
+            ? participants.find(p => p._id !== id)?._id
+            : null;
+
+        console.log("Other participant ID:", otherParticipant); // Kiểm tra người nhận
+
+        const receiver = otherParticipant || post.contactInfo?.user;
+        if (!receiver) {
+            console.error("❌ Không tìm thấy receiver!");
+            return; // Ngăn lỗi nếu không tìm thấy người nhận
+        }
+
+        const messageData = {
+            sender: id,
+            receiver,
+            content: newMessage,
+            postId: post?._id || null,
         };
 
-        setMessagesChat([...messagesChat, newMsg]); // Cập nhật danh sách tin nhắn
+        console.log("Sending message:", messageData);
+
+        socket.emit("sendMessage", messageData, (response) => {
+            console.log("Server response:", response);
+        });
+
+        setMessages((prevMessages) => [...prevMessages, messageData]);
         setNewMessage("");
     };
 
-    const messages = [
-        {
-            id: 1,
-            name: 'John Doe',
-            message: 'Hello, how are you?',
-            avatar: avatar,
-            image: demo,
-            active: 'Active now'
-        },
-        {
-            id: 2,
-            name: 'Jane Smithssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss',
-            message: 'I am fine, thank youaaaaaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaaaaa!',
-            avatar: avatar,
-            image: demo,
-            active: 'Active now'
-        },
-        {
-            id: 3,
-            name: 'John Doe',
-            message: 'Hello, how are you?',
-            avatar: avatar,
-            image: demo,
-            active: 'Active now'
-        },
-        {
-            id: 4,
-            name: 'John Doe',
-            message: 'Hello, how are you?',
-            avatar: avatar,
-            image: demo,
-            active: 'Active 1 minute ago'
-        },
-        {
-            id: 5,
-            name: 'John Doe',
-            message: 'Hello, how are you?',
-            avatar: avatar,
-            image: demo,
-            active: 'Active 30 minute ago'
-        },
-        {
-            id: 6,
-            name: 'John Doe',
-            message: 'Hello, how are you?',
-            avatar: avatar,
-            image: demo,
-            active: 'Active 1 minute ago'
-        },
-        {
-            id: 7,
-            name: 'John Doe',
-            message: 'Hello, how are you?',
-            avatar: avatar,
-            image: demo,
-            active: 'Active 1 minute ago',
-        },
-    ];
 
-    const truncateMessage = (message, maxLength) => {
-        if (message.length > maxLength) {
-            return message.substring(0, maxLength) + '...';
-        }
-        return message;
+    const truncateMessage = (messa, maxLength) => {
+        if (!messa) return "";
+
+        return messa.length > maxLength
+            ? messa.substring(0, maxLength) + '...'
+            : messa;
     };
 
     const handleCheckboxChange = (id) => {
@@ -124,6 +177,11 @@ const Chat = () => {
 
     const handleCardClick = (msg) => {
         setSelectedChat(msg);
+    };
+
+    const handleCloseIconClick = () => {
+        setShowIcons(!showIcons);
+        console.log("showIcons:", !showIcons);
     };
 
     return (
@@ -163,8 +221,8 @@ const Chat = () => {
                     </>
                 )}
                 <div className='chat-box-right-body' style={{ overflowY: 'auto', maxHeight: '400px' }}>
-                    {messages.map((msg) => (
-                        <div key={msg.id} className='chat-card' onClick={() => handleCardClick(msg)}>
+                    {conversation.map((msg) => (
+                        <div key={msg._id} className='chat-card' onClick={() => handleCardClick(msg)}>
                             {isHidden && (
                                 <Checkbox
                                     checked={selectedMessages.includes(msg.id)}
@@ -177,12 +235,12 @@ const Chat = () => {
                                     }}
                                 />
                             )}
-                            <Avatar src={msg.avatar} alt={msg.name} className='chat-card-avatar' />
+                            <Avatar src={msg.profile?.picture} alt={msg.participants?.username} className='chat-card-avatar' />
                             <div className='chat-card-content'>
-                                <div className='chat-card-name'>{truncateMessage(msg.name, 30)}</div>
-                                <div className='chat-card-message'>{truncateMessage(msg.message, 50)}</div>
+                                <div className='chat-card-name'>{truncateMessage(msg.username, 30)}</div>
+                                <div className='chat-card-message'>{truncateMessage(msg.lastMessage?.content, 50)}</div>
                             </div>
-                            <img src={msg.image} alt='message' className='chat-card-image' />
+                            <img src={msg.postId?.images} alt='message' className='chat-card-image' />
                         </div>
                     ))}
                 </div>
@@ -223,9 +281,9 @@ const Chat = () => {
                 <div className='chat-box-left-header'>
                     {selectedChat ? (
                         <>
-                            <Avatar src={selectedChat.avatar} alt={selectedChat.name} className='chat-card-avatar-left' />
+                            <Avatar src={selectedChat.profile?.picture} alt={selectedChat.username} className='chat-card-avatar-left' />
                             <div className='chat-card-content-left'>
-                                <div className='chat-card-name-left'>{truncateMessage(selectedChat.name, 30)}</div>
+                                <div className='chat-card-name-left'>{truncateMessage(selectedChat.username, 30)}</div>
                                 <div className='chat-card-online'>
                                     <span
                                         style={{
@@ -233,11 +291,11 @@ const Chat = () => {
                                             width: '8px',
                                             height: '8px',
                                             borderRadius: '50%',
-                                            backgroundColor: selectedChat.active === 'Active now' ? 'green' : 'gray',
+                                            backgroundColor: selectedChat.isOnline === 'True' ? 'green' : 'gray',
                                             marginRight: '5px',
                                         }}
                                     ></span>
-                                    {selectedChat.active}
+                                    {selectedChat.isOnline === 'True' ? 'Online' : 'Offline'}
                                 </div>
                             </div>
                             <MoreVertIcon style={{ marginLeft: 'auto', alignContent: 'center' }} />
@@ -250,33 +308,66 @@ const Chat = () => {
                 </div>
                 <div className='chat-box-left-posts'>
                     <div className='chat-box-left-posts-content'>
-                        <div className='chat-box-left-posts-title'>{truncateMessage(titlePost, 30)}</div>
-                        <div className='chat-box-left-posts-price'>{truncateMessage(pricePost, 30)}</div>
+                        <div className='chat-box-left-posts-title'>{selectedChat?.postId?.title}</div>
+                        <div className="chat-box-left-posts-price">
+                            {selectedChat?.postId?.rentalPrice} triệu
+                            {selectedChat?.postId?.typePrice === 1 ? "/tháng" : selectedChat?.postId?.typePrice === 2 ? "/m²/tháng" : ""}
+                        </div>
                     </div>
                     <div className='chat-box-left-posts-image'>
-                        <img src={demo} alt='post' className='chat-card-post-image' />
+                        <img src={selectedChat?.firstPostImage} alt='post' className='chat-card-post-image' />
                     </div>
                 </div>
                 <div className='chat-box-left-content'>
-                    {messagesChat
-                        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) // Sắp xếp theo thời gian
+                    {mess
+                        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) // Sắp xếp tin nhắn theo thời gian
                         .map((msg) => (
-                            <div key={msg.id} className={`message ${msg.senderId === currentUser ? "sent" : "received"}`}>
-                                <p>{msg.message}</p>
-                                <span>{msg.timestamp}</span>
+                            <div key={msg.id} className={`message ${msg.senderId === idd ? "sent" : "received"}`}>
+                                <p>{msg.content}</p>
+                                <span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
                             </div>
                         ))}
                 </div>
                 <div className='chat-box-left-idea'>
+                    <div className='chat-box-left-idea-body' style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
+                        {["Phòng này hiện còn trống không ạ?", "Tình trạng giấy tờ thế nào ạ?", "Tôi có thể trả góp không?", "Giá thuê phòng là bao nhiêu? Có bao gồm điện, nước không?", "Phòng có nội thất hay không? Nếu có thì bao gồm những gì?", "Hợp đồng thuê tối thiểu bao lâu? Có thể trả theo tháng không?"].map((question, index) => (
+                            <Button
+                                key={index}
+                                variant="outlined"
+                                size="small"
+                                style={{ color: '#444444', textTransform: 'none', borderColor: '#444444', borderRadius: '15px', alignItems: 'center', margin: '0 5px', marginTop: '5px' }}
+                            >
+                                {question}
+                            </Button>
+                        ))}
+                    </div>
                 </div>
                 <div className='chat-box-left-footer'>
-                    <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Nhập tin nhắn..."
-                    />
-                    <button onClick={sendMessage}>Gửi</button>
+                    <div className="chat-box-left-footer">
+                        <div className={`chat-box-left-footer-media ${showIcons ? 'visible' : 'hidden'}`}>
+                            {showIcons ? (
+                                <>
+                                    <CloseIcon sx={{ color: '#63ab45' }} onClick={handleCloseIconClick} />
+                                    <InsertPhotoIcon sx={{ color: '#63ab45' }} />
+                                    <LocationOnIcon sx={{ color: '#63ab45' }} />
+                                    <ChatIcon sx={{ color: '#63ab45' }} />
+                                </>
+                            ) : null}
+                        </div>
+                        {!showIcons && (
+                            <AddIcon sx={{ color: '#63ab45' }} onClick={handleCloseIconClick} />
+                        )}
+                    </div>
+                    <div className='chat-box-left-input-container' style={{ flex: showIcons ? 8 : 10 }}>
+                        <input
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Nhập tin nhắn..."
+                            className='chat-box-left-input'
+                        />
+                        <SendIcon onClick={sendMessage} sx={{ color: '#63ab45' }} />
+                    </div>
                 </div>
             </div>
         </div>

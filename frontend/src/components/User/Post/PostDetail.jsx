@@ -23,7 +23,7 @@ import {
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
 import Swal from "sweetalert2";
@@ -35,6 +35,8 @@ import ReviewsList from "../Review/ReviewList/ReviewsList";
 import "./PostDetail.css";
 
 const PostDetail = ({ onToggleFavorite }) => {
+  const navigate = useNavigate();
+
   document.title = "Chi tiết bài đăng";
   const { id } = useParams();
   const [post, setPost] = useState(null);
@@ -46,9 +48,14 @@ const PostDetail = ({ onToggleFavorite }) => {
   const { toggleFavorite } = useFavoriteToggle(user);
   const { reviews, loading, error } = useSelector((state) => state.reviews);
   const [favoriteCount, setFavoriteCount] = useState(0);
+
   let axiosJWT = axios.create({
     baseURL: process.env.REACT_APP_BASE_URL_API,
   });
+
+  const handleChat = (post) => {
+    navigate(`/chat`, { state: { post } });
+  };
 
   useEffect(() => {
     const fetchPostDetail = async () => {
@@ -66,7 +73,7 @@ const PostDetail = ({ onToggleFavorite }) => {
               console.log("Lỗi cập nhật lượt xem", err);
             }
           }, 5000);
-  
+
           return () => clearTimeout(timer);
         }
       } catch (error) {
@@ -190,9 +197,9 @@ const PostDetail = ({ onToggleFavorite }) => {
             </Button>
           </Box>
           <Box className="view-count-container">
-          <Typography className="view-count">
-            👀 {post.views} lượt xem
-          </Typography>
+            <Typography className="view-count">
+              👀 {post.views} lượt xem
+            </Typography>
           </Box>
           <Button startIcon={<RoomOutlinedIcon />} className="address-detail">
             {post.address.exactaddress || "Địa chỉ chưa có"} {post.address.ward}{" "}
@@ -252,17 +259,17 @@ const PostDetail = ({ onToggleFavorite }) => {
               <LocalPhoneIcon className="style-icon" />{" "}
               {post.contactInfo.phoneNumber}
             </Button>
-            <Button variant="outlined" className="room-post-button">
+            <Button variant="outlined" className="room-post-button" onClick={() => handleChat(post)}>
               <EmailIcon className="style-icon" /> Gửi tin nhắn
             </Button>
           </Card>
         </Box>
         <Box className="favorite-container">
-        <Button className="favorite-icon" onClick={handleToggleFavorite}>
-          {isFavorite ? <Favorite color="error" /> : <FavoriteBorder />}
-        </Button>
-        <Typography className="favorite-count">{favoriteCount}</Typography>
-      </Box>
+          <Button className="favorite-icon" onClick={handleToggleFavorite}>
+            {isFavorite ? <Favorite color="error" /> : <FavoriteBorder />}
+          </Button>
+          <Typography className="favorite-count">{favoriteCount}</Typography>
+        </Box>
       </Box>
       <div className="post-detail-container-comment">
         <AddReviewForm />

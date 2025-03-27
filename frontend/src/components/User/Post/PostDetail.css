@@ -115,7 +115,6 @@
   font-family: "Times New Roman", Times, serif;
   font-size: 1rem;
   border-radius: 25px;
-  overflow: hidden;
   width: 95%;
   margin-bottom: 20px;
 }
@@ -214,4 +213,12 @@
   font-size: 16px !important; 
   font-weight: normal;
   color: rgb(142, 142, 142);
+}
+
+.card-info {
+  overflow: visible !important;
+}
+
+.room-post-button {
+  pointer-events: auto !important;
 }

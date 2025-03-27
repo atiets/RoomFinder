@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema({
     bio:{
       type: String,
     },
+    isOnline: {
+      type: Boolean,
+      default: true,
+    },
   },
   favorites: [
     {
