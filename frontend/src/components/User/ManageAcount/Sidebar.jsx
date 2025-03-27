@@ -36,6 +36,9 @@ const Sidebar = ({ user, setSelectedMenu }) => {
           <li onClick={() => setSelectedMenu("favoritePosts")}>
             ❤️ Danh sách yêu thích
           </li>
+          <li onClick={() => setSelectedMenu("viewedPosts")}>
+            🕒 Bài đăng đã xem
+          </li>
         </ul>
       </nav>
     </div>

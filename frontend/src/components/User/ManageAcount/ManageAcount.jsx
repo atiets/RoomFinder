@@ -4,6 +4,7 @@ import { setSelectedMenu } from "../../../redux/menuSlice";
 import ChangePassword from "../ChangePassword/ChangePassword";
 import FavoritePosts from "../FavoritePosts/FavoritePosts";
 import Header from "../Header/Header";
+import ViewedPost from "../ViewedPost/ViewedPost";
 import EditProfile from "./EditProfile";
 import ListUserPost from "./listUserPost";
 import "./ManageAcount.css";
@@ -34,6 +35,8 @@ const ManageAcount = () => {
         return <ChangePassword />;
       case "favoritePosts":
         return <FavoritePosts />;
+      case "viewedPosts":
+        return <ViewedPost />;
       default:
         return <EditProfile user={currentUser || null} />;
     }
