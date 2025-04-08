@@ -286,7 +286,7 @@ export const getTopProvinces = async (token) => {
 
 // API URL cho reviews
 const REVIEW_API_URL =
-  `${process.env.REACT_APP_BASE_URL_API}v1/reviews/`;
+  `${process.env.REACT_APP_BASE_URL_API}/v1/reviews/`;
 
 export const createReview = async (postId, reviewData, token) => {
   try {
@@ -296,7 +296,7 @@ export const createReview = async (postId, reviewData, token) => {
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          // "Content-Type": "multipart/form-data",
         },
       },
     );

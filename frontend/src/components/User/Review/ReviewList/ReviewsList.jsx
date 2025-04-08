@@ -3,6 +3,11 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import { useDispatch, useSelector } from "react-redux";
 import Swal from "sweetalert2";
+import { Checkbox } from "@mui/material";
+import ReviewDetailModal from "../ReviewDetailModal/ReviewDetailModal";
+import ReviewComments from "../ReviewComments/ReviewComments";
+import ReviewChecks from "../ReviewChecks/ReviewChecks";
+
 import {
   deleteReview as deleteReviewAPI,
   editReview,
@@ -14,6 +19,24 @@ import {
   updateReview,
 } from "../../../../redux/reviewSlice";
 import "./ReviewsList.css";
+const COMMENT = {
+  best_part: "Điều thích nhất về phòng",
+  worst_part: "Điều không hài lòng",
+  advice: "Lời khuyên cho người thuê sau",
+  additional_comment: "Ý kiến bổ sung",
+};
+const RATING = {
+  quality: "🏠 Chất lượng phòng",
+  location: " 📍 Vị trí & Khu vực xung quanh",
+  price: "💰 Giá cả so với chất lượng",
+  security: "👥 Chủ nhà & Dịch vụ",
+  service: "🔒 An ninh khu vực",
+};
+const REVIEW_CHECKS = {
+  is_info_complete: "Bài đăng đầy đủ thông tin không?",
+  is_image_accurate: "Hình ảnh có đúng thực tế không?",
+  is_host_responsive: "Chủ phòng có phản hồi nhanh không?",
+};
 
 const ReviewsList = ({ postId, userId }) => {
   const dispatch = useDispatch();
@@ -28,6 +51,7 @@ const ReviewsList = ({ postId, userId }) => {
   const [showForm, setShowForm] = useState(false);
   const [editReviewId, setEditReviewId] = useState(null);
   const [rating, setRating] = useState(0);
+  const [eachAverageRating, setEachAverageRating] = useState(0);
   const [comment, setComment] = useState("");
   const currentUser = useSelector((state) => state.auth.login.currentUser);
   const id = currentUser?._id;
@@ -36,6 +60,26 @@ const ReviewsList = ({ postId, userId }) => {
   const [totalReviews, setTotalReviews] = useState(0);
   const [ratingsBreakdown, setRatingsBreakdown] = useState({});
   const [selectedRating, setSelectedRating] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedReview, setSelectedReview] = useState(null);
+
+  const calculateAverageRating = (ratings) => {
+    // Check if review.rating is available, if not, return 0
+    // console.log("Ratings:", ratings);
+    if (!ratings) return 0;
+
+    // Calculate the total rating by summing up the individual category ratings
+    const totalRating = Object.values(ratings).reduce(
+      (sum, value) => sum + value,
+      0
+    );
+
+    // Calculate the average rating by dividing the total by the number of categories
+    const averageRating = totalRating / Object.keys(ratings).length;
+
+    // Return the average, rounded to 1 decimal place
+    return averageRating.toFixed(1);
+  };
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -47,6 +91,8 @@ const ReviewsList = ({ postId, userId }) => {
       try {
         const reviewsData = await getReviewsByPostId(postId);
         dispatch(setReviews(reviewsData));
+
+        console.log("Đánh giá đã được tải thành công:", reviewsData);
       } catch (error) {
         console.error("Lỗi khi tải bài đánh giá:", error);
       }
@@ -79,7 +125,7 @@ const ReviewsList = ({ postId, userId }) => {
       stars.push(
         <span key={i} className={`star ${i <= rating ? "filled" : ""}`}>
           ★
-        </span>,
+        </span>
       );
     }
     return stars;
@@ -323,22 +369,34 @@ const ReviewsList = ({ postId, userId }) => {
                   {review.user_id?.username}
                 </span>
                 <br />
-                <span className="stars">{renderStars(review.rating)}</span>
+                <span className="stars">
+                  {renderStars(calculateAverageRating(review.rating))}{" "}
+                  <span
+                    className="rating_detail"
+                    onClick={() => {
+                      setSelectedReview(review);
+                      setOpenModal(true);
+                    }}
+                    style={{ cursor: "pointer", color: "red" }}
+                  >
+                    Chi tiết
+                  </span>
+                </span>
+
                 <span className="review-item_time">
                   {new Date(review.createdAt).toLocaleString()}
                 </span>
               </p>
-              <p>Comment: {review.comment}</p>
 
-              {review.user_id._id === id && (
-                <div className="review-actions">
-                  <FaEdit onClick={() => handleEdit(review)} />
-                  <FaTrash onClick={() => handleDelete(review._id)} />
-                </div>
-              )}
+              <ReviewComments comments={review?.comments} COMMENT={COMMENT} />
+              <ReviewChecks
+                reviewChecks={review?.review_checks}
+                REVIEW_CHECKS={REVIEW_CHECKS}
+              />
             </div>
           ))}
 
+          {/* Pagination */}
           <ReactPaginate
             previousLabel={"Trước"}
             nextLabel={"Tiếp theo"}
@@ -351,6 +409,13 @@ const ReviewsList = ({ postId, userId }) => {
             activeClassName={"active"}
           />
         </>
+      )}
+
+      {openModal && selectedReview && (
+        <ReviewDetailModal
+          review={selectedReview}
+          onClose={() => setOpenModal(false)}
+        />
       )}
 
       {showForm && (

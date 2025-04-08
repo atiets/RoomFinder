@@ -1,16 +1,29 @@
 const Review = require('../models/Review');
 const Post = require('../models/Post');
 const User = require('../models/User');
+const cloudinary = require('cloudinary').v2;
 
 // Tạo đánh giá mới
 exports.createReview = async (req, res) => {
     const { rating, comments, review_checks } = req.body;
+    console.log("kk", req.body);
     const { postId } = req.params;
     // const mediaFiles = req.files || [];
+
+    // const parsedRating = JSON.parse(rating);
+    // const parsedComments = JSON.parse(comments);
+    // const parsedReviewChecks = JSON.parse(review_checks);
+
+
     const imageUrls = [];
+    let videoUrls = '';
     if (req.files && req.files.length > 0) {
       req.files.forEach(file => {
-        imageUrls.push(file.path);
+        if(file.mimetype.startsWith('image/') && imageUrls.length < 5) {
+            imageUrls.push(file.path);
+        } else if(file.mimetype.startsWith('video/') && !videoUrls) {
+            videoUrls = file.path;
+        }
       });
     }
 
@@ -29,7 +42,10 @@ exports.createReview = async (req, res) => {
             rating,
             comments,
             review_checks,
-            media: { images: imageUrls}
+            media: { 
+                images: imageUrls,
+                video: videoUrls
+            }
         });
 
         await review.save();    
@@ -62,7 +78,7 @@ exports.createReview = async (req, res) => {
 exports.getReviewsByPost = async (req, res) => {
     const { postId } = req.params;
 
-    try {
+    try {   
         const reviews = await Review.find({ post_id: postId }).populate('user_id', 'username');
         res.status(200).json(reviews);
     } catch (error) {

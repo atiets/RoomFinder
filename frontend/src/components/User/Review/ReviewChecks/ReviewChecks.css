@@ -1,0 +1,13 @@
+  .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 8px 0;
+  }
+  
+  .checkbox-group label {
+    margin: 5px 0;
+    min-width: 30%;
+    flex: 0 1 calc(33.33% - 12px); 
+  }
+  

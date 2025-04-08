@@ -12,10 +12,19 @@ const ReviewForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [postId, setPostId] = useState(id);
-  const [checked, setChecked] = useState(false);
-  const [checked1, setChecked1] = useState(false);
-  const [checked2, setChecked2] = useState(false);
-  const [checked3, setChecked3] = useState(false);
+  const [quality, setQuality] = useState(0);
+  const [location, setLocation] = useState(0);
+  const [price, setPrice] = useState(0);
+  const [service, setService] = useState(0);
+  const [security, setSecurity] = useState(0);
+  const [bestPart, setBestPart] = useState("");
+  const [worstPart, setWorstPart] = useState("");
+  const [advice, setAdvice] = useState("");
+  const [additionalComment, setAdditionalComment] = useState("");
+  const [isInfoComplete, setIsInfoComplete] = useState(false);
+  const [isImageAccurate, setIsImageAccurate] = useState(false);
+  const [isHostResponsive, setIsHostResponsive] = useState(false);
+  const [isIntroduce, setIsIntroduce] = useState(false);
   const categories = [
     "🏠 Chất lượng phòng",
     " 📍 Vị trí & Khu vực xung quanh",
@@ -69,34 +78,74 @@ const ReviewForm = () => {
   }, []);
 
 
-  const handleSubmit = async (e) => {
-    const averageRating = calculateAverageRating();
-    e.preventDefault();
-    setError(null);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-    if (!postId || !user_id || !averageRating) {
-      setError("Post ID, User ID, and Rating are required.");
+    if (
+      quality === 0 ||
+      location === 0 ||
+      price === 0 ||
+      service === 0 ||
+      security === 0
+    ) {
+      Swal.fire({
+        icon: "warning",
+        title: "Thiếu đánh giá",
+        text: "Vui lòng chọn đầy đủ 5 tiêu chí đánh giá (chất lượng, vị trí, giá cả, phục vụ, an ninh).",
+        confirmButtonText: "OK",
+      });
       return;
     }
-
-    setLoading(true);
-    try {
-      const reviewData = { rating: averageRating, comment, user_id };
-      if (media) {
-        reviewData.media = media;
+  
+    const averageRating = calculateAverageRating();
+  
+    const reviewData = {
+      rating: {
+        quality: quality,
+        location: location,
+        price: price,
+        service: service,
+        security: security,
+        averageRating: averageRating
+      },
+      comments: {
+        best_part: bestPart || "",
+        worst_part: worstPart || "",
+        advice: advice || "",
+        additional_comment: additionalComment || ""
+      },
+      review_checks: {
+        is_info_complete: isInfoComplete,
+        is_image_accurate: isImageAccurate,
+        is_host_responsive: isHostResponsive,
+        is_introduce: isIntroduce
+      },
+      media: {
+        images: media?.images || [], 
+        video: media?.video || "" 
       }
+    };    
+  
+    // // Ảnh và video (media)
+    // if (media?.images?.length > 0) {
+    //   media.images.forEach((image) => {
+    //     formData.append("media", image); // Nếu là File
+    //   });
+    // }
+  
+    // if (media?.video) {
+    //   formData.append("media", media.video); // Nếu là File
+    // }
+  
+    try {
+      setLoading(true);
+  
+      // Gửi dữ liệu tới API
       await createReview(postId, reviewData, token);
-
-      // Reset form fields
-      setRating(0);
-      setComment("");
-      setMedia(null);
-      setShowForm(false);
-
-      // Hiển thị thông báo thành công
+  
       toast.success("Đánh giá thành công! Cảm ơn bạn.", {
         position: "top-right",
-        autoClose: 2000, // Thời gian hiển thị thông báo
+        autoClose: 2000, 
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
@@ -105,10 +154,30 @@ const ReviewForm = () => {
           window.location.reload();
         },
       });
+  
+      // Reset form
+      setRating({
+        quality: 0,
+        location: 0,
+        price: 0,
+        service: 0,
+        security: 0,
+      });
+      setComment({
+        best_part: "",
+        worst_part: "",
+        advice: "",
+        additional_comment: "",
+      });
+      setIsInfoComplete(false);
+      setIsImageAccurate(false);
+      setIsHostResponsive(false);
+      setIsIntroduce(false);
+      setMedia(null);
+      setShowForm(false);
+      setError(null);
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to add review.");
-
-      // Hiển thị thông báo lỗi
+      setError(err.response?.data?.message || "Không thể gửi đánh giá.");
       toast.error("Đánh giá thất bại. Vui lòng thử lại.", {
         position: "top-right",
         autoClose: 3000,
@@ -116,7 +185,7 @@ const ReviewForm = () => {
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   // const handleStarClick = (index) => {
   //   setRating(index + 1);
@@ -127,7 +196,19 @@ const ReviewForm = () => {
       ...prevRatings,
       [category]: value,
     }));
-  };
+  
+    if (category === "🏠 Chất lượng phòng") {
+      setQuality(value);
+    } else if (category === " 📍 Vị trí & Khu vực xung quanh") {
+      setLocation(value);
+    } else if (category === "💰 Giá cả so với chất lượng") {
+      setPrice(value);
+    } else if (category === "👥 Chủ nhà & Dịch vụ") {
+      setService(value);
+    } else if (category === "🔒 An ninh khu vực") {
+      setSecurity(value);
+    }
+  };  
 
   const handleStarMouseEnter = (category, value) => {
     setHoveredRating((prevHovered) => ({
@@ -238,6 +319,13 @@ const ReviewForm = () => {
       {showForm && (
         <div className="addreview-overlay">
           <div className="addreview-form-container">
+          <button
+    className="addreview-close-top"
+    onClick={() => setShowForm(false)}
+    aria-label="Close"
+  >
+    ❌
+  </button>
             <h3>Thêm Đánh Giá</h3>
             <form onSubmit={handleSubmit}>
               <div className="addreview-form-group">
@@ -350,6 +438,7 @@ const ReviewForm = () => {
                       className="addreview-comment-input"
                       rows="1"
                       placeholder="để lại đánh giá..."
+                      onChange={(e) => setBestPart(e.target.value)}
                     ></textarea>
                   </div>
                   <div className="addreview-comment-group">
@@ -363,6 +452,7 @@ const ReviewForm = () => {
                       className="addreview-comment-input"
                       rows="1"
                       placeholder="để lại đánh giá..."
+                      onChange={(e) => setWorstPart(e.target.value)}
                     ></textarea>
                   </div>
                   <div className="addreview-comment-group">
@@ -376,6 +466,7 @@ const ReviewForm = () => {
                       className="addreview-comment-input"
                       rows="1"
                       placeholder="để lại đánh giá..."
+                      onChange={(e) => setAdvice(e.target.value)}
                     ></textarea>
                   </div>
                 </div>
@@ -386,6 +477,7 @@ const ReviewForm = () => {
                         className="addreview-comment-input"
                         rows="3"
                         placeholder="Hãy chia sẻ thêm ý kiến của bạn với những khách thuê nhà khác nhé."
+                        onChange={(e) => setAdditionalComment(e.target.value)}
                         style={{
                           minHeight: "100px",
                           color: "rgba(0, 0, 0, 0.87)",
@@ -401,8 +493,8 @@ const ReviewForm = () => {
                       <FormControlLabel
                         control={
                           <Checkbox
-                            checked={checked1}
-                            onChange={() => setChecked1(!checked1)}
+                            checked={isInfoComplete}
+                            onChange={() => setIsInfoComplete(!isInfoComplete)}
                             sx={{
                               color: "#f44336",
                               "&.Mui-checked": {
@@ -421,8 +513,8 @@ const ReviewForm = () => {
                       <FormControlLabel
                         control={
                           <Checkbox
-                            checked={checked2}
-                            onChange={() => setChecked2(!checked2)}
+                            checked={isImageAccurate}
+                            onChange={() => setIsImageAccurate(!isImageAccurate)}
                             sx={{
                               color: "#f44336",
                               "&.Mui-checked": {
@@ -441,8 +533,8 @@ const ReviewForm = () => {
                       <FormControlLabel
                         control={
                           <Checkbox
-                            checked={checked3}
-                            onChange={() => setChecked3(!checked3)}
+                            checked={isHostResponsive}
+                            onChange={() => setIsHostResponsive(!isHostResponsive)}
                             sx={{
                               color: "#f44336",
                               "&.Mui-checked": {
@@ -474,10 +566,9 @@ const ReviewForm = () => {
                       />
                     ) : (
                       <video controls className="preview-video">
-                        src={URL.createObjectURL(file)}
-                        alt={`Preview ${index}`}
-                        className="media-preview-video" controls
-                      </video>
+  <source src={URL.createObjectURL(file)} type={file.type} />
+  Trình duyệt không hỗ trợ video.
+</video>
                     )}
                     <button
                       className="remove-btn"
@@ -520,8 +611,8 @@ const ReviewForm = () => {
                 <FormControlLabel
                   control={
                     <Checkbox
-                      checked={checked}
-                      onChange={() => setChecked(!checked)}
+                      checked={isIntroduce}
+                      onChange={() => setIsIntroduce(!isIntroduce)}
                       sx={{
                         color: "#f44336",
                         "&.Mui-checked": {
