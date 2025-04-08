@@ -1,0 +1,33 @@
+.review-comments {
+    padding: 0 8px;
+  }
+  
+  .comment-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .comment-label {
+    color: #888 !important;
+    font-weight: 500 !important;
+    white-space: nowrap;
+  }
+  
+  .comment-value {
+    color: #333 !important;
+    margin-left: 6px;
+  }
+  
+  /* Responsive (optional) */
+  @media (max-width: 600px) {
+    .comment-item {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  
+    .comment-value {
+      margin-left: 0;
+      margin-top: 4px;
+    }
+  }  
