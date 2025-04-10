@@ -1,17 +1,22 @@
 import { Favorite, FavoriteBorder } from "@mui/icons-material";
 import Diversity3OutlinedIcon from "@mui/icons-material/Diversity3Outlined";
 import EmailIcon from "@mui/icons-material/Email";
+import EventIcon from '@mui/icons-material/Event';
 import HouseOutlinedIcon from "@mui/icons-material/HouseOutlined";
 import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import PeopleOutlineOutlinedIcon from "@mui/icons-material/PeopleOutlineOutlined";
 import RoomOutlinedIcon from "@mui/icons-material/RoomOutlined";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+
 import {
   Avatar,
   Box,
   Button,
   Card,
   Divider,
+  IconButton,
   Paper,
   Table,
   TableBody,
@@ -32,6 +37,7 @@ import AdminHeader from "../../Admin/AdminHeader/AdminHeader";
 import Header from "../Header/Header";
 import AddReviewForm from "../Review/ReviewForm/ReviewForm";
 import ReviewsList from "../Review/ReviewList/ReviewsList";
+import ModalAppointment from "./ModalAppointment";
 import "./PostDetail.css";
 
 const PostDetail = ({ onToggleFavorite }) => {
@@ -48,10 +54,21 @@ const PostDetail = ({ onToggleFavorite }) => {
   const { toggleFavorite } = useFavoriteToggle(user);
   const { reviews, loading, error } = useSelector((state) => state.reviews);
   const [favoriteCount, setFavoriteCount] = useState(0);
+  const [showFullPhone, setShowFullPhone] = useState(false);
+  const [showModalAppointment, setShowModalAppointment] = useState(false);
 
   let axiosJWT = axios.create({
     baseURL: process.env.REACT_APP_BASE_URL_API,
   });
+
+  const togglePhoneVisibility = () => {
+    setShowFullPhone((prev) => !prev);
+  };
+
+  const getHiddenPhoneNumber = (number) => {
+    if (!number || number.length < 3) return number;
+    return number.slice(0, -3) + "***";
+  };
 
   const handleChat = (post) => {
     navigate(`/chat`, { state: { post } });
@@ -160,6 +177,7 @@ const PostDetail = ({ onToggleFavorite }) => {
 
   const isFavorite = favorites.some((fav) => fav._id === id);
 
+  console.log('apom:', showModalAppointment)
   return (
     <div className="post-detail-container">
       {user && (user.admin === "true" || user.admin === true) ? (
@@ -202,8 +220,8 @@ const PostDetail = ({ onToggleFavorite }) => {
             </Typography>
           </Box>
           <Button startIcon={<RoomOutlinedIcon />} className="address-detail">
-            {post.address.exactaddress || "Địa chỉ chưa có"} {post.address.ward}{" "}
-            {post.address.district} {post.address.province}
+            {post.address?.exactaddress || "Địa chỉ chưa có"} {post.address?.ward}{" "}
+            {post.address?.district} {post.address?.province}
           </Button>
           <div dangerouslySetInnerHTML={{ __html: post.content }} />
           <TableContainer component={Paper} className="container-table">
@@ -248,19 +266,29 @@ const PostDetail = ({ onToggleFavorite }) => {
           <Card className="card-info">
             <Box className="container-contactinfo">
               <Avatar className="room-post-avatar">
-                {post.contactInfo.username.charAt(0)}
+                {post.contactInfo?.username.charAt(0)}
               </Avatar>
               <Typography className="room-post-username">
-                {post.contactInfo.username}
+                {post.contactInfo?.username}
               </Typography>
             </Box>
             <Divider></Divider>
             <Button variant="outlined" className="room-post-button">
-              <LocalPhoneIcon className="style-icon" />{" "}
-              {post.contactInfo.phoneNumber}
+              <LocalPhoneIcon className="style-icon" />
+              {showFullPhone ? post.contactInfo?.phoneNumber : getHiddenPhoneNumber(post.contactInfo?.phoneNumber)}
+              <IconButton onClick={togglePhoneVisibility}>
+                {showFullPhone ? <VisibilityOffIcon /> : <VisibilityIcon />}
+              </IconButton>
             </Button>
             <Button variant="outlined" className="room-post-button" onClick={() => handleChat(post)}>
               <EmailIcon className="style-icon" /> Gửi tin nhắn
+            </Button>
+            <Button
+              variant="outlined"
+              className="room-post-button-calendar"
+              onClick={() => setShowModalAppointment(true)}
+            >
+              <EventIcon className="style-icon" /> Đặt lịch hẹn ngay
             </Button>
           </Card>
         </Box>
@@ -275,6 +303,13 @@ const PostDetail = ({ onToggleFavorite }) => {
         <AddReviewForm />
         <ReviewsList postId={id} />
       </div>
+      {showModalAppointment && (
+        <ModalAppointment
+          visible={showModalAppointment}
+          onClose={() => setShowModalAppointment(false)}
+          post={post}
+        />
+      )}
     </div>
   );
 };
