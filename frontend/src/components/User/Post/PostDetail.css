@@ -153,6 +153,32 @@
   width: 100%;
   margin-top: 0.5rem;
   pointer-events: none;
+  text-transform: none !important;
+}
+
+.card-info .room-post-button-calendar {
+  background-color: #7ecc5d;
+  border-color: #7ecc5d;
+  border-radius: 20px;
+  color: black;
+  font-size: 1rem;
+  font-weight: bold;
+  width: 100%;
+  margin-top: 0.5rem;
+  text-transform: none !important;
+  animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+    }
 }
 
 .post-detail-container-comment {
