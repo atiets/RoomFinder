@@ -53,6 +53,18 @@ const userSchema = new mongoose.Schema({
       ref: 'Post',
     }
   ],
+  suspiciousActivityCount: [
+    {
+      loginCount: {
+        type: Number,
+        default: 0, 
+      },
+      reviewCount: {
+        type: Number,
+        default: 0, 
+      }, 
+    }
+  ],
   notifications: [
     {
       message: {
