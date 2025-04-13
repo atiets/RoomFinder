@@ -6,6 +6,7 @@ const { OAuth2Client } = require ('google-auth-library');
 const nodemailer = require("nodemailer");
 const crypto = require('crypto');
 const mongoose = require('mongoose');
+const userController = require("./userControllers"); 
 
 let refreshTokens = [];
 const client_id = '542714924408-kun6tfccnlcit4k9ono82oue7vqhth70.apps.googleusercontent.com';
@@ -84,8 +85,15 @@ const authController = {
 
             const validPassword = await bcrypt.compare(req.body.password, user.password);
             if (!validPassword) {
-                return res.status(40).json("Mật khẩu không đúng!");
+                await userController.detectSuspiciousActivity(user._id, "Nhập sai mật khẩu nhiều lần");
+                return res.status(401).json("Mật khẩu không đúng!");
             }
+
+                    // Reset lại đếm nếu đăng nhập thành công
+        if (user.suspiciousActivityCount > 0) {
+            user.suspiciousActivityCount = 0;
+            await user.save();
+        }
 
             // Nếu người dùng hợp lệ
             const accessToken = authController.generateAccessToken(user);

@@ -2,29 +2,23 @@ const Review = require('../models/Review');
 const Post = require('../models/Post');
 const User = require('../models/User');
 const cloudinary = require('cloudinary').v2;
+const userController = require('./userControllers');
 
 // Tạo đánh giá mới
 exports.createReview = async (req, res) => {
     const { rating, comments, review_checks } = req.body;
-    console.log("kk", req.body);
     const { postId } = req.params;
-    // const mediaFiles = req.files || [];
-
-    // const parsedRating = JSON.parse(rating);
-    // const parsedComments = JSON.parse(comments);
-    // const parsedReviewChecks = JSON.parse(review_checks);
-
 
     const imageUrls = [];
     let videoUrls = '';
     if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        if(file.mimetype.startsWith('image/') && imageUrls.length < 5) {
-            imageUrls.push(file.path);
-        } else if(file.mimetype.startsWith('video/') && !videoUrls) {
-            videoUrls = file.path;
-        }
-      });
+        req.files.forEach(file => {
+            if (file.mimetype.startsWith('image/') && imageUrls.length < 5) {
+                imageUrls.push(file.path);
+            } else if (file.mimetype.startsWith('video/') && !videoUrls) {
+                videoUrls = file.path;
+            }
+        });
     }
 
     try {
@@ -34,26 +28,52 @@ exports.createReview = async (req, res) => {
             return res.status(404).json({ message: 'Bài đăng không tồn tại' });
         }
 
+        // Lấy user ID
+        const userId = req.user.id;
 
-        // Tạo đánh giá
+        // Kiểm tra hành vi spam review
+        let isSpam = false;
+
+        // 1. 5 review trong vòng 1 giờ
+        const reviewsInOneHour = await Review.find({
+            user_id: userId,
+            createdAt: { $gte: new Date(Date.now() - 60 * 60 * 1000) }
+        });
+        if (reviewsInOneHour.length >= 5) {
+            isSpam = true;
+        }
+
+        // 2. 2 review liên tiếp trong vòng 10 phút
+        const lastTwo = await Review.find({ user_id: userId }).sort({ createdAt: -1 }).limit(2);
+        if (lastTwo.length === 2) {
+            const timeDiff = (lastTwo[0].createdAt - lastTwo[1].createdAt) / (1000 * 60); // phút
+            if (timeDiff <= 10) {
+                isSpam = true;
+            }
+        }
+
+        if (isSpam) {
+            await userController.detectSuspiciousActivity(userId, "Spam review");
+        }
+
+        // Tạo review mới
         const review = new Review({
             post_id: postId,
-            user_id: req.user.id, 
+            user_id: userId,
             rating,
             comments,
             review_checks,
-            media: { 
+            media: {
                 images: imageUrls,
-                video: videoUrls
+                videos: videoUrls ? [videoUrls] : []
             }
         });
 
-        await review.save();    
+        await review.save();
 
-        // Tìm chủ bài đăng
+        // Gửi thông báo cho chủ bài viết
         const owner = await User.findById(post.contactInfo.user);
         if (owner) {
-            // Tạo thông báo
             const notification = {
                 message: `Bài viết "${post.title}" của bạn nhận được một đánh giá mới.`,
                 type: 'review',
@@ -62,17 +82,16 @@ exports.createReview = async (req, res) => {
                 status: 'unread',
             };
 
-            // Thêm thông báo vào mảng notifications của chủ bài đăng
             owner.notifications.push(notification);
-            await owner.save(); // Lưu lại người dùng với thông báo mới
+            await owner.save();
         }
 
-        // Gửi phản hồi
         res.status(201).json({ review });
     } catch (error) {
         res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 };
+
 
 // Lấy đánh giá theo bài đăng
 exports.getReviewsByPost = async (req, res) => {

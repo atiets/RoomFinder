@@ -103,6 +103,88 @@ const userController = {
     }
   },
 
+  detectSuspiciousActivity: async (userId, reason) => {
+    try {
+      const user = await User.findById(userId);
+      if (!user || user.profile.isBlocked) return;
+  
+      // Nếu chưa có mảng suspiciousActivityCount, khởi tạo mặc định
+      if (!user.suspiciousActivityCount || user.suspiciousActivityCount.length === 0) {
+        user.suspiciousActivityCount = [{
+          loginCount: 0,
+          reviewCount: 0
+        }];
+      }
+  
+      const suspiciousData = user.suspiciousActivityCount[0];
+  
+      // Tăng đúng loại count dựa vào reason
+      if (reason === "Cố gắng đăng nhập nhiều lần") {
+        suspiciousData.loginCount += 1;
+  
+        // Kiểm tra nếu login quá 5 lần thì khóa
+        if (suspiciousData.loginCount >= 5) {
+          user.profile.isBlocked = true;
+        }
+  
+      } else if (reason === "Spam review") {
+        suspiciousData.reviewCount += 1;
+  
+        if (suspiciousData.reviewCount >= 2) {
+          user.profile.isBlocked = true;
+        }
+      }
+  
+      // Nếu bị khóa thì gửi email
+      if (user.profile.isBlocked) {
+        const subject = "Tài khoản của bạn đã bị khóa";
+  
+        const html = `
+          <p>Chào bạn,</p>
+          <p>Tài khoản của bạn đã bị <strong>tự động khóa</strong> do phát hiện hoạt động đáng ngờ: ${reason}.</p>   
+          <p>Vui lòng kiểm tra kỹ lại các hành động của mình để hiểu rõ lý do và tránh tái phạm trong tương lai. Nếu bạn nghĩ đây là một sự nhầm lẫn hoặc cần giải thích thêm, hãy liên hệ với bộ phận hỗ trợ khách hàng của chúng tôi qua email hoặc số điện thoại dưới đây:</p>
+          <ul>
+            <li>Email hỗ trợ: PhongTroXinh@gmail.com</li>
+            <li>Số điện thoại hỗ trợ: 04564789</li>
+          </ul>
+          <p>Chúng tôi sẽ làm việc cùng bạn để giải quyết vấn đề này một cách nhanh chóng và công bằng.</p>
+          <img src="https://i.pinimg.com/736x/51/46/0c/51460cf91031e29fe2950c7464b28c62.jpg" alt="Account Blocked" width="600" />
+          <p>Trân trọng, <br> Đội ngũ hỗ trợ của Phòng trọ xinh</p>
+        `;
+  
+        const transporter = nodemailer.createTransport({
+          service: "Gmail",
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        });
+  
+        const mailOptions = {
+          from: `"Phòng trọ xinh" <${process.env.EMAIL_USER}>`,
+          to: user.email,
+          subject,
+          html,
+        };
+  
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            console.error("Gửi email thất bại:", error);
+          } else {
+            console.log("Email sent: " + info.response);
+          }
+        });
+      }
+  
+      await user.save();
+  
+    } catch (error) {
+      console.error("Lỗi trong detectSuspiciousActivity:", error);
+      throw error;
+    }
+  },
+  
+
   updateUserProfile: async (req, res) => {
     try {
       const userId = req.params.id;
