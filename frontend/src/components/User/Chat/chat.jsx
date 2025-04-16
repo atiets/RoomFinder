@@ -8,19 +8,23 @@ import SendIcon from '@mui/icons-material/Send';
 import SettingsIcon from '@mui/icons-material/Settings';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import { Avatar, Button, Checkbox, FormControl, Input, InputLabel, MenuItem, Select } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import useSocket from '../../../hooks/useSocket';
-import { getConversationsByUser } from '../../../redux/chatApi';
+import { getConversationsByUser, getMessagesByConversation } from '../../../redux/chatApi';
 import './chat.css';
-
-const currentUser = "user_1";
 
 const Chat = () => {
     const location = useLocation();
 
-    const post = location.state?.post;
+    const postID = location.state?.postId || null;
+    const title = location.state?.title || null;
+    const images = location.state?.images || null;
+    const price = location.state?.price || null;
+    const typePrice = location.state?.typePrice || null;
+    const contactInfo = location.state?.contactInfo || null;
+
     const currentUser = useSelector((state) => state.auth.login.currentUser);
     const id = currentUser?._id;
     const token = currentUser?.accessToken;
@@ -36,51 +40,38 @@ const Chat = () => {
     const [showIcons, setShowIcons] = useState(true);
     const [messages, setMessages] = useState([]);
     const [conversation, setConversation] = useState([]);
+    const chatRef = useRef(null); // Tham chiếu đến chat-box
+    const inputRef = useRef(null); // Tham chiếu đến input tin nhắn
 
-    const mess = [
-        {
-            id: "1",
-            senderId: "user1",
-            receiverId: "user2",
-            content: "Chào bạn, bạn có khỏe không?",
-            timestamp: "2024-03-25T08:30:00Z"
-        },
-        {
-            id: "2",
-            senderId: "user2",
-            receiverId: "user1",
-            content: "Mình khỏe, còn bạn thế nào?",
-            timestamp: "2024-03-25T08:31:00Z"
-        },
-        {
-            id: "3",
-            senderId: "user1",
-            receiverId: "user2",
-            content: "Mình cũng khỏe, cảm ơn bạn!",
-            timestamp: "2024-03-25T08:32:00Z"
-        },
-        {
-            id: "4",
-            senderId: "user2",
-            receiverId: "user1",
-            content: "Tối nay có đi chơi không?",
-            timestamp: "2024-03-25T08:33:00Z"
-        },
-        {
-            id: "5",
-            senderId: "user1",
-            receiverId: "user2",
-            content: "Mình bận rồi, hôm khác nhé!",
-            timestamp: "2024-03-25T08:34:00Z"
-        }
-    ];
+    const conversationId = selectedChat?._id || null;
 
-    // Giả định id của người dùng hiện tại
-    const idd = "user1";
+    // Cuộn xuống dưới khi có tin nhắn mới
+    useEffect(() => {
+        const chatBox = chatRef.current;
+        if (!chatBox) return;
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }, [messagesChat]);
+
+    useEffect(() => {
+        if (!socket) return; // 👉 BẮT BUỘC phải có dòng này
+
+        const handleReceiveMessage = (newMessage) => {
+            setMessagesChat((prev) => [...prev, newMessage]);
+        };
+
+        socket.on("receiveMessage", handleReceiveMessage);
+
+        return () => {
+            socket.off("receiveMessage", handleReceiveMessage);
+        };
+    }, [socket]);
 
     const getOtherParticipants = (conversations, currentUserId) => {
-        return conversations.map(chat => {
-            const otherParticipant = chat.participants.find(p => p._id !== currentUserId);
+        return (conversations || []).map(chat => {
+            const participants = Array.isArray(chat.participants) ? chat.participants : [];
+
+            const otherParticipant = participants.find(p => p._id !== currentUserId);
 
             return {
                 ...chat, // Giữ nguyên tất cả thuộc tính khác của cuộc trò chuyện
@@ -91,37 +82,65 @@ const Chat = () => {
         });
     };
 
-    console.log("selectChat:", selectedChat);  // Kiểm tra cuộc trò chuyện đã chọn
-
-
     useEffect(() => {
         const fetchConversation = async () => {
             try {
                 const response = await getConversationsByUser(id, token);
                 const formattedConversations = getOtherParticipants(response.data || [], id);
-                setConversation(formattedConversations); // Lưu dữ liệu đã chuẩn hóa
+                setConversation(formattedConversations);
             } catch (error) {
                 console.error("Lỗi khi lấy đoạn chat:", error);
                 setConversation([]);
             }
         };
-
         fetchConversation();
-    }, [id, token]);
+        // Lắng nghe sự kiện từ socket để cập nhật cuộc trò chuyện realtime
+        if (socket) {
+            const handleUpdateConversation = ({ userIds, updatedConversation }) => {
+                if (!userIds.includes(id)) return;
+
+                setConversation(prev => {
+                    const exists = prev.find(conv => conv._id === updatedConversation._id);
+
+                    if (exists) {
+                        return prev.map(conv =>
+                            conv._id === updatedConversation._id
+                                ? { ...conv, ...updatedConversation }
+                                : conv
+                        );
+                    } else {
+                        const newFormatted = getOtherParticipants([updatedConversation], id);
+                        return [...newFormatted, ...prev];
+                    }
+                });
+            };
+            socket.on("updateConversations", handleUpdateConversation);
+            return () => {
+                socket.off("updateConversations", handleUpdateConversation);
+            };
+        }
+    }, [id, token, socket]);
+
+    const fetchMessages = async () => {
+        try {
+            const response = await getMessagesByConversation(conversationId, token, 1, 20);
+            if (response && response.data) {
+                setMessagesChat(response.data.messages);
+            }
+        } catch (error) {
+            console.error("Lỗi khi lấy tin nhắn:", error);
+        }
+    };
 
     useEffect(() => {
-        if (!socket) return;
+        fetchMessages();
+    }, [conversationId, token]);
 
-        socket.on("receiveMessage", (message) => {
-            console.log("Received message:", message);
-            setMessages((prevMessages) => [...prevMessages, message]);
-        });
-
-        return () => {
-            socket.off("receiveMessage");
-        };
-    }, [socket]);
-
+    const handleKeyPress = (event) => {
+        if (event.key === "Enter" && newMessage.trim()) {
+            sendMessage();
+        }
+    };
 
     const sendMessage = () => {
         if (!newMessage.trim()) return; // Kiểm tra tin nhắn rỗng
@@ -135,17 +154,16 @@ const Chat = () => {
 
         console.log("Other participant ID:", otherParticipant); // Kiểm tra người nhận
 
-        const receiver = otherParticipant || post.contactInfo?.user;
+        const receiver = otherParticipant || contactInfo;
         if (!receiver) {
             console.error("❌ Không tìm thấy receiver!");
             return; // Ngăn lỗi nếu không tìm thấy người nhận
         }
-
         const messageData = {
             sender: id,
             receiver,
             content: newMessage,
-            postId: post?._id || null,
+            postId: postID || null,
         };
 
         console.log("Sending message:", messageData);
@@ -176,6 +194,12 @@ const Chat = () => {
     };
 
     const handleCardClick = (msg) => {
+        if (!msg.readBy?.includes(currentUser.id)) {
+            socket.emit("readConversation", {
+                conversationId: msg._id,
+                userId: id,
+            });
+        }
         setSelectedChat(msg);
     };
 
@@ -183,6 +207,8 @@ const Chat = () => {
         setShowIcons(!showIcons);
         console.log("showIcons:", !showIcons);
     };
+
+    console.log('conversation:', conversation);
 
     return (
         <div className="chat-container">
@@ -221,28 +247,39 @@ const Chat = () => {
                     </>
                 )}
                 <div className='chat-box-right-body' style={{ overflowY: 'auto', maxHeight: '400px' }}>
-                    {conversation.map((msg) => (
-                        <div key={msg._id} className='chat-card' onClick={() => handleCardClick(msg)}>
-                            {isHidden && (
-                                <Checkbox
-                                    checked={selectedMessages.includes(msg.id)}
-                                    onChange={() => handleCheckboxChange(msg.id)}
-                                    sx={{
-                                        color: 'black',
-                                        '&.Mui-checked': {
-                                            color: '#63ab45',
-                                        },
-                                    }}
-                                />
-                            )}
-                            <Avatar src={msg.profile?.picture} alt={msg.participants?.username} className='chat-card-avatar' />
-                            <div className='chat-card-content'>
-                                <div className='chat-card-name'>{truncateMessage(msg.username, 30)}</div>
-                                <div className='chat-card-message'>{truncateMessage(msg.lastMessage?.content, 50)}</div>
+                    {conversation.map((msg) => {
+                        const isUnread = !msg.readBy?.includes(id);
+                        return (
+                            <div
+                                key={msg._id}
+                                className={`chat-card ${isUnread ? 'unread' : ''}`}
+                                onClick={() => handleCardClick(msg)}
+                            >
+                                {isHidden && (
+                                    <Checkbox
+                                        checked={selectedMessages.includes(msg.id)}
+                                        onChange={() => handleCheckboxChange(msg.id)}
+                                        sx={{
+                                            color: 'black',
+                                            '&.Mui-checked': {
+                                                color: '#63ab45',
+                                            },
+                                        }}
+                                    />
+                                )}
+                                <Avatar src={msg.profilePic} alt={msg.username} className='chat-card-avatar' />
+                                <div className='chat-card-content'>
+                                    <div className={`chat-card-name ${isUnread ? 'unread-text' : ''}`}>
+                                        {truncateMessage(msg.username, 30)}
+                                    </div>
+                                    <div className={`chat-card-message ${isUnread ? 'unread-text' : ''}`}>
+                                        {truncateMessage(msg.lastMessage?.content, 50)}
+                                    </div>
+                                </div>
+                                <img src={msg.postId?.images} alt='message' className='chat-card-image' />
                             </div>
-                            <img src={msg.postId?.images} alt='message' className='chat-card-image' />
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
                 <div className='chat-box-right-footer'>
                     {!isHidden ? (
@@ -281,7 +318,7 @@ const Chat = () => {
                 <div className='chat-box-left-header'>
                     {selectedChat ? (
                         <>
-                            <Avatar src={selectedChat.profile?.picture} alt={selectedChat.username} className='chat-card-avatar-left' />
+                            <Avatar src={selectedChat.profilePic} alt={selectedChat.username} className='chat-card-avatar-left' />
                             <div className='chat-card-content-left'>
                                 <div className='chat-card-name-left'>{truncateMessage(selectedChat.username, 30)}</div>
                                 <div className='chat-card-online'>
@@ -308,21 +345,21 @@ const Chat = () => {
                 </div>
                 <div className='chat-box-left-posts'>
                     <div className='chat-box-left-posts-content'>
-                        <div className='chat-box-left-posts-title'>{selectedChat?.postId?.title}</div>
+                        <div className='chat-box-left-posts-title'>{title || selectedChat?.postId?.title}</div>
                         <div className="chat-box-left-posts-price">
-                            {selectedChat?.postId?.rentalPrice} triệu
-                            {selectedChat?.postId?.typePrice === 1 ? "/tháng" : selectedChat?.postId?.typePrice === 2 ? "/m²/tháng" : ""}
+                            {price || selectedChat?.postId?.rentalPrice} triệu
+                            {typePrice || selectedChat?.postId?.typePrice === 1 ? "/tháng" : typePrice || selectedChat?.postId?.typePrice === 2 ? "/m²/tháng" : ""}
                         </div>
                     </div>
                     <div className='chat-box-left-posts-image'>
-                        <img src={selectedChat?.firstPostImage} alt='post' className='chat-card-post-image' />
+                        <img src={images || selectedChat?.firstPostImage} alt='post' className='chat-card-post-image' />
                     </div>
                 </div>
-                <div className='chat-box-left-content'>
-                    {mess
+                <div className='chat-box-left-content' ref={chatRef}>
+                    {messagesChat
                         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) // Sắp xếp tin nhắn theo thời gian
                         .map((msg) => (
-                            <div key={msg.id} className={`message ${msg.senderId === idd ? "sent" : "received"}`}>
+                            <div key={msg.id} className={`message ${msg.sender === id ? "sent" : "received"}`}>
                                 <p>{msg.content}</p>
                                 <span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
                             </div>
@@ -360,11 +397,13 @@ const Chat = () => {
                     </div>
                     <div className='chat-box-left-input-container' style={{ flex: showIcons ? 8 : 10 }}>
                         <input
+                            ref={inputRef}
                             type="text"
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder="Nhập tin nhắn..."
                             className='chat-box-left-input'
+                            onKeyPress={handleKeyPress}
                         />
                         <SendIcon onClick={sendMessage} sx={{ color: '#63ab45' }} />
                     </div>

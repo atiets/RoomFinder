@@ -1,41 +1,6 @@
 const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
 
-// Gửi tin nhắn
-exports.sendMessage = async (req, res) => {
-    try {
-        const { sender, receiver, content, postId } = req.body;
-
-        // Kiểm tra xem cuộc trò chuyện đã tồn tại chưa
-        let conversation = await Conversation.findOne({
-            participants: { $all: [sender, receiver] },
-            postId: postId
-        });
-
-        // Nếu chưa có, tạo mới cuộc trò chuyện
-        if (!conversation) {
-            conversation = new Conversation({
-                participants: [sender, receiver],
-                postId: postId
-            });
-            await conversation.save();
-        }
-        const newMessage = new Message({
-            conversationId: conversation._id,
-            sender,
-            receiver,
-            content
-        });
-        await newMessage.save();
-        conversation.lastMessage = newMessage._id;
-        conversation.updatedAt = Date.now();
-        await conversation.save();
-        res.status(200).json({ message: "Message sent", conversationId: conversation._id, newMessage });
-    } catch (error) {
-        res.status(500).json({ error: "Lỗi khi gửi tin nhắn", details: error.message });
-    }
-};
-
 // Lấy danh sách cuộc trò chuyện của một người dùng
 exports.getConversationsByUser = async (req, res) => {
     try {
@@ -58,6 +23,7 @@ exports.getConversationsByUser = async (req, res) => {
 
         const formattedConversations = conversations.map(chat => ({
             ...chat._doc,
+            readBy: chat.readBy,
             firstPostImage: chat.postId?.images?.length ? chat.postId.images[0] : null
         }));
 
@@ -70,23 +36,65 @@ exports.getConversationsByUser = async (req, res) => {
 
 //Lấy tin nhắn của cuộc trò chuyện bất kì
 exports.getMessagesByConversation = async (req, res) => {
+
     try {
         const { conversationId } = req.params;
-        const { page = 1, limit = 20 } = req.query; // Mặc định lấy 20 tin nhắn trên mỗi trang
+        const { page = 1, limit = 20 } = req.query;
 
         const messages = await Message.find({ conversationId })
-            .sort({ timestamp: -1 }) // Sắp xếp giảm dần theo thời gian
-            .skip((page - 1) * limit) // Bỏ qua số lượng tin đã lấy trước đó
-            .limit(Number(limit)); // Giới hạn số tin nhắn mỗi lần lấy
-
+            .sort({ timestamp: -1 })
+            .skip((page - 1) * limit)
+            .limit(Number(limit));
         res.status(200).json({
             success: true,
             messages,
             currentPage: Number(page),
-            hasNextPage: messages.length === Number(limit), // Kiểm tra có trang tiếp theo không
+            hasNextPage: messages.length === Number(limit),
         });
     } catch (error) {
-        console.error("Error fetching messages:", error);
         res.status(500).json({ error: "Internal server error" });
     }
+};
+
+//đọc tin nhắn trong cuộc trò chuyện
+exports.markConversationAsRead = async (conversationId, userId, socket) => {
+    try {
+        const conversation = await Conversation.findById(conversationId);
+
+        if (!conversation) return;
+
+        // Nếu userId chưa có trong readBy thì thêm vào
+        if (!conversation.readBy.includes(userId)) {
+            conversation.readBy.push(userId);
+            await conversation.save();
+
+            socket.to(userId.toString()).emit("conversationRead", {
+                conversationId,
+                userId,
+                readBy: conversation.readBy
+            });
+        }
+
+        // Đếm lại số cuộc hội thoại chưa đọc
+        const unreadCount = await countUnreadConversations(userId);
+
+        // Emit lại số chưa đọc về cho người dùng
+        socket.to(userId.toString()).emit("unreadConversationsCount", {
+            userId,
+            count: unreadCount
+        });
+
+    } catch (error) {
+        console.error("Lỗi khi đánh dấu đã đọc:", error);
+    }
+};
+
+
+//Đêm số hội thoại chưa đọc
+const countUnreadConversations = async (userId) => {
+    const count = await Conversation.countDocuments({
+        participants: userId,
+        readBy: { $ne: userId }
+    });
+    return count;
 };

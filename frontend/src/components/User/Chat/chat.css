@@ -17,7 +17,7 @@
     padding-right: 0.5rem;
 }
 
-.chat-box-right-header{
+.chat-box-right-header {
     flex: 1;
 }
 
@@ -38,22 +38,22 @@
     align-items: center;
 }
 
-.chat-box-right-body{
+.chat-box-right-body {
     flex: 8;
 }
 
-.chat-card{
+.chat-card {
     display: flex;
     flex-direction: row;
     margin-bottom: 1rem;
 }
 
-.chat-card-avatar{
+.chat-card-avatar {
     height: 60px;
     width: 60px;
 }
 
-.chat-card-content{
+.chat-card-content {
     display: flex;
     flex-direction: column;
     margin-left: 0.5rem;
@@ -61,28 +61,27 @@
     justify-content: center;
 }
 
-.chat-card-name{
+.chat-card-name {
     font-size: 16px;
-    font-weight: bold;
     margin-bottom: 0.2rem;
 }
 
-.chat-card-message{
+.chat-card-message {
     font-size: 12px;
     color: #8e8e8e;
 }
 
-.chat-card-image{
+.chat-card-image {
     width: 60px;
     height: 60px;
     border-radius: 8px;
 }
 
-.chat-box-right-footer{
+.chat-box-right-footer {
     flex: 1;
 }
 
-.chat-box-right-footer-selected{
+.chat-box-right-footer-selected {
     display: flex;
     justify-content: space-between;
     margin-top: 1rem;
@@ -96,18 +95,18 @@
     margin-left: 0.5rem;
 }
 
-.chat-box-left-header{
+.chat-box-left-header {
     flex: 1;
     display: flex;
     flex-direction: row;
 }
 
-.chat-card-avatar-left{
+.chat-card-avatar-left {
     height: 40px;
     width: 40px;
 }
 
-.chat-card-content-left{
+.chat-card-content-left {
     display: flex;
     flex-direction: column;
     margin-left: 0.5rem;
@@ -115,18 +114,18 @@
     justify-content: center;
 }
 
-.chat-card-name-left{
+.chat-card-name-left {
     font-size: 16px;
     font-weight: bold;
     margin-bottom: 0.2rem;
 }
 
-.chat-card-online{
+.chat-card-online {
     font-size: 12px;
     color: #8e8e8e;
 }
 
-.chat-box-left-posts{
+.chat-box-left-posts {
     display: flex;
     flex-direction: row;
     flex: 1;
@@ -134,41 +133,45 @@
     align-items: center;
 }
 
-.chat-box-left-posts-content{
+.chat-box-left-posts-content {
     display: flex;
     flex-direction: column;
     margin-left: 0.5rem;
     width: 90%;
     justify-content: left;
 }
- 
-.chat-box-left-posts-image{
+
+.chat-box-left-posts-image {
     justify-content: right;
 }
 
-.chat-box-left-posts-title{
+.chat-box-left-posts-title {
     font-size: 16px;
     font-weight: bold;
     margin-bottom: 0.2rem;
 }
 
-.chat-box-left-posts-price{
+.chat-box-left-posts-price {
     font-size: 14px;
     color: red;
 }
 
-.chat-card-post-image{
+.chat-card-post-image {
     width: 60px;
     height: 60px;
     border-radius: 8px;
 }
 
-.chat-box-left-content{
+.chat-box-left-content {
     flex: 8;
     display: flex;
     flex-direction: column;
+    max-height: 300px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
 }
-.chat-box-left-idea{
+
+.chat-box-left-idea {
     flex: 1;
 }
 
@@ -216,47 +219,52 @@
 
 /*chat gpt*/
 .message {
-  max-width: 70%;
-  padding: 8px 12px;
-  margin: 5px;
-  border-radius: 15px;
-  font-size: 14px;
-  position: relative;
+    max-width: 70%;
+    padding: 8px 12px;
+    margin: 5px;
+    border-radius: 15px;
+    font-size: 14px;
+    position: relative;
 }
 
 .sent {
-  align-self: flex-end;
-  background-color: #007bff;
-  color: white;
+    align-self: flex-end;
+    background-color: #007bff;
+    color: white;
 }
 
 .received {
-  align-self: flex-start;
-  background-color: #e5e5ea;
-  color: black;
+    align-self: flex-start;
+    background-color: #e5e5ea;
+    color: black;
 }
 
 .chat-input {
-  display: flex;
-  padding: 10px;
-  background: white;
-  border-top: 1px solid #ccc;
+    display: flex;
+    padding: 10px;
+    background: white;
+    border-top: 1px solid #ccc;
 }
 
 .chat-input input {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  outline: none;
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    outline: none;
 }
 
 .chat-input button {
-  margin-left: 10px;
-  padding: 8px 15px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+    margin-left: 10px;
+    padding: 8px 15px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
 }
+
+.unread-text {
+    font-weight: bolder; /* hoặc bold */
+  }
+  

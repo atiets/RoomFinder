@@ -71,9 +71,18 @@ const PostDetail = ({ onToggleFavorite }) => {
   };
 
   const handleChat = (post) => {
-    navigate(`/chat`, { state: { post } });
+    navigate(`/chat`, {
+      state: {
+        postId: post._id,
+        title: post.title,
+        image: post.images?.[0],
+        price: post.rentalPrice,
+        typePrice: post.typePrice,
+        contactInfo: post.contactInfo?.user
+      },
+    });
   };
-
+  
   useEffect(() => {
     const fetchPostDetail = async () => {
       try {

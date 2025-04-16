@@ -19,6 +19,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { createAxios } from "../../../createInstance";
+import useSocket from '../../../hooks/useSocket';
 import { logout } from "../../../redux/apiRequest";
 import { logoutSuccess } from "../../../redux/authSlice";
 import Notification from "../Notification/Notification";
@@ -34,8 +35,10 @@ const Header = () => {
   const dispatch = useDispatch();
   const accessToken = currentUser?.accessToken;
   const id = currentUser?._id;
+  const socket = useSocket(id);
   const axiosJWT = createAxios(currentUser, dispatch, logoutSuccess);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
 
   const notificationsList = currentUser?.notifications || [];
   const notificationCount = notificationsList.filter(
@@ -44,6 +47,18 @@ const Header = () => {
 
   const totalNotifications = notificationsList.length;
   const [openDialog, setOpenDialog] = useState(false);
+
+  useEffect(() => {
+    if (socket) {
+      socket.on("unreadConversationsCount", ({ count }) => {
+        setUnreadChatCount(count); // Cập nhật số tin nhắn chưa đọc
+      });
+
+      return () => {
+        socket.off("unreadConversationsCount");
+      };
+    }
+  }, [socket]); // Chạy lại khi socket thay đổi
 
   useEffect(() => {
     if (currentUser && Array.isArray(currentUser.notifications)) {
@@ -104,6 +119,9 @@ const Header = () => {
     setOpenDialog(false);
   };
 
+  console.log("Unread chat count:", unreadChatCount);
+
+
   return (
     <>
       <AppBar position="fixed" className="user-header-app-bar">
@@ -131,7 +149,13 @@ const Header = () => {
             </Button>
             {currentUser && (
               <Button className="user-header-btn" onClick={() => navigate("/chat")}>
-                <ChatIcon />
+                <Badge
+                  badgeContent={unreadChatCount}  // Số tin nhắn chưa đọc
+                  color="error"  // Màu sắc của badge (đỏ)
+                  invisible={unreadChatCount === 0}  // Ẩn badge nếu không có tin nhắn chưa đọc
+                >
+                  <ChatIcon />
+                </Badge>
               </Button>
             )}
             <Button className="user-header-btn" onClick={handleNotificationClick}>
