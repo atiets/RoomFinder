@@ -1,6 +1,8 @@
 const { Server } = require("socket.io");
 const Message = require("../models/Message");
 const Conversation = require("../models/Conversation");
+const mongoose = require("mongoose");
+const { markConversationAsRead } = require("../controllers/chatController");
 
 function initializeSocket(server) {
     const io = new Server(server, {
@@ -17,35 +19,86 @@ function initializeSocket(server) {
 
         socket.on("join", (userId) => {
             onlineUsers[userId] = socket.id;
+            socket.join(userId);
+            console.log(`User ${userId} joined their personal room`);
         });
+        
 
         socket.on("sendMessage", async ({ sender, receiver, content, postId }) => {
             try {
+                const senderId = new mongoose.Types.ObjectId(sender);
+                const receiverId = new mongoose.Types.ObjectId(receiver);
+                const participantsSorted = [senderId, receiverId].sort();
+
                 let conversation = await Conversation.findOne({
-                    participants: { $all: [sender, receiver] },
-                    postId
+                    participants: { $all: participantsSorted, $size: 2 },
                 });
 
-                if (!conversation) {
-                    conversation = new Conversation({ participants: [sender, receiver], postId });
-                    await conversation.save();
+                if (conversation) {
+                    if (postId && !conversation.postId) {
+                        conversation.postId = postId;
+                        await conversation.save();
+                    }
+                } else {
+                    if (postId) {
+                        conversation = new Conversation({
+                            participants: participantsSorted,
+                            postId: postId,
+                        });
+                        await conversation.save();
+                    }
                 }
 
-                const newMessage = new Message({ conversationId: conversation._id, sender, receiver, content });
+                const newMessage = new Message({
+                    conversationId: conversation._id,
+                    sender,
+                    receiver,
+                    content,
+                });
                 await newMessage.save();
 
                 conversation.lastMessage = newMessage._id;
+                conversation.readBy = [sender];
                 conversation.updatedAt = Date.now();
                 await conversation.save();
 
-                const receiverSocketId = onlineUsers[receiver];
-                if (receiverSocketId) {
-                    io.to(receiverSocketId).emit("receiveMessage", newMessage);
-                }
+                const unreadCount = await Conversation.countDocuments({
+                    participants: receiverId,
+                    readBy: { $ne: receiverId },
+                });
+                
+                io.to(receiverId.toString()).emit("unreadConversationsCount", {
+                    userId: receiverId,
+                    count: unreadCount,
+                });
+
+                io.emit("receiveMessage", newMessage);  
+                const updatedConversation = await Conversation.findById(conversation._id)
+                    .populate({
+                        path: "participants",
+                        select: "username profile.picture profile.isOnline",
+                    })
+                    .populate({
+                        path: "lastMessage",
+                    })
+                    .populate({
+                        path: "postId",
+                        select: "images title rentalPrice typePrice",
+                    });
+
+                io.emit("updateConversations", {
+                    userIds: [sender, receiver],
+                    updatedConversation,
+                });
             } catch (error) {
                 console.error("Lỗi khi gửi tin nhắn:", error);
             }
         });
+
+        socket.on("readConversation", async ({ conversationId, userId }) => {
+            await markConversationAsRead(conversationId, userId, socket);
+        });
+        
 
         socket.on("disconnect", () => {
             for (let userId in onlineUsers) {
