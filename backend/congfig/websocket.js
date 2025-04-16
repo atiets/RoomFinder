@@ -16,15 +16,17 @@ function initializeSocket(server) {
 
     io.on("connection", (socket) => {
         console.log("User connected:", socket.id);
+        const getOnlineUserIds = () => Object.keys(onlineUsers);
 
         socket.on("join", (userId) => {
             onlineUsers[userId] = socket.id;
             socket.join(userId);
             console.log(`User ${userId} joined their personal room`);
+            io.emit("onlineUsers", getOnlineUserIds());
         });
-        
 
-        socket.on("sendMessage", async ({ sender, receiver, content, postId }) => {
+
+        socket.on("sendMessage", async ({ sender, receiver, content, postId, images, location }) => {
             try {
                 const senderId = new mongoose.Types.ObjectId(sender);
                 const receiverId = new mongoose.Types.ObjectId(receiver);
@@ -54,6 +56,9 @@ function initializeSocket(server) {
                     sender,
                     receiver,
                     content,
+                    content: content || '',
+                    images,
+                    location: location || null,
                 });
                 await newMessage.save();
 
@@ -66,13 +71,13 @@ function initializeSocket(server) {
                     participants: receiverId,
                     readBy: { $ne: receiverId },
                 });
-                
+
                 io.to(receiverId.toString()).emit("unreadConversationsCount", {
                     userId: receiverId,
                     count: unreadCount,
                 });
 
-                io.emit("receiveMessage", newMessage);  
+                io.emit("receiveMessage", newMessage);
                 const updatedConversation = await Conversation.findById(conversation._id)
                     .populate({
                         path: "participants",
@@ -98,7 +103,7 @@ function initializeSocket(server) {
         socket.on("readConversation", async ({ conversationId, userId }) => {
             await markConversationAsRead(conversationId, userId, socket);
         });
-        
+
 
         socket.on("disconnect", () => {
             for (let userId in onlineUsers) {
@@ -107,6 +112,7 @@ function initializeSocket(server) {
                     break;
                 }
             }
+            io.emit("onlineUsers", getOnlineUserIds());
         });
     });
 

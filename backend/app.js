@@ -9,6 +9,7 @@ const postRoute = require("./routes/post");
 const newsRoutes = require("./routes/news");
 const reviewRoutes = require("./routes/review");
 const conversationRoutes = require("./routes/chat");
+const uploadRoutes = require('./routes/upload');
 const http = require('http');
 const initializeSocket = require("./congfig/websocket");
 require('./congfig/cronJobs');
@@ -41,6 +42,7 @@ app.use('/v1/posts', postRoute);
 app.use('/v1/news', newsRoutes);
 app.use('/v1/reviews', reviewRoutes);
 app.use("/v1/conversations", conversationRoutes);
+app.use("/v1/upload", uploadRoutes);
 
 const server = http.createServer(app);
 initializeSocket(server); 
