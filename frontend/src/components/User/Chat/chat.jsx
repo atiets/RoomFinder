@@ -13,10 +13,14 @@ import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import useSocket from '../../../hooks/useSocket';
 import { getConversationsByUser, getMessagesByConversation } from '../../../redux/chatApi';
+import { uploadImages } from '../../../redux/uploadApi';
 import './chat.css';
 
 const Chat = () => {
     const location = useLocation();
+    const chatRef = useRef(null);
+    const inputRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     const postID = location.state?.postId || null;
     const title = location.state?.title || null;
@@ -40,12 +44,61 @@ const Chat = () => {
     const [showIcons, setShowIcons] = useState(true);
     const [messages, setMessages] = useState([]);
     const [conversation, setConversation] = useState([]);
-    const chatRef = useRef(null); // Tham chiếu đến chat-box
-    const inputRef = useRef(null); // Tham chiếu đến input tin nhắn
+    const [onlineUsers, setOnlineUsers] = useState([]);
+    const [selectedImages, setSelectedImages] = useState([]); // để preview blob
+    const [imageFiles, setImageFiles] = useState([]);         // để gửi file
+    const [selectedImage, setSelectedImage] = useState(null);
 
     const conversationId = selectedChat?._id || null;
 
-    // Cuộn xuống dưới khi có tin nhắn mới
+    // Hàm để mở ảnh lớn
+    const handleImageClick = (imgUrl) => {
+        setSelectedImage(imgUrl);  // Đặt ảnh được nhấp vào vào state
+    };
+
+    // Hàm để đóng modal
+    const closeModal = () => {
+        setSelectedImage(null);
+    };
+
+    // Bấm vào icon sẽ mở file picker
+    const handleImageIconClick = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
+    const handleRemoveImage = (index) => {
+        setSelectedImages(prev => prev.filter((_, i) => i !== index));
+        setImageFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleImageChange = (event) => {
+        const files = Array.from(event.target.files);
+
+        const previews = files.map(file => URL.createObjectURL(file));
+
+        // Lưu ảnh để preview và gửi
+        setSelectedImages(prev => [...prev, ...previews]);
+        setImageFiles(prev => [...prev, ...files]);
+    };
+
+    console.log("tin nhắn", messagesChat);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on("onlineUsers", (userIds) => {
+            setOnlineUsers(userIds);
+        });
+
+        return () => {
+            socket.off("onlineUsers");
+        };
+    }, [socket]);
+
+    console.log("Online users:", onlineUsers);
+
     useEffect(() => {
         const chatBox = chatRef.current;
         if (!chatBox) return;
@@ -76,6 +129,7 @@ const Chat = () => {
             return {
                 ...chat, // Giữ nguyên tất cả thuộc tính khác của cuộc trò chuyện
                 conversationId: chat._id,
+                userId: otherParticipant ? otherParticipant._id : null,
                 username: otherParticipant ? otherParticipant.username : "Unknown",
                 profilePic: otherParticipant?.profile?.picture || null
             };
@@ -142,40 +196,53 @@ const Chat = () => {
         }
     };
 
-    const sendMessage = () => {
-        if (!newMessage.trim()) return; // Kiểm tra tin nhắn rỗng
+    const sendMessage = async () => {
+        // Không gửi nếu không có nội dung hoặc ảnh
+        if (!newMessage.trim() && imageFiles.length === 0) return;
 
-        const participants = selectedChat?.participants || []; // Đảm bảo luôn có mảng
-        console.log("Participants:", participants); // Kiểm tra dữ liệu
+        try {
+            // Bước 1: Upload ảnh trước (nếu có)
+            let uploadedImageUrls = [];
+            if (imageFiles.length > 0) {
+                uploadedImageUrls = await uploadImages(imageFiles); // bạn đã có hàm này ở trên
+            }
 
-        const otherParticipant = participants.length > 1
-            ? participants.find(p => p._id !== id)?._id
-            : null;
+            // Bước 2: Lấy người nhận từ selectedChat hoặc contactInfo
+            const participants = selectedChat?.participants || [];
+            const otherParticipant = participants.length > 1
+                ? participants.find(p => p._id !== id)?._id
+                : null;
+            const receiver = otherParticipant || contactInfo;
 
-        console.log("Other participant ID:", otherParticipant); // Kiểm tra người nhận
+            if (!receiver) {
+                console.error("❌ Không tìm thấy người nhận!");
+                return;
+            }
 
-        const receiver = otherParticipant || contactInfo;
-        if (!receiver) {
-            console.error("❌ Không tìm thấy receiver!");
-            return; // Ngăn lỗi nếu không tìm thấy người nhận
+            // Bước 3: Chuẩn bị nội dung tin nhắn
+            const messageData = {
+                sender: id,
+                receiver,
+                content: newMessage,
+                images: uploadedImageUrls,  // danh sách URL ảnh
+                postId: postID || null,
+            };
+
+            // Bước 4: Gửi tin nhắn qua socket
+            socket.emit("sendMessage", messageData, (response) => {
+                console.log("Server response:", response);
+            });
+
+            // Bước 5: Cập nhật UI
+            setMessages(prev => [...prev, messageData]);
+            setNewMessage("");         // clear input
+            setSelectedImages([]);     // clear ảnh preview
+            setImageFiles([]);         // clear file gửi
+
+        } catch (error) {
+            console.error("❌ Lỗi khi gửi tin nhắn hoặc upload ảnh:", error);
         }
-        const messageData = {
-            sender: id,
-            receiver,
-            content: newMessage,
-            postId: postID || null,
-        };
-
-        console.log("Sending message:", messageData);
-
-        socket.emit("sendMessage", messageData, (response) => {
-            console.log("Server response:", response);
-        });
-
-        setMessages((prevMessages) => [...prevMessages, messageData]);
-        setNewMessage("");
     };
-
 
     const truncateMessage = (messa, maxLength) => {
         if (!messa) return "";
@@ -328,11 +395,11 @@ const Chat = () => {
                                             width: '8px',
                                             height: '8px',
                                             borderRadius: '50%',
-                                            backgroundColor: selectedChat.isOnline === 'True' ? 'green' : 'gray',
+                                            backgroundColor: onlineUsers.includes(selectedChat.userId) ? 'green' : 'gray',
                                             marginRight: '5px',
                                         }}
                                     ></span>
-                                    {selectedChat.isOnline === 'True' ? 'Online' : 'Offline'}
+                                    {onlineUsers.includes(selectedChat.userId) ? 'Online' : 'Offline'}
                                 </div>
                             </div>
                             <MoreVertIcon style={{ marginLeft: 'auto', alignContent: 'center' }} />
@@ -357,13 +424,38 @@ const Chat = () => {
                 </div>
                 <div className='chat-box-left-content' ref={chatRef}>
                     {messagesChat
-                        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) // Sắp xếp tin nhắn theo thời gian
+                        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
                         .map((msg) => (
                             <div key={msg.id} className={`message ${msg.sender === id ? "sent" : "received"}`}>
-                                <p>{msg.content}</p>
+                                {/* Nội dung văn bản */}
+                                {msg.content && <p>{msg.content}</p>}
+
+                                {/* Hiển thị ảnh nếu có */}
+                                {msg.images && msg.images.length > 0 && (
+                                    <div className="message-images">
+                                        {msg.images.map((imgUrl, index) => (
+                                            <img
+                                                key={index}
+                                                src={imgUrl}
+                                                alt={`Ảnh ${index + 1}`}
+                                                className="message-image"
+                                                onClick={() => handleImageClick(imgUrl)} // Mở ảnh lớn khi click
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Thời gian */}
                                 <span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
                             </div>
                         ))}
+
+                    {/* Modal hiển thị ảnh lớn */}
+                    {selectedImage && (
+                        <div className="modal open" onClick={closeModal}>
+                            <img src={selectedImage} alt="Ảnh lớn" />
+                        </div>
+                    )}
                 </div>
                 <div className='chat-box-left-idea'>
                     <div className='chat-box-left-idea-body' style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
@@ -379,13 +471,28 @@ const Chat = () => {
                         ))}
                     </div>
                 </div>
+                <div className="image-preview-container">
+                    {selectedImages.map((image, index) => (
+                        <div key={index} className="image-preview">
+                            <img src={image} alt={`preview-${index}`} />
+                            <button onClick={() => handleRemoveImage(index)}>X</button>
+                        </div>
+                    ))}
+                </div>
                 <div className='chat-box-left-footer'>
                     <div className="chat-box-left-footer">
                         <div className={`chat-box-left-footer-media ${showIcons ? 'visible' : 'hidden'}`}>
                             {showIcons ? (
                                 <>
                                     <CloseIcon sx={{ color: '#63ab45' }} onClick={handleCloseIconClick} />
-                                    <InsertPhotoIcon sx={{ color: '#63ab45' }} />
+                                    <InsertPhotoIcon sx={{ color: '#63ab45' }} onClick={handleImageIconClick} />
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        ref={fileInputRef}
+                                        onChange={handleImageChange}
+                                    />
                                     <LocationOnIcon sx={{ color: '#63ab45' }} />
                                     <ChatIcon sx={{ color: '#63ab45' }} />
                                 </>

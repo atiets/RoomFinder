@@ -8,7 +8,7 @@ exports.getConversationsByUser = async (req, res) => {
         const conversations = await Conversation.find({ participants: userId })
             .populate({
                 path: "participants",
-                select: "username profile.picture profile.isOnline",
+                select: "_id username profile.picture profile.isOnline",
                 options: { strictPopulate: false },
             })
             .populate({
