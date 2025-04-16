@@ -14,7 +14,9 @@ import { useLocation } from 'react-router-dom';
 import useSocket from '../../../hooks/useSocket';
 import { getConversationsByUser, getMessagesByConversation } from '../../../redux/chatApi';
 import { uploadImages } from '../../../redux/uploadApi';
+import ModalMap from '../ModalMap';
 import './chat.css';
+import MessageLocation from './MessageLocation';
 
 const Chat = () => {
     const location = useLocation();
@@ -48,6 +50,8 @@ const Chat = () => {
     const [selectedImages, setSelectedImages] = useState([]); // để preview blob
     const [imageFiles, setImageFiles] = useState([]);         // để gửi file
     const [selectedImage, setSelectedImage] = useState(null);
+    const [openMapModal, setOpenMapModal] = useState(false);
+    const [selectedLocation, setSelectedLocation] = useState(null);
 
     const conversationId = selectedChat?._id || null;
 
@@ -196,18 +200,15 @@ const Chat = () => {
         }
     };
 
-    const sendMessage = async () => {
-        // Không gửi nếu không có nội dung hoặc ảnh
-        if (!newMessage.trim() && imageFiles.length === 0) return;
+    const sendMessage = async (location = null) => {
+        if (!newMessage.trim() && imageFiles.length === 0 && !location) return;
 
         try {
-            // Bước 1: Upload ảnh trước (nếu có)
             let uploadedImageUrls = [];
             if (imageFiles.length > 0) {
-                uploadedImageUrls = await uploadImages(imageFiles); // bạn đã có hàm này ở trên
+                uploadedImageUrls = await uploadImages(imageFiles);
             }
 
-            // Bước 2: Lấy người nhận từ selectedChat hoặc contactInfo
             const participants = selectedChat?.participants || [];
             const otherParticipant = participants.length > 1
                 ? participants.find(p => p._id !== id)?._id
@@ -219,25 +220,23 @@ const Chat = () => {
                 return;
             }
 
-            // Bước 3: Chuẩn bị nội dung tin nhắn
             const messageData = {
                 sender: id,
                 receiver,
                 content: newMessage,
-                images: uploadedImageUrls,  // danh sách URL ảnh
+                images: uploadedImageUrls,
                 postId: postID || null,
+                location: location ? { latitude: location[0], longitude: location[1] } : null,
             };
 
-            // Bước 4: Gửi tin nhắn qua socket
             socket.emit("sendMessage", messageData, (response) => {
                 console.log("Server response:", response);
             });
 
-            // Bước 5: Cập nhật UI
             setMessages(prev => [...prev, messageData]);
-            setNewMessage("");         // clear input
-            setSelectedImages([]);     // clear ảnh preview
-            setImageFiles([]);         // clear file gửi
+            setNewMessage("");
+            setSelectedImages([]);
+            setImageFiles([]);
 
         } catch (error) {
             console.error("❌ Lỗi khi gửi tin nhắn hoặc upload ảnh:", error);
@@ -444,7 +443,7 @@ const Chat = () => {
                                         ))}
                                     </div>
                                 )}
-
+                                {msg.location && <MessageLocation location={msg.location} />}
                                 {/* Thời gian */}
                                 <span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
                             </div>
@@ -493,7 +492,15 @@ const Chat = () => {
                                         ref={fileInputRef}
                                         onChange={handleImageChange}
                                     />
-                                    <LocationOnIcon sx={{ color: '#63ab45' }} />
+                                    <LocationOnIcon
+                                        sx={{ color: "#63ab45", cursor: "pointer" }}
+                                        onClick={() => setOpenMapModal(true)}
+                                    />
+                                    <ModalMap
+                                        open={openMapModal}
+                                        onClose={() => setOpenMapModal(false)}
+                                        onSendLocation={(coords) => sendMessage(coords)}
+                                    />
                                     <ChatIcon sx={{ color: '#63ab45' }} />
                                 </>
                             ) : null}
