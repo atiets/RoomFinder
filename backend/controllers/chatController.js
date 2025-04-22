@@ -24,6 +24,7 @@ exports.getConversationsByUser = async (req, res) => {
         const formattedConversations = conversations.map(chat => ({
             ...chat._doc,
             readBy: chat.readBy,
+            visible: chat.visible,
             firstPostImage: chat.postId?.images?.length ? chat.postId.images[0] : null
         }));
 
@@ -113,20 +114,20 @@ exports.searchConversationsByUser = async (req, res) => {
         const conversations = await Conversation.find({
             participants: userId
         })
-        .populate({
-            path: "participants",
-            select: "_id username profile.picture profile.isOnline",
-            options: { strictPopulate: false },
-        })
-        .populate({
-            path: "lastMessage",
-            options: { strictPopulate: false },
-        })
-        .populate({
-            path: "postId",
-            select: "images title rentalPrice typePrice",
-            options: { strictPopulate: false },
-        });
+            .populate({
+                path: "participants",
+                select: "_id username profile.picture profile.isOnline",
+                options: { strictPopulate: false },
+            })
+            .populate({
+                path: "lastMessage",
+                options: { strictPopulate: false },
+            })
+            .populate({
+                path: "postId",
+                select: "images title rentalPrice typePrice",
+                options: { strictPopulate: false },
+            });
 
         // B2: Lọc các conversation có người còn lại khớp searchText
         const filteredConversations = conversations.filter(convo => {
@@ -145,5 +146,84 @@ exports.searchConversationsByUser = async (req, res) => {
     } catch (error) {
         console.error("❌ Error searching conversations:", error);
         return res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+//Ẩn hoặc hiển thị một hoặc nhiều cuộc hội thoại
+exports.toggleConversationsVisibility = async (req, res) => {
+    try {
+        const { conversationIds, visible } = req.body;
+
+        if (!Array.isArray(conversationIds) || typeof visible !== "number") {
+            return res.status(400).json({
+                message: "Invalid request. 'conversationIds' must be an array and 'visible' must be 0 or 1."
+            });
+        }
+
+        const updated = await Conversation.updateMany(
+            { _id: { $in: conversationIds } },
+            { visible: visible === 1, updatedAt: new Date() }
+        );
+
+        res.status(200).json({
+            message: visible === 1 ? "Conversations unhidden successfully" : "Conversations hidden successfully",
+            modifiedCount: updated.modifiedCount
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+};
+
+//Lọc các loại cuộc hội thoại
+exports.getFilteredConversations = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const { type } = req.query;
+
+        if (!userId) return res.status(400).json({ message: "Missing userId" });
+
+        let query = {
+            participants: userId,
+        };
+
+        if (!type) {
+            // ❗ Khi không truyền type → chỉ lấy visible: true
+            query.visible = true;
+        } else if (type === "hidden") {
+            query.visible = false;
+        } else if (type === "unread") {
+            query.readBy = { $ne: userId };
+        }
+        // type === "all" thì không thêm điều kiện gì
+
+        const conversations = await Conversation.find(query)
+            .populate({
+                path: "participants",
+                select: "_id username profile.picture profile.isOnline",
+                options: { strictPopulate: false },
+            })
+            .populate({
+                path: "lastMessage",
+                options: { strictPopulate: false },
+            })
+            .populate({
+                path: "postId",
+                select: "images title rentalPrice typePrice",
+                options: { strictPopulate: false },
+            });
+
+        const formattedConversations = conversations.map(chat => ({
+            ...chat._doc,
+            readBy: chat.readBy,
+            visible: chat.visible,
+            firstPostImage: chat.postId?.images?.length ? chat.postId.images[0] : null
+        }));
+
+        res.status(200).json(formattedConversations);
+    } catch (err) {
+        res.status(500).json({ message: "Server error", error: err.message });
     }
 };
