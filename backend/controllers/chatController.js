@@ -98,3 +98,52 @@ const countUnreadConversations = async (userId) => {
     });
     return count;
 };
+
+//Search conversation by username
+exports.searchConversationsByUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { searchText } = req.query;
+
+        if (!searchText || !searchText.trim()) {
+            return res.status(400).json({ error: "Missing search text" });
+        }
+
+        // B1: Tìm tất cả các cuộc hội thoại có userId là participant
+        const conversations = await Conversation.find({
+            participants: userId
+        })
+        .populate({
+            path: "participants",
+            select: "_id username profile.picture profile.isOnline",
+            options: { strictPopulate: false },
+        })
+        .populate({
+            path: "lastMessage",
+            options: { strictPopulate: false },
+        })
+        .populate({
+            path: "postId",
+            select: "images title rentalPrice typePrice",
+            options: { strictPopulate: false },
+        });
+
+        // B2: Lọc các conversation có người còn lại khớp searchText
+        const filteredConversations = conversations.filter(convo => {
+            const otherParticipant = convo.participants.find(p => p._id.toString() !== userId);
+            return otherParticipant && otherParticipant.username.toLowerCase().includes(searchText.toLowerCase());
+        });
+
+        const formatted = filteredConversations.map(chat => ({
+            ...chat._doc,
+            readBy: chat.readBy,
+            firstPostImage: chat.postId?.images?.[0] || null
+        }));
+
+        return res.status(200).json(formatted);
+
+    } catch (error) {
+        console.error("❌ Error searching conversations:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};

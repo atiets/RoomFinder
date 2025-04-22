@@ -12,7 +12,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import useSocket from '../../../hooks/useSocket';
-import { getConversationsByUser, getMessagesByConversation } from '../../../redux/chatApi';
+import { getConversationsByUser, getMessagesByConversation, searchConversation } from '../../../redux/chatApi';
 import { uploadImages } from '../../../redux/uploadApi';
 import ModalMap from '../ModalMap';
 import './chat.css';
@@ -51,11 +51,44 @@ const Chat = () => {
     const [imageFiles, setImageFiles] = useState([]);         // để gửi file
     const [selectedImage, setSelectedImage] = useState(null);
     const [openMapModal, setOpenMapModal] = useState(false);
-    const [selectedLocation, setSelectedLocation] = useState(null);
+    const [searchText, setSearchText] = useState("");
+    const [debouncedText, setDebouncedText] = useState("");
 
     const conversationId = selectedChat?._id || null;
 
-    // Hàm để mở ảnh lớn
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedText(searchText.trim());
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchText]);
+
+    useEffect(() => {
+        const fetchResults = async () => {
+            try {
+                if (!debouncedText) {
+                    // Nếu input rỗng, fetch lại tất cả conversation
+                    const response = await getConversationsByUser(id, token);
+                    const formatted = getOtherParticipants(response.data || [], id);
+                    setConversation(formatted);
+                } else {
+                    // Nếu có searchText, thực hiện tìm kiếm
+                    const results = await searchConversation(id, debouncedText, token);
+                    if (results) {
+                        const formattedResults = getOtherParticipants(results, id);
+                        setConversation(formattedResults);
+                    }
+                }
+            } catch (error) {
+                console.error("Lỗi khi tìm kiếm hoặc lấy cuộc trò chuyện:", error);
+                setConversation([]);
+            }
+        };
+
+        fetchResults();
+    }, [debouncedText, id, token]);
+
     const handleImageClick = (imgUrl) => {
         setSelectedImage(imgUrl);  // Đặt ảnh được nhấp vào vào state
     };
@@ -282,7 +315,11 @@ const Chat = () => {
                 {!isHidden && (
                     <>
                         <div className='chat-box-right-header'>
-                            <Input placeholder='Search for friends' />
+                            <Input
+                                placeholder='Search for friends'
+                                value={searchText}
+                                onChange={(e) => setSearchText(e.target.value)}
+                            />
                         </div>
                         <div className='chat-box-right-settings'>
                             <div className='chat-box-right-settings-select'>
