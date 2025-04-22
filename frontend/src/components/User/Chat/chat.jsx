@@ -7,12 +7,14 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SendIcon from '@mui/icons-material/Send';
 import SettingsIcon from '@mui/icons-material/Settings';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { Avatar, Button, Checkbox, FormControl, Input, InputLabel, MenuItem, Select } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
 import useSocket from '../../../hooks/useSocket';
-import { getConversationsByUser, getMessagesByConversation, searchConversation } from '../../../redux/chatApi';
+import { getConversationsByUser, getFilteredConversations, getMessagesByConversation, searchConversation, updateConversationVisibility } from '../../../redux/chatApi';
 import { uploadImages } from '../../../redux/uploadApi';
 import ModalMap from '../ModalMap';
 import './chat.css';
@@ -37,22 +39,21 @@ const Chat = () => {
     const socket = useSocket(id);
 
     const [isHidden, setIsHidden] = useState(false);
-    const [selectedMessages, setSelectedMessages] = useState([]);
     const [selectedChat, setSelectedChat] = useState(null);
-    const [titlePost, setTitlePost] = useState('Bài đăng');
-    const [pricePost, setPricePost] = useState('Giá');
     const [messagesChat, setMessagesChat] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const [showIcons, setShowIcons] = useState(true);
     const [messages, setMessages] = useState([]);
     const [conversation, setConversation] = useState([]);
     const [onlineUsers, setOnlineUsers] = useState([]);
-    const [selectedImages, setSelectedImages] = useState([]); // để preview blob
-    const [imageFiles, setImageFiles] = useState([]);         // để gửi file
+    const [selectedImages, setSelectedImages] = useState([]);
+    const [imageFiles, setImageFiles] = useState([]);
     const [selectedImage, setSelectedImage] = useState(null);
     const [openMapModal, setOpenMapModal] = useState(false);
     const [searchText, setSearchText] = useState("");
     const [debouncedText, setDebouncedText] = useState("");
+    const [visibleConversations, setVisibleConversations] = useState([]);
+    const [typeConversation, setTypeConversation] = useState("");
 
     const conversationId = selectedChat?._id || null;
 
@@ -68,12 +69,10 @@ const Chat = () => {
         const fetchResults = async () => {
             try {
                 if (!debouncedText) {
-                    // Nếu input rỗng, fetch lại tất cả conversation
                     const response = await getConversationsByUser(id, token);
                     const formatted = getOtherParticipants(response.data || [], id);
                     setConversation(formatted);
                 } else {
-                    // Nếu có searchText, thực hiện tìm kiếm
                     const results = await searchConversation(id, debouncedText, token);
                     if (results) {
                         const formattedResults = getOtherParticipants(results, id);
@@ -90,15 +89,13 @@ const Chat = () => {
     }, [debouncedText, id, token]);
 
     const handleImageClick = (imgUrl) => {
-        setSelectedImage(imgUrl);  // Đặt ảnh được nhấp vào vào state
+        setSelectedImage(imgUrl);
     };
 
-    // Hàm để đóng modal
     const closeModal = () => {
         setSelectedImage(null);
     };
 
-    // Bấm vào icon sẽ mở file picker
     const handleImageIconClick = () => {
         if (fileInputRef.current) {
             fileInputRef.current.click();
@@ -112,46 +109,33 @@ const Chat = () => {
 
     const handleImageChange = (event) => {
         const files = Array.from(event.target.files);
-
         const previews = files.map(file => URL.createObjectURL(file));
-
-        // Lưu ảnh để preview và gửi
         setSelectedImages(prev => [...prev, ...previews]);
         setImageFiles(prev => [...prev, ...files]);
     };
 
-    console.log("tin nhắn", messagesChat);
-
     useEffect(() => {
         if (!socket) return;
-
         socket.on("onlineUsers", (userIds) => {
             setOnlineUsers(userIds);
         });
-
         return () => {
             socket.off("onlineUsers");
         };
     }, [socket]);
 
-    console.log("Online users:", onlineUsers);
-
     useEffect(() => {
         const chatBox = chatRef.current;
         if (!chatBox) return;
-
         chatBox.scrollTop = chatBox.scrollHeight;
     }, [messagesChat]);
 
     useEffect(() => {
-        if (!socket) return; // 👉 BẮT BUỘC phải có dòng này
-
+        if (!socket) return;
         const handleReceiveMessage = (newMessage) => {
             setMessagesChat((prev) => [...prev, newMessage]);
         };
-
         socket.on("receiveMessage", handleReceiveMessage);
-
         return () => {
             socket.off("receiveMessage", handleReceiveMessage);
         };
@@ -160,11 +144,9 @@ const Chat = () => {
     const getOtherParticipants = (conversations, currentUserId) => {
         return (conversations || []).map(chat => {
             const participants = Array.isArray(chat.participants) ? chat.participants : [];
-
             const otherParticipant = participants.find(p => p._id !== currentUserId);
-
             return {
-                ...chat, // Giữ nguyên tất cả thuộc tính khác của cuộc trò chuyện
+                ...chat,
                 conversationId: chat._id,
                 userId: otherParticipant ? otherParticipant._id : null,
                 username: otherParticipant ? otherParticipant.username : "Unknown",
@@ -173,39 +155,32 @@ const Chat = () => {
         });
     };
 
+
     useEffect(() => {
-        const fetchConversation = async () => {
-            try {
-                const response = await getConversationsByUser(id, token);
-                const formattedConversations = getOtherParticipants(response.data || [], id);
-                setConversation(formattedConversations);
-            } catch (error) {
-                console.error("Lỗi khi lấy đoạn chat:", error);
-                setConversation([]);
-            }
-        };
-        fetchConversation();
-        // Lắng nghe sự kiện từ socket để cập nhật cuộc trò chuyện realtime
+        handleFilterConversations(typeConversation);
         if (socket) {
             const handleUpdateConversation = ({ userIds, updatedConversation }) => {
                 if (!userIds.includes(id)) return;
-
                 setConversation(prev => {
                     const exists = prev.find(conv => conv._id === updatedConversation._id);
-
+                    let newList;
                     if (exists) {
-                        return prev.map(conv =>
+                        newList = prev.map(conv =>
                             conv._id === updatedConversation._id
                                 ? { ...conv, ...updatedConversation }
                                 : conv
                         );
                     } else {
                         const newFormatted = getOtherParticipants([updatedConversation], id);
-                        return [...newFormatted, ...prev];
+                        newList = [...newFormatted, ...prev];
                     }
+
+                    return [...newList].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
                 });
             };
+
             socket.on("updateConversations", handleUpdateConversation);
+
             return () => {
                 socket.off("updateConversations", handleUpdateConversation);
             };
@@ -235,24 +210,20 @@ const Chat = () => {
 
     const sendMessage = async (location = null) => {
         if (!newMessage.trim() && imageFiles.length === 0 && !location) return;
-
         try {
             let uploadedImageUrls = [];
             if (imageFiles.length > 0) {
                 uploadedImageUrls = await uploadImages(imageFiles);
             }
-
             const participants = selectedChat?.participants || [];
             const otherParticipant = participants.length > 1
                 ? participants.find(p => p._id !== id)?._id
                 : null;
             const receiver = otherParticipant || contactInfo;
-
             if (!receiver) {
                 console.error("❌ Không tìm thấy người nhận!");
                 return;
             }
-
             const messageData = {
                 sender: id,
                 receiver,
@@ -261,16 +232,13 @@ const Chat = () => {
                 postId: postID || null,
                 location: location ? { latitude: location[0], longitude: location[1] } : null,
             };
-
             socket.emit("sendMessage", messageData, (response) => {
                 console.log("Server response:", response);
             });
-
             setMessages(prev => [...prev, messageData]);
             setNewMessage("");
             setSelectedImages([]);
             setImageFiles([]);
-
         } catch (error) {
             console.error("❌ Lỗi khi gửi tin nhắn hoặc upload ảnh:", error);
         }
@@ -278,18 +246,19 @@ const Chat = () => {
 
     const truncateMessage = (messa, maxLength) => {
         if (!messa) return "";
-
         return messa.length > maxLength
             ? messa.substring(0, maxLength) + '...'
             : messa;
     };
 
     const handleCheckboxChange = (id) => {
-        setSelectedMessages((prevSelected) =>
-            prevSelected.includes(id)
-                ? prevSelected.filter((msgId) => msgId !== id)
-                : [...prevSelected, id]
-        );
+        setVisibleConversations((prevSelected) => {
+            if (prevSelected.includes(id)) {
+                return prevSelected.filter((msgId) => msgId !== id);
+            } else {
+                return [...prevSelected, id];
+            }
+        });
     };
 
     const handleCardClick = (msg) => {
@@ -304,13 +273,40 @@ const Chat = () => {
 
     const handleCloseIconClick = () => {
         setShowIcons(!showIcons);
-        console.log("showIcons:", !showIcons);
     };
 
-    console.log('conversation:', conversation);
+    const handleToggleVisibility = async (visible) => {
+        try {
+            const data = await updateConversationVisibility(visibleConversations, visible, token);
+            setVisibleConversations([]);
+            toast.success("Cập nhật thành công!");
+            handleFilterConversations(typeConversation);
+        } catch (err) {
+            toast.error(err);
+        }
+    };
+
+    const handleSelectChange = (event) => {
+        const selectedType = event.target.value;
+        setTypeConversation(selectedType);
+        handleFilterConversations(selectedType);
+    };
+
+    const handleFilterConversations = async (typeConversation) => {
+        try {
+            const response = await getFilteredConversations(id, typeConversation, token);
+            const formatted = getOtherParticipants(response.data || [], id);
+            setConversation(formatted);
+        } catch (error) {
+            console.error("Lỗi khi lọc cuộc trò chuyện:", error);
+        }
+    };
+
+    console.log("conversation", conversation);
 
     return (
         <div className="chat-container">
+            <ToastContainer position="top-right" autoClose={5000} />
             <div className='chat-box-right'>
                 {!isHidden && (
                     <>
@@ -329,6 +325,9 @@ const Chat = () => {
                                         labelId="label-select-filter"
                                         id="label-select-filter"
                                         label="Bộ lọc"
+                                        value={typeConversation}
+                                        onChange={handleSelectChange}
+                                        size="small"
                                         MenuProps={{
                                             PaperProps: {
                                                 sx: {
@@ -337,9 +336,10 @@ const Chat = () => {
                                             },
                                         }}
                                     >
-                                        <MenuItem value={10}>Tin nhắn chưa đọc</MenuItem>
-                                        <MenuItem value={20}>Tin nhắn đã ẩn</MenuItem>
-                                        <MenuItem value={30}>Tin nhắn rác</MenuItem>
+                                        <MenuItem value="">Không lọc</MenuItem>
+                                        <MenuItem value="all">Tất cả</MenuItem>
+                                        <MenuItem value="unread">Tin nhắn chưa đọc</MenuItem>
+                                        <MenuItem value="hidden">Tin nhắn đã ẩn</MenuItem>
                                     </Select>
                                 </FormControl>
                             </div>
@@ -350,39 +350,41 @@ const Chat = () => {
                     </>
                 )}
                 <div className='chat-box-right-body' style={{ overflowY: 'auto', maxHeight: '400px' }}>
-                    {conversation.map((msg) => {
-                        const isUnread = !msg.readBy?.includes(id);
-                        return (
-                            <div
-                                key={msg._id}
-                                className={`chat-card ${isUnread ? 'unread' : ''}`}
-                                onClick={() => handleCardClick(msg)}
-                            >
-                                {isHidden && (
-                                    <Checkbox
-                                        checked={selectedMessages.includes(msg.id)}
-                                        onChange={() => handleCheckboxChange(msg.id)}
-                                        sx={{
-                                            color: 'black',
-                                            '&.Mui-checked': {
-                                                color: '#63ab45',
-                                            },
-                                        }}
-                                    />
-                                )}
-                                <Avatar src={msg.profilePic} alt={msg.username} className='chat-card-avatar' />
-                                <div className='chat-card-content'>
-                                    <div className={`chat-card-name ${isUnread ? 'unread-text' : ''}`}>
-                                        {truncateMessage(msg.username, 30)}
+                    {conversation
+                        .map((msg) => {
+                            const isUnread = !msg.readBy?.includes(id);
+                            return (
+                                <div
+                                    key={msg._id}
+                                    className={`chat-card ${isUnread ? 'unread' : ''}`}
+                                    onClick={() => handleCardClick(msg)}
+                                >
+                                    {isHidden && (
+                                        <Checkbox
+                                            checked={visibleConversations.includes(msg._id)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            onChange={() => handleCheckboxChange(msg._id)}
+                                            sx={{
+                                                color: 'black',
+                                                '&.Mui-checked': {
+                                                    color: '#63ab45',
+                                                },
+                                            }}
+                                        />
+                                    )}
+                                    <Avatar src={msg.profilePic} alt={msg.username} className="chat-card-avatar" />
+                                    <div className="chat-card-content">
+                                        <div className={`chat-card-name ${isUnread ? 'unread-text' : ''}`}>
+                                            {truncateMessage(msg.username, 30)}
+                                        </div>
+                                        <div className={`chat-card-message ${isUnread ? 'unread-text' : ''}`}>
+                                            {truncateMessage(msg.lastMessage?.content, 50)}
+                                        </div>
                                     </div>
-                                    <div className={`chat-card-message ${isUnread ? 'unread-text' : ''}`}>
-                                        {truncateMessage(msg.lastMessage?.content, 50)}
-                                    </div>
+                                    <img src={msg.postId?.images} alt="message" className="chat-card-image" />
                                 </div>
-                                <img src={msg.postId?.images} alt='message' className='chat-card-image' />
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
                 </div>
                 <div className='chat-box-right-footer'>
                     {!isHidden ? (
@@ -392,12 +394,21 @@ const Chat = () => {
                             style={{ color: 'black', textTransform: 'none', borderColor: 'black', display: 'flex', alignItems: 'center' }}
                             onClick={() => setIsHidden(true)}
                         >
-                            <VisibilityOffOutlinedIcon style={{ marginRight: '5px' }} />
-                            Ẩn hộp thoại
+                            {typeConversation === 'hidden' ? (
+                                <>
+                                    <VisibilityOutlinedIcon style={{ marginRight: '5px' }} />
+                                    Hiện hộp thoại
+                                </>
+                            ) : (
+                                <>
+                                    <VisibilityOffOutlinedIcon style={{ marginRight: '5px' }} />
+                                    Ẩn hộp thoại
+                                </>
+                            )}
                         </Button>
                     ) : (
                         <div className='chat-box-right-footer-selected'>
-                            <span>Đã chọn {selectedMessages.length}</span>
+                            <span>Đã chọn {visibleConversations.length}</span>
                             <Button
                                 variant="outlined"
                                 size="small"
@@ -409,9 +420,17 @@ const Chat = () => {
                             <Button
                                 variant="outlined"
                                 size="small"
-                                style={{ color: 'white', textTransform: 'none', borderColor: 'black', marginLeft: '1rem', backgroundColor: '#63ab45', width: '30%' }}
+                                style={{
+                                    color: 'white',
+                                    textTransform: 'none',
+                                    borderColor: 'black',
+                                    marginLeft: '1rem',
+                                    backgroundColor: '#63ab45',
+                                    width: '30%'
+                                }}
+                                onClick={() => handleToggleVisibility(typeConversation === 'hidden' ? 1 : 0)}
                             >
-                                Ẩn
+                                {typeConversation === 'hidden' ? 'Hiện' : 'Ẩn'}
                             </Button>
                         </div>
                     )}
