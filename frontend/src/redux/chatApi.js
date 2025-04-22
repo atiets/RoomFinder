@@ -31,3 +31,16 @@ export const getMessagesByConversation = async (conversationId, token, page = 1,
     }
 };
 
+export const searchConversation = async (userId, searchText, token) => {
+    try {
+        const res = await axios.get(`${BASE_URL}search/${userId}`, {
+            params: { searchText },
+            headers: {
+                Authorization: `Bearer ${token}`,
+            }
+        });
+        return res.data;
+    } catch (err) {
+        console.error("Search error:", err);
+    }
+};
