@@ -6,6 +6,7 @@
   border-radius: 8px !important;
   border: #bbbbbb solid 1px !important;
   z-index: 1200;
+  margin-bottom: 1000px !important;
 }
 
 .admin-header + .content {

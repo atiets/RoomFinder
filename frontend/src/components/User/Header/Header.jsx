@@ -23,6 +23,8 @@ import useSocket from '../../../hooks/useSocket';
 import { logout } from "../../../redux/apiRequest";
 import { logoutSuccess } from "../../../redux/authSlice";
 import Notification from "../Notification/Notification";
+import UpgradeModal from '../Payment/UpgradeModal';
+import Swal from "sweetalert2";
 import "./Header.css";
 
 const Header = () => {
@@ -39,6 +41,7 @@ const Header = () => {
   const axiosJWT = createAxios(currentUser, dispatch, logoutSuccess);
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const notificationsList = currentUser?.notifications || [];
   const notificationCount = notificationsList.filter(
@@ -94,16 +97,35 @@ const Header = () => {
 
   const handleAddPost = () => {
     if (!currentUser) {
-      setOpenDialog(true);
+      Swal.fire({
+        title: "Chưa đăng nhập",
+        text: "Vui lòng đăng nhập để đăng tin.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Đăng nhập",
+        cancelButtonText: "Hủy",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/login");
+        }
+      });
+    } else if (currentUser.postQuota <= 0) {
+      Swal.fire({
+        title: "Hết lượt đăng tin",
+        text: "Bạn đã hết lượt đăng tin trong tháng.",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonText: "Nâng cấp gói",
+        cancelButtonText: "Hủy",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setShowUpgradeModal(true);
+        }
+      });
     } else {
       navigate("/AddPost");
     }
-  };
-
-  const handleConfirmLogin = () => {
-    setOpenDialog(false);
-    navigate("/login");
-  };
+  }; 
 
   const markAsRead = (notificationId) => {
     setNotifications((prevNotifications) =>
@@ -115,16 +137,16 @@ const Header = () => {
     );
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-  };
-
   console.log("Unread chat count:", unreadChatCount);
 
+  const handleUpgrade = (plan) => {
+    setShowUpgradeModal(false);
+    navigate(`/payment/${encodeURIComponent(plan)}`);
+  };  
 
   return (
     <>
-      <AppBar position="fixed" className="user-header-app-bar">
+      <AppBar className="user-header-app-bar">
         <Toolbar className="user-header-tool-bar">
           <Typography
             variant="h6"
@@ -147,6 +169,11 @@ const Header = () => {
             <Button className="user-header-btn" onClick={handleAddPost}>
               Đăng tin mới
             </Button>
+            <UpgradeModal
+        show={showUpgradeModal}
+        onHide={() => setShowUpgradeModal(false)}
+        onUpgrade={handleUpgrade}
+      />
             {currentUser && (
               <Button className="user-header-btn" onClick={() => navigate("/chat")}>
                 <Badge
@@ -224,23 +251,6 @@ const Header = () => {
         accessToken={accessToken}
         onUpdateUnreadCount={handleUpdateUnreadCount}
       />
-
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Xác Nhận</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Bạn có muốn di chuyển đến trang đăng nhập để tiếp tục
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
-            Hủy
-          </Button>
-          <Button onClick={handleConfirmLogin} color="secondary">
-            Xác nhận
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 };

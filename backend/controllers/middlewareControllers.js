@@ -49,6 +49,27 @@ const middlewareControllers = {
             }
         });
     },
+
+    checkQuota : async (req, res, next) => {
+        const user = await User.findById(req.userId); // lấy từ token
+        
+        const now = new Date();
+        const resetTime = new Date(user.quotaResetAt);
+      
+        // Reset mỗi tháng 1 lần
+        if (now.getMonth() !== resetTime.getMonth() || now.getFullYear() !== resetTime.getFullYear()) {
+          user.postQuota = 3; // reset quota về 3 tin miễn phí
+          user.quotaResetAt = now;
+          await user.save();
+        }
+      
+        if (user.postQuota > 0 || (user.plan && user.plan.expiredAt > now)) {
+          return next(); // Cho phép đăng tin
+        }
+      
+        // Hết quota và không có gói
+        return res.status(403).json({ message: "Bạn đã hết lượt đăng tin miễn phí. Vui lòng mua gói để tiếp tục." });
+      },
 };
 
 module.exports = middlewareControllers;
