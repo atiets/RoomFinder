@@ -1,0 +1,141 @@
+.compare-area-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 30px 20px;
+  font-family: "Segoe UI", sans-serif;
+  border-radius: 12px;
+}
+
+.area-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.area-btn {
+  padding: 10px 15px;
+  background-color: #ffe0b2; /* cam pastel */
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+  color: #4e342e;
+  font-weight: bold;
+}
+
+.area-btn:hover {
+  background-color: #ffcc80; /* cam pastel đậm hơn */
+}
+
+.area-btn.selected {
+  background-color: #81c784; /* xanh pastel đậm */
+  color: #fff;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 30px;
+  background-color: #ffffff;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+
+.compare-table th,
+.compare-table td {
+  padding: 12px 15px;
+  border: 1px solid #c8e6c9; /* xanh pastel viền */
+  text-align: center;
+}
+
+.compare-table th {
+  background-color: #c8e6c9; /* xanh pastel */
+  font-weight: bold;
+  color: #2e7d32;
+}
+
+.hint {
+  font-style: italic;
+  color: #777;
+  margin-top: 20px;
+}
+
+/* Dropdown Container */
+.province-select-container {
+  margin-bottom: 20px;
+}
+
+/* Label */
+.province-select-container label {
+  font-weight: bold;
+  color: #4caf50; /* pastel green */
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+/* Dropdown Select */
+.province-select-container select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background-color: #f1f8e9; /* light pastel green */
+  font-size: 15px;
+  transition: 0.3s ease;
+  cursor: pointer;
+  color: #333;
+}
+
+.province-select-container select:hover {
+  background-color: #ffe0b2; /* light pastel orange */
+}
+
+.province-select-container select:focus {
+  outline: none;
+  border-color: #ffcc80; /* pastel orange border */
+  background-color: #fff3e0;
+}
+
+/* Biểu đồ CompareChart */
+.compare-chart {
+  background-color: #fff; /* nền trắng cho biểu đồ */
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-top: 30px;
+}
+
+/* Các màu sắc chủ đạo cho biểu đồ */
+.compare-chart .bar {
+  fill: #81c784; /* Xanh pastel đậm cho thanh biểu đồ */
+}
+
+.compare-chart .bar:hover {
+  fill: #66bb6a; /* Xanh lá đậm hơn khi hover */
+}
+
+.compare-chart .tooltip {
+  background-color: #ffcc80; /* Cam pastel */
+  color: #4e342e; /* Màu chữ đậm, dễ đọc */
+  border-radius: 8px;
+  padding: 8px;
+  font-weight: bold;
+}
+
+.compare-chart .axis path,
+.compare-chart .axis line {
+  stroke: #c8e6c9; /* Màu xanh pastel cho các trục */
+}
+
+.compare-chart .axis text {
+  font-size: 14px;
+  fill: #4e342e; /* Màu chữ trục */
+  font-weight: bold;
+}
+
+.compare-chart .title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #2e7d32; /* Màu chữ xanh đậm cho tiêu đề */
+  text-align: center;
+  margin-bottom: 15px;
+}

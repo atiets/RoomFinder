@@ -11,6 +11,7 @@ import "./Home.css";
 import Introduction from "./Introduction";
 import Introduction2 from "./Introduction2";
 import ListNewsHome from "./ListNewsHome";
+import CompareArea from "../CompareArea/CompareArea";
 
 const Home = () => {
   document.title = "Phòng trọ xinh";
@@ -134,6 +135,9 @@ const Home = () => {
             title="Văn phòng, mặt bằng"
             favorite={favorites}
           />
+          <div style={{ width: "100%", height: "auto" }}>
+  <CompareArea />
+</div>
           <div style={{ width: "100%", height: "auto" }}>
             <Introduction />
           </div>
