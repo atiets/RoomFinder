@@ -1,16 +1,17 @@
 .main-content {
-  padding-top: 64px;
+  padding-top: 0px;
 }
 
 .user-header-app-bar {
   background-color: white !important;
   padding: 0;
   margin: 0;
-  position: fixed;
+  /* position: fixed;
   top: 0;
-  left: 0;
+  left: 0; */
   width: 100%;
   z-index: 1000;
+  margin-bottom: 20px !important;
 }
 
 .user-header-tool-bar {

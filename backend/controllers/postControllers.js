@@ -17,13 +17,28 @@ exports.createPost = async (req, res) => {
       maxOccupants,
       youtubeLink,
       contactInfo,
-      defaultDaysToShow = 7,
+      defaultDaysToShow = 30,
     } = req.body;
 
     // Kiểm tra các trường bắt buộc
     if (!title || !content || !address || !category || !rentalPrice || !area || !contactInfo) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
+     // Lấy thông tin user từ token
+     const userId = req.user.id; // từ middlewareControllers.verifyToken
+     const user = await User.findById(userId);
+ 
+     if (!user) {
+       return res.status(404).json({ message: "User not found" });
+     }
+ 
+     // Kiểm tra quota còn không
+     if (user.postQuota <= 0) {
+       return res.status(403).json({
+         message: "Bạn đã hết lượt đăng bài miễn phí trong tháng này. Vui lòng đợi tới tháng sau hoặc nâng cấp tài khoản.",
+       });
+     }
 
     // Xử lý hình ảnh
     const imageUrls = [];
@@ -52,6 +67,10 @@ exports.createPost = async (req, res) => {
       hoursRemaining: 0,
       expiryDate:0,
     });
+
+    // Trừ quota rồi lưu user lại
+    user.postQuota -= 1;
+    await user.save();
 
     // Lưu bài đăng
     const savedPost = await newPost.save();
@@ -148,7 +167,6 @@ exports.deletePost = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 exports.getPostsByStatus = async (req, res) => {
   try {

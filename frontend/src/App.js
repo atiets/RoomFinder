@@ -33,6 +33,7 @@ import PostDetail from "./components/User/Post/PostDetail";
 import PostsPage from "./components/User/Post/PostPage";
 import SearchPosts from "./components/User/Search/searchPosts";
 import SearchResultsPage from "./components/User/Search/searchResultPage";
+import PaymentPage from "./components/User/Payment/PaymentPage";
 
 function App() {
   return (
@@ -288,6 +289,16 @@ function App() {
                 <>
                   <Header />
                   <Chat />
+                </>
+              }
+            />
+
+            <Route
+              path="/payment/:plan"
+              element={
+                <>
+                  <Header />
+                  <PaymentPage />
                 </>
               }
             />

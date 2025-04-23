@@ -94,6 +94,15 @@ const userSchema = new mongoose.Schema({
       },
     }
   ],
+
+  // Gói đăng tin
+  postQuota: { type: Number, default: 3 },         // Số lượng còn lại trong tháng
+  quotaResetAt: { type: Date, default: new Date() }, // Ngày bắt đầu tính quota
+  plan: {
+    name: String, // free, 50k, 100k
+    expiredAt: Date
+  }
+  
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

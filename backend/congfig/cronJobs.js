@@ -62,3 +62,28 @@ cron.schedule('0 * * * *', async () => {
     console.error('Error updating posts:', error);
   }
 });
+
+// B. Reset hạn mức đăng tin miễn phí cho người dùng vào 00:00 mỗi ngày
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const users = await User.find();
+
+    const resetOperations = users.map(user => ({
+      updateOne: {
+        filter: { _id: user._id },
+        update: {
+          $set: {
+            freePostQuota: 5, // Hoặc số lượng bạn muốn reset mỗi ngày
+          },
+        },
+      },
+    }));
+
+    if (resetOperations.length > 0) {
+      await User.bulkWrite(resetOperations);
+      console.log(`[${new Date().toLocaleString()}] Reset free post quota for ${users.length} users`);
+    }
+  } catch (error) {
+    console.error(`[${new Date().toLocaleString()}] Error resetting quotas:`, error);
+  }
+});

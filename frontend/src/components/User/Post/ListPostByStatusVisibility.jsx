@@ -20,6 +20,7 @@ const ListPostByStatusVisibility = ({ status, visibility, token }) => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 5;
+  const currentUser = useSelector((state) => state.auth.login.currentUser);
 
   const handleTitleClick = (id) => {
     console.log("Navigating to post with ID:", id);
@@ -31,9 +32,13 @@ const ListPostByStatusVisibility = ({ status, visibility, token }) => {
   };
 
   const handleCreatePost = () => {
-    navigate("/AddPost");
+    if (currentUser.postQuota <= 0) {
+      alert("Bạn đã hết lượt đăng tin trong tháng. Vui lòng nâng cấp gói hoặc chờ đến tháng sau.");
+    } else {
+      navigate("/AddPost");
+    }
   };
-
+  
   const handleEditPost = (postId) => {
     dispatch(setSelectedPost(postId));
     dispatch(setSelectedMenu("updatePost"));

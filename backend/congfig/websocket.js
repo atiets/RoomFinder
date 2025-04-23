@@ -15,13 +15,13 @@ function initializeSocket(server) {
     const onlineUsers = {};
 
     io.on("connection", (socket) => {
-        console.log("User connected:", socket.id);
+        // console.log("User connected:", socket.id);
         const getOnlineUserIds = () => Object.keys(onlineUsers);
 
         socket.on("join", (userId) => {
             onlineUsers[userId] = socket.id;
             socket.join(userId);
-            console.log(`User ${userId} joined their personal room`);
+            // console.log(`User ${userId} joined their personal room`);
             io.emit("onlineUsers", getOnlineUserIds());
         });
 
