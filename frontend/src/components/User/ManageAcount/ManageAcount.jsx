@@ -10,6 +10,7 @@ import ListUserPost from "./listUserPost";
 import "./ManageAcount.css";
 import Sidebar from "./Sidebar";
 import UpdatePost from "./UpdatePost";
+import UserStatistics from "./UserStatistics";
 
 const ManageAcount = () => {
   document.title = "Quản lý tài khoản";
@@ -37,6 +38,8 @@ const ManageAcount = () => {
         return <FavoritePosts />;
       case "viewedPosts":
         return <ViewedPost />;
+      case "statistics":
+        return <UserStatistics />;
       default:
         return <EditProfile user={currentUser || null} />;
     }
