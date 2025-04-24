@@ -82,9 +82,14 @@ const CompareArea = () => {
   return (
     <div className="compare-area-container">
       <h2>So sánh giá phòng trọ giữa các khu vực</h2>
+      <p className="intro-text">
+        Tham khảo giá bất động sản
+        <br />
+        Cập nhật dữ liệu biến động giá mới nhất tháng 04/2025 tại các thành phố
+      </p>
 
       {/* Chọn tỉnh/thành */}
-      <div style={{ marginBottom: "15px" }}>
+      {/* <div style={{ marginBottom: "15px" }}>
         <label htmlFor="province-select">Chọn tỉnh/thành: </label>
         <select
           id="province-select"
@@ -98,7 +103,23 @@ const CompareArea = () => {
             </option>
           ))}
         </select>
-      </div>
+      </div> */}
+      <div className="select-container">
+  <label htmlFor="province-select">Chọn tỉnh/thành: </label>
+  <select
+    id="province-select"
+    value={selectedProvince}
+    onChange={handleProvinceChange}
+  >
+    <option value="">-- Chọn tỉnh/thành phố --</option>
+    {Object.keys(mockData).map((province) => (
+      <option key={province} value={province}>
+        {province}
+      </option>
+    ))}
+  </select>
+</div>
+
 
       {/* Chọn khu vực (quận/huyện) */}
       {selectedProvince && (
@@ -119,6 +140,16 @@ const CompareArea = () => {
           })}
         </div>
       )}
+
+      <p className="additional-info">
+        Dữ liệu từ 100 triệu tin đăng BĐS
+        <br />
+        Giá giao dịch thực tế
+        <br />
+        Chi tiết đến quận, phường, đường
+        <br />
+        Cập nhật hằng tháng
+      </p>
 
       {/* Hiển thị bảng và biểu đồ nếu đã chọn khu vực */}
       {selectedAreas.length > 0 ? (

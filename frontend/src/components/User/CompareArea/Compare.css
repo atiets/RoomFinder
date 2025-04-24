@@ -139,3 +139,128 @@
   text-align: center;
   margin-bottom: 15px;
 }
+
+.compare-area-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h2 {
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.intro-text {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.additional-info {
+  font-size: 1rem;
+  line-height: 1.6;
+  text-align: center;
+  margin-top: 30px;
+}
+
+.area-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.area-btn {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  padding: 10px 20px;
+  margin: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.area-btn.selected {
+  background-color: #eb3b3b;
+  color: white;
+}
+
+.map-container {
+  margin-top: 40px;
+}
+
+.map-container h3 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 30px;
+}
+
+.compare-table th,
+.compare-table td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.compare-table th {
+  background-color: #f4f4f4;
+}
+
+.hint {
+  font-size: 1.2rem;
+  text-align: center;
+  margin-top: 20px;
+  color: #888;
+}
+
+.selected {
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+/* Style for the container holding the label and select input */
+.select-container {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Style for the label */
+.select-container label {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333; /* Dark text for the label */
+}
+
+/* Style for the select dropdown */
+.select-container select {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Add a border color change on focus */
+.select-container select:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+/* Option styles */
+.select-container select option {
+  padding: 10px;
+}
