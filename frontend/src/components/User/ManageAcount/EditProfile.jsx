@@ -3,35 +3,21 @@ import AddAPhotoOutlinedIcon from "@mui/icons-material/AddAPhotoOutlined";
 import {
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControl,
   IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
-  TextField,
+  TextField
 } from "@mui/material";
-import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { updateUserProfile } from "../../../redux/apiRequest";
+import AddressModal from "../ModalAddress";
 import "./EditProfile.css";
 
 const EditProfile = ({ user }) => {
   document.title = "Chỉnh sửa thông tin cá nhân";
   const [picture, setAvatar] = useState(user?.profile?.picture || "");
   const [open, setOpen] = useState(false);
-  const [provinces, setProvinces] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [wards, setWards] = useState([]);
-  const [selectedProvince, setSelectedProvince] = useState(null);
-  const [selectedDistrict, setSelectedDistrict] = useState(null);
-  const [selectedWard, setSelectedWard] = useState(null);
   const [address, setAddress] = useState(user?.profile?.address || "");
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [username, setUsername] = useState(user?.username || "");
@@ -40,81 +26,11 @@ const EditProfile = ({ user }) => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
 
-  const SelectWithLabel = ({ label, options, value, onChange }) => {
-    return (
-      <FormControl fullWidth variant="outlined">
-        <InputLabel>{label}</InputLabel>
-        <Select
-          value={value || ""}
-          onChange={(event) => {
-            const selected = options.find(
-              (option) => option.code === event.target.value,
-            );
-            onChange(selected);
-          }}
-          label={label}
-          size="small"
-        >
-          {options.map((option) => (
-            <MenuItem key={option.code} value={option.code}>
-              {option.name}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-    );
-  };
-  // Mở modal
   const handleClickOpen = () => {
     setOpen(true);
   };
 
   const handleClose = () => {
-    setOpen(false);
-  };
-
-  // Gọi API để lấy danh sách địa chỉ
-  useEffect(() => {
-    const fetchProvinces = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(
-          "https://provinces.open-api.vn/api/?depth=3",
-        );
-        setProvinces(response.data);
-      } catch (error) {
-        console.error("Error fetching provinces:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProvinces();
-  }, []);
-
-  const handleProvinceChange = (newValue) => {
-    setSelectedProvince(newValue);
-    setSelectedDistrict(null);
-    setSelectedWard(null);
-    setDistricts(newValue ? newValue.districts || [] : []);
-    setWards([]);
-  };
-
-  const handleDistrictChange = (newValue) => {
-    setSelectedDistrict(newValue);
-    setSelectedWard(null);
-    setWards(newValue ? newValue.wards || [] : []);
-  };
-
-  const handleWardChange = (newValue) => {
-    setSelectedWard(newValue);
-  };
-
-  const handleSelectAddress = () => {
-    const fullAddress = `${selectedProvince?.name || ""}, ${selectedDistrict?.name || ""}, ${selectedWard?.name || ""}, ${address}`;
-
-    setSelectedAddress(fullAddress);
-    setAddress(fullAddress);
     setOpen(false);
   };
 
@@ -244,63 +160,13 @@ const EditProfile = ({ user }) => {
         value={selectedAddress || address}
       />
 
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Chọn Địa chỉ</DialogTitle>
-        <DialogContent>
-          <div
-            style={{
-              display: "flex",
-              gap: "25px",
-              flexDirection: "column",
-              flexGrow: 1,
-              width: 400,
-              borderRadius: "15px",
-            }}
-          >
-            <div style={{ flex: 1 }}>
-              <SelectWithLabel
-                label="Chọn Tỉnh/Thành phố"
-                options={provinces}
-                value={selectedProvince ? selectedProvince.code : null}
-                onChange={handleProvinceChange}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <SelectWithLabel
-                label="Chọn Quận/Huyện"
-                options={districts}
-                value={selectedDistrict ? selectedDistrict.code : null}
-                onChange={handleDistrictChange}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <SelectWithLabel
-                label="Chọn Phường/Xã"
-                options={wards}
-                value={selectedWard ? selectedWard.code : null}
-                onChange={handleWardChange}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <TextField
-                size="small"
-                label="Địa chỉ cụ thể"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Số nhà, tên đường"
-              />
-            </div>
-          </div>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={handleSelectAddress}
-            className="update-profile-confirm-btn"
-          >
-            Xác nhận
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AddressModal
+        open={open}
+        onClose={handleClose}
+        onConfirm={(fullAddress) => {
+          setSelectedAddress(fullAddress);
+          setAddress(fullAddress);
+        }} />
 
       <textarea
         placeholder="Viết vài dòng giới thiệu bản thân"

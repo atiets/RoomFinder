@@ -1,0 +1,103 @@
+.complaint-container {
+    padding: 2rem;
+    max-width: 900px;
+    margin: auto;
+    margin-top: 20px;
+}
+
+.complaint-paper {
+    padding: 2.5rem;
+    background-color: #f6fff7;
+    border-radius: 20px;
+    border: 2px solid #63ab45;
+}
+
+.complaint-header {
+    display: flex;
+    align-items: center;
+    color: #63ab45;
+    font-weight: bold;
+}
+
+.complaint-icon {
+    margin-right: 10px;
+    font-size: 28px;
+}
+
+.section-label {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+.file-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #555;
+}
+
+.file-input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.submit-button {
+    margin-top: 2rem;
+    background: linear-gradient(to right, #63ab45, #8bc34a);
+    color: white;
+    font-weight: bold;
+    width: 100%;
+    border-radius: 8px;
+    padding: 10px 0;
+    transition: all 0.3s ease;
+}
+
+.submit-button:hover {
+    background: linear-gradient(to right, #5a9c3c, #7cb342);
+}
+
+.terms-checkbox {
+    margin-top: 1.2rem;
+    color: #4caf50;
+}
+
+/* Style for the file input button */
+.file-input {
+    display: none; /* Ẩn input file gốc */
+}
+
+/* Style for the custom button */
+.file-input-button.MuiButton-root{
+    display: inline-block;
+    background-color: white; /* Màu nền nút */
+    color: #2e7d32; /* Màu chữ */
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 4px; /* Bo tròn các góc */
+    cursor: pointer; /* Hiển thị con trỏ pointer khi hover */
+    transition: background-color 0.3s ease; /* Hiệu ứng chuyển màu nền khi hover */
+    text-transform: none;
+}
+
+/* Hover effect for the custom button */
+.file-input-button:hover {
+    background-color: #1565c0; /* Màu nền khi hover */
+}
+
+/* Style for the text showing file name after selection */
+.file-input-name {
+    margin-top: 10px;
+    color: #4caf50; /* Màu xanh khi tệp đã được chọn */
+    font-size: 14px;
+}
+
+/* Optional: Style for the wrapper around the button */
+.file-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}

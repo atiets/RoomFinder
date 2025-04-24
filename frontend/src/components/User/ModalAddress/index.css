@@ -1,0 +1,15 @@
+.update-profile-confirm-btn {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background-color: #7ecc5d !important;
+    color: #2a261a !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    text-transform: none !important;
+    text-decoration: none !important;
+    margin: 0.5rem !important;
+  }
