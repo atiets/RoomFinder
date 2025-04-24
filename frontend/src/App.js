@@ -21,19 +21,20 @@ import ResetPassword from "./components/ResetPassword/ResetPassword ";
 import AboutUs from "./components/User/AboutUs/AboutUs";
 import ChangePassword from "./components/User/ChangePassword/ChangePassword";
 import Chat from "./components/User/Chat/chat";
+import ComplaintForm from "./components/User/ComplaintForm";
 import Header from "./components/User/Header/Header";
 import Home from "./components/User/Home/Home";
 import ManageAcount from "./components/User/ManageAcount/ManageAcount";
 import UpdatePost from "./components/User/ManageAcount/UpdatePost";
 import NewsDetailUser from "./components/User/News/NewsDetail/NewsDetailUser";
 import NewsListUser from "./components/User/News/NewsList/NewsListUser";
+import PaymentPage from "./components/User/Payment/PaymentPage";
 import PolicyTerms from "./components/User/PolicyTerms/PolicyTerms";
-import AddPost from "./components/User/Post/AddPost";
+import AddPost from "./components/User/Post/AddPost/AddPost";
 import PostDetail from "./components/User/Post/PostDetail";
 import PostsPage from "./components/User/Post/PostPage";
 import SearchPosts from "./components/User/Search/searchPosts";
 import SearchResultsPage from "./components/User/Search/searchResultPage";
-import PaymentPage from "./components/User/Payment/PaymentPage";
 
 function App() {
   return (
@@ -292,13 +293,22 @@ function App() {
                 </>
               }
             />
-
             <Route
               path="/payment/:plan"
               element={
                 <>
                   <Header />
                   <PaymentPage />
+                  <Footer />
+                </>}
+            />
+            <Route
+              path="/complaints"
+              element={
+                <>
+                  <Header />
+                  <ComplaintForm />
+                  <Footer />
                 </>
               }
             />

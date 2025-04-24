@@ -1,0 +1,28 @@
+.house-feature-container {
+    width: 100%;
+}
+
+.add-post-right-header-label {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+    display: inline-block;
+}
+
+.house-feature-list {
+    display: flex;
+    gap: 20px;
+}
+
+.house-feature-column {
+    flex: 1;
+}
+
+.house-feature-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #ccc;
+    font-size: 14px;
+}
