@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@react-google-maps/api": "^2.20.6",
     "bootstrap": "^5.3.5",
     "leaflet": "^1.9.4",
     "leaflet-geosearch": "^4.2.0",
