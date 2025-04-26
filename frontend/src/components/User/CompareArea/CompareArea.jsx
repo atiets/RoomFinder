@@ -1,65 +1,44 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import area from "../../../mockData/area";
+import MapView from "./Map";
 import "./Compare.css";
-import CompareChart from "./CompareChart";
 
-const mockData = {
-  "TP.HCM": {
-    "Quận 1": { average: 4500000, area: 18 },
-    "Quận 3": { average: 4300000, area: 19 },
-    "Quận 7": { average: 4700000, area: 21 },
-    "Thủ Đức": { average: 3500000, area: 22 },
-    "Gò Vấp": { average: 3000000, area: 20 },
-    "Tân Bình": { average: 3200000, area: 19 },
-    "Bình Thạnh": { average: 4000000, area: 21 },
-  },
-  "Hà Nội": {
-    "Cầu Giấy": { average: 3900000, area: 18 },
-    "Đống Đa": { average: 4200000, area: 17 },
-    "Ba Đình": { average: 4600000, area: 19 },
-    "Thanh Xuân": { average: 3700000, area: 20 },
-    "Hà Đông": { average: 3400000, area: 22 },
-  },
-  "Đà Nẵng": {
-    "Hải Châu": { average: 3600000, area: 20 },
-    "Thanh Khê": { average: 3300000, area: 21 },
-    "Liên Chiểu": { average: 3100000, area: 23 },
-  },
-  "Cần Thơ": {
-    "Ninh Kiều": { average: 3000000, area: 22 },
-    "Bình Thủy": { average: 2700000, area: 24 },
-    "Cái Răng": { average: 2500000, area: 23 },
-  },
-  "Bình Dương": {
-    "Thủ Dầu Một": { average: 3200000, area: 20 },
-    "Dĩ An": { average: 3100000, area: 21 },
-    "Thuận An": { average: 3000000, area: 22 },
-  },
-  "Hải Phòng": {
-    "Ngô Quyền": { average: 3400000, area: 19 },
-    "Lê Chân": { average: 3300000, area: 20 },
-    "Hồng Bàng": { average: 3100000, area: 21 },
-  },
-  "Thừa Thiên Huế": {
-    "TP. Huế": { average: 2800000, area: 23 },
-    "Hương Thủy": { average: 2600000, area: 25 },
-  },
-  "Khánh Hòa": {
-    "Nha Trang": { average: 3500000, area: 22 },
-    "Cam Ranh": { average: 2700000, area: 24 },
-  },
-  "Bà Rịa - Vũng Tàu": {
-    "TP. Vũng Tàu": { average: 3600000, area: 21 },
-    "Bà Rịa": { average: 3000000, area: 22 },
-  },
+const centerVN = { lat: 14.0583, lng: 108.2772 }; // Tâm Việt Nam
+
+const ErrorBoundary = ({ children }) => {
+  const [hasError, setHasError] = useState(false);
+
+  const staticErrorMessage = "Something went wrong!";
+
+  const componentDidCatch = (error, info) => {
+    setHasError(true);
+    console.error("Error caught by error boundary:", error, info);
+  };
+
+  if (hasError) {
+    return <div>{staticErrorMessage}</div>;
+  }
+
+  return children;
 };
 
 const CompareArea = () => {
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedAreas, setSelectedAreas] = useState([]);
+  const [mapCenter, setMapCenter] = useState(centerVN);
+  const [mapZoom, setMapZoom] = useState(6);
+  const navigate = useNavigate();
 
   const handleProvinceChange = (e) => {
-    setSelectedProvince(e.target.value);
-    setSelectedAreas([]); // reset khu vực khi đổi tỉnh
+    const province = e.target.value;
+    setSelectedProvince(province);
+    setSelectedAreas([]);
+
+    if (province && area[province]) {
+      setMapCenter(area[province].position);
+      setMapZoom(11);
+    }
   };
 
   const handleToggleArea = (district) => {
@@ -69,133 +48,101 @@ const CompareArea = () => {
         ? prev.filter((a) => a !== areaName)
         : [...prev, areaName]
     );
+
+    const districtPos = area[selectedProvince]?.districts[district];
+    if (districtPos) {
+      setMapCenter(districtPos);
+      setMapZoom(13);
+    }
   };
 
-  const sortedAreas = [...selectedAreas].sort((a, b) => {
-    const [provA, distA] = a.split(" - ");
-    const [provB, distB] = b.split(" - ");
-    return (
-      mockData[provB][distB].average - mockData[provA][distA].average
-    );
-  });
+  const handleViewPrice = () => {
+    if (selectedAreas.length > 0) {
+      navigate("/compare-chart", {
+        state: { selectedAreas, area },
+      });
+    } else {
+      alert("Vui lòng chọn ít nhất một khu vực.");
+    }
+  };
 
   return (
-    <div className="compare-area-container">
-      <h2>So sánh giá phòng trọ giữa các khu vực</h2>
-      <p className="intro-text">
-        Tham khảo giá bất động sản
-        <br />
-        Cập nhật dữ liệu biến động giá mới nhất tháng 04/2025 tại các thành phố
-      </p>
+    <div className="compare-wrapper">
+      <div className="compare-left">
+        <h2 className="compare-title">So sánh giá phòng trọ</h2>
+        <p className="compare-subtitle">
+          Cập nhật dữ liệu giá mới nhất tháng 04/2025 tại các thành phố lớn
+        </p>
 
-      {/* Chọn tỉnh/thành */}
-      {/* <div style={{ marginBottom: "15px" }}>
-        <label htmlFor="province-select">Chọn tỉnh/thành: </label>
-        <select
-          id="province-select"
-          value={selectedProvince}
-          onChange={handleProvinceChange}
-        >
-          <option value="">-- Chọn tỉnh/thành phố --</option>
-          {Object.keys(mockData).map((province) => (
-            <option key={province} value={province}>
-              {province}
-            </option>
-          ))}
-        </select>
-      </div> */}
-      <div className="select-container">
-  <label htmlFor="province-select">Chọn tỉnh/thành: </label>
-  <select
-    id="province-select"
-    value={selectedProvince}
-    onChange={handleProvinceChange}
-  >
-    <option value="">-- Chọn tỉnh/thành phố --</option>
-    {Object.keys(mockData).map((province) => (
-      <option key={province} value={province}>
-        {province}
-      </option>
-    ))}
-  </select>
+        <div className="select-section">
+          <label htmlFor="province-select" className="select-label">
+            Chọn tỉnh/thành phố:
+          </label>
+          <select
+            id="province-select"
+            className="province-select"
+            value={selectedProvince}
+            onChange={handleProvinceChange}
+          >
+            <option value="">-- Chọn tỉnh/thành --</option>
+            {Object.keys(area).map((province) => (
+              <option key={province} value={province}>
+                {province}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {selectedProvince && area[selectedProvince] && area[selectedProvince].districts && (
+          <div className="district-buttons">
+            {Object.keys(area[selectedProvince].districts).map((district) => {
+              const areaKey = `${selectedProvince} - ${district}`;
+              return (
+                <button
+                  key={district}
+                  className={`district-btn ${selectedAreas.includes(areaKey) ? "selected" : ""}`}
+                  onClick={() => handleToggleArea(district)}
+                >
+                  {district}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <button className="view-price-btn" onClick={handleViewPrice}>
+          Xem giá ngay
+        </button>
+
+        <div className="compare-info">
+          <p>✔ Dữ liệu từ 100 triệu tin đăng BĐS</p>
+          <p>✔ Giá giao dịch thực tế</p>
+          <p>✔ Chi tiết đến quận, phường, đường</p>
+          <p>✔ Cập nhật hằng tháng</p>
+        </div>
+      </div>
+
+      <div className="compare-right">
+      <div className="compare-right">
+      <MapView
+  selectedArea={{
+    coords: [mapCenter.lat, mapCenter.lng], 
+    zoomLevel: mapZoom
+  }}
+/>
 </div>
 
-
-      {/* Chọn khu vực (quận/huyện) */}
-      {selectedProvince && (
-        <div className="area-buttons">
-          {Object.keys(mockData[selectedProvince]).map((district) => {
-            const areaKey = `${selectedProvince} - ${district}`;
-            return (
-              <button
-                key={district}
-                className={`area-btn ${
-                  selectedAreas.includes(areaKey) ? "selected" : ""
-                }`}
-                onClick={() => handleToggleArea(district)}
-              >
-                {district}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      <p className="additional-info">
-        Dữ liệu từ 100 triệu tin đăng BĐS
-        <br />
-        Giá giao dịch thực tế
-        <br />
-        Chi tiết đến quận, phường, đường
-        <br />
-        Cập nhật hằng tháng
-      </p>
-
-      {/* Hiển thị bảng và biểu đồ nếu đã chọn khu vực */}
-      {selectedAreas.length > 0 ? (
-        <>
-          <table className="compare-table">
-            <thead>
-              <tr>
-                <th>Khu vực</th>
-                <th>Giá trung bình (VND)</th>
-                <th>Diện tích TB (m²)</th>
-                <th>Giá / m²</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedAreas.map((areaKey) => {
-                const [province, district] = areaKey.split(" - ");
-                const data = mockData[province][district];
-                return (
-                  <tr key={areaKey}>
-                    <td>{areaKey}</td>
-                    <td>{data.average.toLocaleString()}</td>
-                    <td>{data.area}</td>
-                    <td>
-                      {Math.round(data.average / data.area).toLocaleString()}đ
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          <CompareChart
-            selectedAreas={sortedAreas}
-            mockData={Object.entries(mockData).reduce((acc, [prov, districts]) => {
-              Object.entries(districts).forEach(([dist, val]) => {
-                acc[`${prov} - ${dist}`] = val;
-              });
-              return acc;
-            }, {})}
-          />
-        </>
-      ) : (
-        <p className="hint">Chọn tỉnh và khu vực để xem bảng và biểu đồ so sánh</p>
-      )}
+      </div>
     </div>
   );
 };
 
-export default CompareArea;
+const CompareAreaWithErrorBoundary = () => {
+  return (
+    <ErrorBoundary>
+      <CompareArea />
+    </ErrorBoundary>
+  );
+};
+
+export default CompareAreaWithErrorBoundary;
