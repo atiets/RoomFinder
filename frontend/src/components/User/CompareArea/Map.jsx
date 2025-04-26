@@ -1,39 +1,55 @@
-// Map.js
-import React from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { Box } from "@mui/material";
 import L from "leaflet";
+import { OpenStreetMapProvider } from "leaflet-geosearch";
 import "leaflet/dist/leaflet.css";
+import React, { useEffect, useState } from "react";
+import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 
-const provinceCoordinates = {
-  "TP.HCM": { lat: 10.8231, lng: 106.6297 },
-  "Hà Nội": { lat: 21.0285, lng: 105.8542 },
-  "Đà Nẵng": { lat: 16.0544, lng: 108.2022 },
-  "Cần Thơ": { lat: 10.0455, lng: 105.7461 },
-  "Bình Dương": { lat: 10.9626, lng: 106.6609 },
-  "Hải Phòng": { lat: 20.8449, lng: 106.6884 },
-  "Thừa Thiên Huế": { lat: 16.4625, lng: 107.5843 },
-  "Khánh Hòa": { lat: 12.2491, lng: 109.1911 },
-  "Bà Rịa - Vũng Tàu": { lat: 10.3587, lng: 107.0732 },
-};
+// Fix leaflet marker icon issue
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
-const Map = ({ selectedProvince }) => {
-  const position = provinceCoordinates[selectedProvince];
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: markerIcon2x,
+    iconUrl: markerIcon,
+    shadowUrl: markerShadow
+});
 
-  return (
-    <div className="map-container">
-      <MapContainer center={position || [14.0583, 108.2772]} zoom={6} style={{ height: "400px", width: "100%" }}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
-        {position && (
-          <Marker position={position}>
-            <Popup>{selectedProvince}</Popup>
-          </Marker>
-        )}
-      </MapContainer>
-    </div>
-  );
-};
+// Hàm thay đổi view bản đồ
+function ChangeMapView({ coords, zoomLevel }) {
+    const map = useMap();
+    useEffect(() => {
+        if (map) {
+            map.setView(coords, zoomLevel);
+        }
+    }, [coords, zoomLevel, map]); // Ensure map is available before setting view
 
-export default Map;
+    return null;
+}
+
+export default function MapView({ selectedArea }) {
+    const [position, setPosition] = useState([10.762622, 106.660172]); // Default: Ho Chi Minh City
+    const [zoom, setZoom] = useState(6); // Default zoom for Vietnam
+
+    useEffect(() => {
+        if (selectedArea) {
+            // Tự động điều chỉnh zoom và vị trí khi có selectedArea
+            const { coords, zoomLevel } = selectedArea;
+            setPosition(coords);
+            setZoom(zoomLevel);
+        }
+    }, [selectedArea]);
+
+    return (
+        <Box sx={{ width: "100%", height: "100%", backgroundColor: '#fff', p: 2, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ flexGrow: 1 }}>
+                <MapContainer center={position} zoom={zoom} style={{ height: "100%" }}>
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <ChangeMapView coords={position} zoomLevel={zoom} />
+                    <Marker position={position} />
+                </MapContainer>
+            </Box>
+        </Box>
+    );
+}
