@@ -23,33 +23,71 @@
 }
 
 .compare-title {
-  text-align: center;
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 10px;
+  text-align: center; /* Căn giữa tiêu đề */
+  font-size: 32px; /* Cỡ chữ lớn để nổi bật */
+  font-weight: 700; /* Đậm để tiêu đề thu hút sự chú ý */
+  color: #2c3e50; /* Màu chữ tối để dễ đọc */
+  margin-bottom: 15px; /* Khoảng cách dưới tiêu đề */
+  font-family: 'Roboto', sans-serif; /* Font chữ hiện đại và dễ đọc */
+  text-transform: uppercase; /* Làm cho tiêu đề in hoa */
+  letter-spacing: 1px; /* Khoảng cách giữa các chữ cái */
 }
 
 .compare-subtitle {
-  text-align: center;
-  font-size: 16px;
-  color: #555;
-  margin-bottom: 20px;
+  text-align: center; /* Căn giữa phụ đề */
+  font-size: 18px; /* Cỡ chữ vừa phải */
+  color: #7f8c8d; /* Màu chữ xám nhẹ cho phụ đề */
+  font-weight: 400; /* Để phụ đề không quá nổi bật */
+  margin-top: 0; /* Không có khoảng cách trên */
+  margin-bottom: 30px; /* Khoảng cách dưới để tạo sự thoáng */
+  font-family: 'Open Sans', sans-serif; /* Dùng một font chữ khác cho phụ đề */
+  line-height: 1.6; /* Giãn cách dòng để dễ đọc */
+}
+
+.compare-title, .compare-subtitle {
+  animation: fadeIn 1s ease-out; /* Thêm hiệu ứng fade-in cho sự mượt mà */
+}
+
+/* Hiệu ứng fade-in cho sự chuyển động mượt mà */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .select-section {
-  text-align: center;
-  margin-bottom: 20px;
+  margin: 20px 0;
+  display: flex;
+  align-items: center; /* Căn giữa theo chiều dọc */
+  justify-content: center; /* Căn giữa theo chiều ngang */
 }
 
 .select-label {
-  margin-right: 10px;
   font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-right: 10px; /* Khoảng cách giữa label và dropdown */
+  white-space: nowrap; /* Ngăn label xuống dòng */
 }
 
 .province-select {
-  padding: 8px;
+  padding: 10px 20px;
   font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
   width: 250px;
+  background-color: #fff;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  outline: none; /* Bỏ viền mặc định của trình duyệt */
+}
+
+.province-select:focus {
+  border-color: #4caf50; /* Màu viền khi chọn */
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); /* Hiệu ứng đổ bóng khi chọn */
+}
+
+.province-select option {
+  padding: 10px;
+  font-size: 16px;
 }
 
 .district-buttons {
@@ -78,7 +116,7 @@
 
 .view-price-btn {
   display: block;
-  margin: 0 auto 30px auto;
+  margin: 0 auto 15px auto;
   padding: 12px 25px;
   background-color: #ff6600;
   color: white;
@@ -95,8 +133,59 @@
 }
 
 .compare-info {
-  text-align: center;
-  font-size: 14px;
-  color: #666;
-  margin-top: 20px;
+  font-size: 16px;
+  color: #333;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap; 
+  margin-left: 120px;
+  border-top: 1px dashed #ccc;
+}
+
+.compare-info p {
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+  font-weight: 500;
+  width: 48%;
+}
+
+.compare-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  display: inline-block;
+}
+
+.district-info {
+  background: rgb(0 0 0 / 74%);
+  border-radius: 12px;
+  padding: 20px; 
+  color: #fff; 
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); 
+  max-width: 300px; 
+  margin-top: 20px; 
+  animation: fadeIn 0.5s ease; 
+}
+
+.district-info h3 {
+  font-size: 22px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* gạch dưới nhạt */
+  padding-bottom: 8px;
+}
+
+.district-info p {
+  font-size: 16px;
+  margin: 8px 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.district-info-icon {
+  margin-right: 8px;
+  font-size: 18px;
 }

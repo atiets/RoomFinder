@@ -2,18 +2,19 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import area from "../../../mockData/area";
 import MapView from "./Map";
+import { FaMoneyBillWave, FaChartLine } from 'react-icons/fa';
+import tick from "../../../assets//images/tick.gif";
 import "./Compare.css";
 
 const centerVN = { lat: 14.0583, lng: 108.2772 }; // Tâm Việt Nam
 
 const ErrorBoundary = ({ children }) => {
   const [hasError, setHasError] = useState(false);
-
-  const staticErrorMessage = "Something went wrong!";
+  const staticErrorMessage = "Có lỗi xảy ra!";
 
   const componentDidCatch = (error, info) => {
     setHasError(true);
-    console.error("Error caught by error boundary:", error, info);
+    console.error("Lỗi bị bắt:", error, info);
   };
 
   if (hasError) {
@@ -25,6 +26,7 @@ const ErrorBoundary = ({ children }) => {
 
 const CompareArea = () => {
   const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState(null); // Lưu thông tin quận đã chọn
   const [selectedAreas, setSelectedAreas] = useState([]);
   const [mapCenter, setMapCenter] = useState(centerVN);
   const [mapZoom, setMapZoom] = useState(6);
@@ -33,6 +35,7 @@ const CompareArea = () => {
   const handleProvinceChange = (e) => {
     const province = e.target.value;
     setSelectedProvince(province);
+    setSelectedDistrict(null); // Đặt lại quận khi thay đổi tỉnh
     setSelectedAreas([]);
 
     if (province && area[province]) {
@@ -43,18 +46,22 @@ const CompareArea = () => {
 
   const handleToggleArea = (district) => {
     const areaName = `${selectedProvince} - ${district}`;
-    setSelectedAreas((prev) =>
-      prev.includes(areaName)
-        ? prev.filter((a) => a !== areaName)
-        : [...prev, areaName]
-    );
-
-    const districtPos = area[selectedProvince]?.districts[district];
-    if (districtPos) {
-      setMapCenter(districtPos);
-      setMapZoom(13);
+    
+    // Nếu đã chọn quận này, thì bỏ chọn (deselect)
+    if (selectedAreas.includes(areaName)) {
+      setSelectedAreas([]); // Bỏ chọn tất cả
+      setSelectedDistrict(null); // Bỏ thông tin quận
+    } else {
+      // Nếu chưa chọn quận này, thì chọn quận mới và bỏ chọn quận cũ
+      setSelectedAreas([areaName]); // Chỉ lưu 1 quận duy nhất
+      const districtPos = area[selectedProvince]?.districts[district];
+      if (districtPos) {
+        setMapCenter(districtPos);
+        setMapZoom(13);
+        setSelectedDistrict(districtPos); // Lưu thông tin quận đã chọn
+      }
     }
-  };
+  };  
 
   const handleViewPrice = () => {
     if (selectedAreas.length > 0) {
@@ -115,23 +122,33 @@ const CompareArea = () => {
         </button>
 
         <div className="compare-info">
-          <p>✔ Dữ liệu từ 100 triệu tin đăng BĐS</p>
-          <p>✔ Giá giao dịch thực tế</p>
-          <p>✔ Chi tiết đến quận, phường, đường</p>
-          <p>✔ Cập nhật hằng tháng</p>
-        </div>
+  <p>
+    <img src={tick} alt="tick" className="compare-icon" />
+    Dữ liệu từ 100 triệu tin đăng BĐS
+  </p>
+  <p>
+    <img src={tick} alt="tick" className="compare-icon" />
+    Giá giao dịch thực tế
+  </p>
+  <p>
+    <img src={tick} alt="tick" className="compare-icon" />
+    Chi tiết đến quận, phường, đường
+  </p>
+  <p>
+    <img src={tick} alt="tick" className="compare-icon" />
+    Cập nhật hằng tháng
+  </p>
+</div>
       </div>
 
       <div className="compare-right">
-      <div className="compare-right">
-      <MapView
-  selectedArea={{
-    coords: [mapCenter.lat, mapCenter.lng], 
-    zoomLevel: mapZoom
-  }}
-/>
-</div>
-
+        <MapView
+          selectedArea={{
+            coords: [mapCenter.lat, mapCenter.lng], 
+            zoomLevel: mapZoom,
+            info: selectedDistrict
+          }}
+        />
       </div>
     </div>
   );
