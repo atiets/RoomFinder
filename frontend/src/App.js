@@ -35,6 +35,7 @@ import PostDetail from "./components/User/Post/PostDetail";
 import PostsPage from "./components/User/Post/PostPage";
 import SearchPosts from "./components/User/Search/searchPosts";
 import SearchResultsPage from "./components/User/Search/searchResultPage";
+import CompareChart from "./components/User/CompareArea/CompareChart";
 
 function App() {
   return (
@@ -308,6 +309,16 @@ function App() {
                 <>
                   <Header />
                   <ComplaintForm />
+                  <Footer />
+                </>
+              }
+            />
+            <Route
+              path="/compare-chart"
+              element={
+                <>
+                  <Header />
+                  <CompareChart />
                   <Footer />
                 </>
               }

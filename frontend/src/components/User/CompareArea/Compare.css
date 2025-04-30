@@ -23,32 +23,31 @@
 }
 
 .compare-title {
-  text-align: center; /* Căn giữa tiêu đề */
-  font-size: 32px; /* Cỡ chữ lớn để nổi bật */
-  font-weight: 700; /* Đậm để tiêu đề thu hút sự chú ý */
-  color: #2c3e50; /* Màu chữ tối để dễ đọc */
-  margin-bottom: 15px; /* Khoảng cách dưới tiêu đề */
-  font-family: 'Roboto', sans-serif; /* Font chữ hiện đại và dễ đọc */
-  text-transform: uppercase; /* Làm cho tiêu đề in hoa */
-  letter-spacing: 1px; /* Khoảng cách giữa các chữ cái */
+  text-align: center; 
+  font-size: 32px; 
+  font-weight: 700; 
+  color: #2c3e50; 
+  margin-bottom: 15px; 
+  font-family: 'Roboto', sans-serif; 
+  text-transform: uppercase; 
+  letter-spacing: 1px; 
 }
 
 .compare-subtitle {
-  text-align: center; /* Căn giữa phụ đề */
-  font-size: 18px; /* Cỡ chữ vừa phải */
-  color: #7f8c8d; /* Màu chữ xám nhẹ cho phụ đề */
-  font-weight: 400; /* Để phụ đề không quá nổi bật */
-  margin-top: 0; /* Không có khoảng cách trên */
-  margin-bottom: 30px; /* Khoảng cách dưới để tạo sự thoáng */
-  font-family: 'Open Sans', sans-serif; /* Dùng một font chữ khác cho phụ đề */
-  line-height: 1.6; /* Giãn cách dòng để dễ đọc */
+  text-align: center; 
+  font-size: 18px; 
+  color: #7f8c8d; 
+  font-weight: 400;
+  margin-top: 0; 
+  margin-bottom: 30px; 
+  font-family: 'Open Sans', sans-serif; 
+  line-height: 1.6; 
 }
 
 .compare-title, .compare-subtitle {
-  animation: fadeIn 1s ease-out; /* Thêm hiệu ứng fade-in cho sự mượt mà */
+  animation: fadeIn 1s ease-out; 
 }
 
-/* Hiệu ứng fade-in cho sự chuyển động mượt mà */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -57,16 +56,16 @@
 .select-section {
   margin: 20px 0;
   display: flex;
-  align-items: center; /* Căn giữa theo chiều dọc */
-  justify-content: center; /* Căn giữa theo chiều ngang */
+  align-items: center;
+  justify-content: center;
 }
 
 .select-label {
   font-size: 16px;
   font-weight: 600;
   color: #333;
-  margin-right: 10px; /* Khoảng cách giữa label và dropdown */
-  white-space: nowrap; /* Ngăn label xuống dòng */
+  margin-right: 10px; 
+  white-space: nowrap;
 }
 
 .province-select {
@@ -81,8 +80,8 @@
 }
 
 .province-select:focus {
-  border-color: #4caf50; /* Màu viền khi chọn */
-  box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); /* Hiệu ứng đổ bóng khi chọn */
+  border-color: #4caf50;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); 
 }
 
 .province-select option {

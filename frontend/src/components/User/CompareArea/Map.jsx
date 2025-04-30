@@ -71,7 +71,7 @@ export default function MapView({ selectedArea }) {
               fontSize: "16px"
             }}>
               <h3 style={{ fontSize: "20px", marginBottom: "10px", borderBottom: "1px solid rgba(255,255,255,0.2)", paddingBottom: "6px" }}>
-                Thông tin giá:
+                Thông tin giá: {info.districtName} - {info.provinceName}
               </h3>
               <p><strong>Biến động giá:</strong> {info.priceFluctuation}%</p>
               <p><strong>Giá trung bình:</strong> {info.commonPrice} triệu VND/m²</p>
