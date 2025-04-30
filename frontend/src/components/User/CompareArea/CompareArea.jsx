@@ -4,6 +4,7 @@ import area from "../../../mockData/area";
 import MapView from "./Map";
 import { FaMoneyBillWave, FaChartLine } from 'react-icons/fa';
 import tick from "../../../assets//images/tick.gif";
+import Swal from "sweetalert2";
 import "./Compare.css";
 
 const centerVN = { lat: 14.0583, lng: 108.2772 }; // Tâm Việt Nam
@@ -69,7 +70,17 @@ const CompareArea = () => {
         state: { selectedAreas, area },
       });
     } else {
-      alert("Vui lòng chọn ít nhất một khu vực.");
+      Swal.fire({
+        title: "Chưa chọn khu vực",
+        text: "Vui lòng chọn ít nhất một khu vực để xem biểu đồ.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Chọn khu vực",
+        cancelButtonText: "Hủy",
+      }).then((result) => {
+        if (result.isConfirmed) {
+        }
+      });
     }
   };
 

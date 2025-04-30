@@ -1,64 +1,131 @@
-// src/components/CompareChart.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Chart as ChartJS,
-  BarElement,
   CategoryScale,
   LinearScale,
+  BarElement,
+  Title,
   Tooltip,
   Legend,
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
+import area from "../../../mockData/area";
+import "./CompareChart.css";
 
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const CompareChart = ({ selectedAreas, mockData }) => {
-  const areaNames = selectedAreas;
-  const avgPrices = areaNames.map((area) => mockData[area].average);
-  const pricePerSqm = areaNames.map((area) =>
-    Math.round(mockData[area].average / mockData[area].area)
-  );
+const CompareChart = () => {
+  const location = useLocation();
+  const initialSelectedAreas = location.state?.selectedAreas || [];
 
-  const data = {
-    labels: areaNames,
-    datasets: [
-      {
-        label: "Giá trung bình (VND)",
-        data: avgPrices,
-        backgroundColor: "#4fc3f7",
-      },
-      {
-        label: "Giá / m²",
-        data: pricePerSqm,
-        backgroundColor: "#ba68c8",
-      },
-    ],
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedAreas, setSelectedAreas] = useState(initialSelectedAreas);
+
+  useEffect(() => {
+    if (initialSelectedAreas.length > 0) {
+      const [province, district] = initialSelectedAreas[0].split(" - ");
+      setSelectedProvince(province);
+    }
+  }, [initialSelectedAreas]);
+
+  const handleProvinceChange = (e) => {
+    const province = e.target.value;
+    setSelectedProvince(province);
+    setSelectedAreas([]); // Reset areas when province changes
   };
 
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: { position: "top" },
-      tooltip: { enabled: true },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: function (value) {
-            return value.toLocaleString() + "đ";
-          },
+  const handleToggleArea = (district) => {
+    const areaName = `${selectedProvince} - ${district}`;
+    setSelectedAreas((prevSelected) =>
+      prevSelected.includes(areaName)
+        ? prevSelected.filter((area) => area !== areaName) // Remove if already selected
+        : [...prevSelected, areaName] // Add if not selected
+    );
+  };
+
+  const getChartData = () => {
+    const labels = [];
+    const fluctuationData = [];
+    const priceData = [];
+
+    selectedAreas.forEach((areaStr) => {
+      const [city, district] = areaStr.split(" - ");
+      const data = area[city]?.districts[district];
+      if (data) {
+        labels.push(`${district} (${city})`);
+        fluctuationData.push(data.priceFluctuation);
+        priceData.push(data.commonPrice);
+      }
+    });
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Biến động giá (%)",
+          data: fluctuationData,
+          backgroundColor: "rgba(255, 99, 132, 0.6)",
         },
-      },
-    },
+        {
+          label: "Giá trung bình (triệu VND/m²)",
+          data: priceData,
+          backgroundColor: "rgba(75, 192, 192, 0.6)",
+        },
+      ],
+    };
   };
 
   return (
-    <div style={{ width: "100%", maxWidth: "800px", margin: "0 auto" }}>
-      <h3 style={{ textAlign: "center", marginBottom: "20px" }}>
-        Biểu đồ so sánh giá phòng
-      </h3>
-      <Bar data={data} options={options} />
+    <div className="chart-wrapper">
+      <div className="left">
+        <h2>Chọn khu vực</h2>
+
+        <div className="select-section">
+          <label htmlFor="province-select">Tỉnh / Thành phố:</label>
+          <select id="province-select" value={selectedProvince} onChange={handleProvinceChange}>
+            <option value="">-- Chọn tỉnh/thành --</option>
+            {Object.keys(area).map((province) => (
+              <option key={province} value={province}>
+                {province}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {selectedProvince && (
+          <div className="district-buttons">
+            {Object.keys(area[selectedProvince].districts).map((district) => {
+              const areaKey = `${selectedProvince} - ${district}`;
+              return (
+                <button
+                  key={district}
+                  className={`district-btn ${selectedAreas.includes(areaKey) ? "selected" : ""}`}
+                  onClick={() => handleToggleArea(district)}
+                >
+                  {district}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="right">
+        <h2>Biểu đồ so sánh</h2>
+        <div className="chart-container">
+          <Bar
+            data={getChartData()}
+            options={{
+              responsive: true,
+              plugins: {
+                legend: { position: "top" },
+                title: { display: true, text: "Giá & Biến động theo khu vực" },
+              },
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 };
