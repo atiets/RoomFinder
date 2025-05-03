@@ -28,7 +28,6 @@ import ManageAcount from "./components/User/ManageAcount/ManageAcount";
 import UpdatePost from "./components/User/ManageAcount/UpdatePost";
 import NewsDetailUser from "./components/User/News/NewsDetail/NewsDetailUser";
 import NewsListUser from "./components/User/News/NewsList/NewsListUser";
-import PaymentPage from "./components/User/Payment/PaymentPage";
 import PolicyTerms from "./components/User/PolicyTerms/PolicyTerms";
 import AddPost from "./components/User/Post/AddPost/AddPost";
 import PostDetail from "./components/User/Post/PostDetail";
@@ -36,6 +35,9 @@ import PostsPage from "./components/User/Post/PostPage";
 import SearchPosts from "./components/User/Search/searchPosts";
 import SearchResultsPage from "./components/User/Search/searchResultPage";
 import CompareChart from "./components/User/CompareArea/CompareChart";
+import UpgradePlan from "./components/User/Payment/UpgradePlan";
+import CheckoutPage from "./components/User/Payment/CheckoutPage";
+import BankTransferPage from "./components/User/Payment/Method/BankTransferPage";
 
 function App() {
   return (
@@ -295,15 +297,6 @@ function App() {
               }
             />
             <Route
-              path="/payment/:plan"
-              element={
-                <>
-                  <Header />
-                  <PaymentPage />
-                  <Footer />
-                </>}
-            />
-            <Route
               path="/complaints"
               element={
                 <>
@@ -319,6 +312,36 @@ function App() {
                 <>
                   <Header />
                   <CompareChart />
+                  <Footer />
+                </>
+              }
+            />
+            <Route
+              path="/upgrade-plan"
+              element={
+                <>
+                  <Header />
+                  <UpgradePlan />
+                  <Footer />
+                </>
+              }
+            />
+            <Route
+              path="/checkout"
+              element={
+                <>
+                  <Header />
+                  <CheckoutPage />
+                  <Footer />
+                </>
+              }
+            />
+            <Route
+              path="/bank-transfer"
+              element={
+                <>
+                  <Header />
+                  <BankTransferPage />
                   <Footer />
                 </>
               }

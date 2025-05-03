@@ -1,0 +1,151 @@
+.upgrade-plan-container {
+  padding: 40px 20px;
+  background-image: url('https://i.pinimg.com/736x/b7/54/3a/b7543a77ac051b7eef8525d50a9dd18d.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  margin-top: 50px;
+}
+
+.promo-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #e8f5e9; /* light green */
+  border-radius: 12px;
+  padding: 20px;
+  margin: 0 auto 40px;
+  width: 70%;
+
+}
+.promo-content {
+  flex: 1 1 300px;
+}
+.promo-image {
+  flex: 1 1 300px;
+  text-align: center;
+}
+.promo-image img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+.promo-text {
+  margin: 12px 0;
+  font-size: 36px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 48px;
+}
+.promo-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+.promo-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+      -webkit-align-items: center;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
+      gap: 12px;
+      font-size: 16px;
+      line-height: 24px;
+}
+.promo-icon {
+  margin-right: 8px;
+  font-weight: bold;
+  color: #ff7700; /* pastel orange */
+}
+.promo-buttons {
+  margin-top: 20px;
+}
+.btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-right: 12px;
+}
+.btn-primary {
+  background-color: #28a745 ;
+  color: #fff;
+}
+.btn-primary:hover {
+  background-color: #1d7331 ;
+}
+.btn-outline {
+  background-color: transparent;
+  color: #2e5d45;
+  border: 2px solid #2e5d45;
+}
+.btn-outline:hover {
+  background-color: #f6fcf2;
+}
+.btn-outline:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(46, 93, 69, 0.5);
+}
+
+.upgrade-title {
+  margin: 12px 0;
+    font-size: 40px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 48px;
+    text-align: center;
+}
+
+.plan-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: transform 0.3s ease;
+  background-color: #ffffff;
+}
+.plan-card:hover {
+  transform: translateY(-8px);
+}
+
+.plan-title {
+  color: #2e5d45;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.plan-price {
+  margin: 0;
+  font-size: 2rem;
+  color: #f2994a; /* pastel orange price */
+}
+
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+.plan-features li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 8px;
+  color: #4a4a4a;
+}
+.plan-features li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: #f2994a;
+}
+
+.plan-button {
+  width: 100%;
+  padding: 12px 0;
+  border-radius: 8px;
+  font-weight: 500;
+  background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%); /* gradient pastel green */
+}
+.plan-button:hover {
+  background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+}
