@@ -5,11 +5,6 @@ import {
   Badge,
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   Menu,
   MenuItem,
   Toolbar,
@@ -23,7 +18,6 @@ import useSocket from '../../../hooks/useSocket';
 import { logout } from "../../../redux/apiRequest";
 import { logoutSuccess } from "../../../redux/authSlice";
 import Notification from "../Notification/Notification";
-import UpgradeModal from '../Payment/UpgradeModal';
 import Swal from "sweetalert2";
 import "./Header.css";
 
@@ -41,7 +35,6 @@ const Header = () => {
   const axiosJWT = createAxios(currentUser, dispatch, logoutSuccess);
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const notificationsList = currentUser?.notifications || [];
   const notificationCount = notificationsList.filter(
@@ -115,17 +108,17 @@ const Header = () => {
         text: "Bạn đã hết lượt đăng tin trong tháng.",
         icon: "info",
         showCancelButton: true,
-        confirmButtonText: "Nâng cấp gói",
+        confirmButtonText: "Chọn gói nâng cấp",
         cancelButtonText: "Hủy",
       }).then((result) => {
         if (result.isConfirmed) {
-          setShowUpgradeModal(true);
+          navigate("/upgrade-plan"); 
         }
       });
     } else {
       navigate("/AddPost");
     }
-  }; 
+  };  
 
   const markAsRead = (notificationId) => {
     setNotifications((prevNotifications) =>
@@ -138,11 +131,6 @@ const Header = () => {
   };
 
   console.log("Unread chat count:", unreadChatCount);
-
-  const handleUpgrade = (plan) => {
-    setShowUpgradeModal(false);
-    navigate(`/payment/${encodeURIComponent(plan)}`);
-  };  
 
   return (
     <>
@@ -169,11 +157,7 @@ const Header = () => {
             <Button className="user-header-btn" onClick={handleAddPost}>
               Đăng tin mới
             </Button>
-            <UpgradeModal
-        show={showUpgradeModal}
-        onHide={() => setShowUpgradeModal(false)}
-        onUpgrade={handleUpgrade}
-      />
+
             {currentUser && (
               <Button className="user-header-btn" onClick={() => navigate("/chat")}>
                 <Badge

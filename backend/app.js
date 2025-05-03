@@ -10,6 +10,8 @@ const newsRoutes = require("./routes/news");
 const reviewRoutes = require("./routes/review");
 const conversationRoutes = require("./routes/chat");
 const uploadRoutes = require('./routes/upload');
+const webhookRoutes = require("./routes/webhook");
+const orderRoutes = require("./routes/order");
 const http = require('http');
 const initializeSocket = require("./congfig/websocket");
 require('./congfig/cronJobs');
@@ -30,6 +32,25 @@ app.use('/uploads', express.static('uploads'));
 
 app.use(cookieParser());
 
+app.post("/api/webhook/momo", async (req, res) => {
+  const { transId, amount, note, status } = req.body;
+
+  if (status === "success" && note) {
+    console.log("Nhận được thanh toán:", req.body);
+
+    // Ví dụ tìm đơn hàng theo nội dung chuyển khoản
+    const order = await Order.findOne({ where: { orderCode: note } });
+
+    if (order && !order.paid) {
+      order.paid = true;
+      order.paidAt = new Date();
+      await order.save();
+    }
+  }
+
+  res.status(200).send("OK");
+});
+
 mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
 .then(() =>
   console.log('Connected to MongoDB...'))
@@ -43,6 +64,8 @@ app.use('/v1/news', newsRoutes);
 app.use('/v1/reviews', reviewRoutes);
 app.use("/v1/conversations", conversationRoutes);
 app.use("/v1/upload", uploadRoutes);
+app.use("/v1/webhook", webhookRoutes);
+app.use("/v1/orders", orderRoutes);
 
 const server = http.createServer(app);
 initializeSocket(server); 
