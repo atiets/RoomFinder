@@ -31,6 +31,7 @@ import {
   getUsersFailed,
   getUsersSuccess,
   getUserStart,
+  setUser,
 } from "./userSlice";
 
 export const loginUser = async (user, dispatch, navigate, setErrorMessage) => {
@@ -399,5 +400,28 @@ export const changePassword = async (
       console.error("Change password error:", err.message);
       setMessage("Lỗi kết nối, vui lòng kiểm tra mạng.");
     }
+  }
+};
+
+export const refreshUser = async (dispatch) => {
+  try {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      throw new Error("No access token found");
+    }
+
+    // Gọi lại API login với token đã lưu trong localStorage
+    const res = await axios.post(`${process.env.REACT_APP_BASE_URL_API}/v1/auth/login`, {
+      accessToken: token,
+    });
+
+    const userData = res.data;
+
+    // Cập nhật Redux store bằng cách gọi loginSuccess
+    dispatch(loginSuccess(userData));
+
+  } catch (err) {
+    console.error("Không thể làm mới thông tin user:", err);
   }
 };

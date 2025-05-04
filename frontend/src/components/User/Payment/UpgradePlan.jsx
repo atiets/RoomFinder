@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import {
   Box,
   Typography,
@@ -21,6 +22,7 @@ import {
 } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { refreshUser } from "../../../redux/apiRequest"
 import "./UpgradePlan.css";
 
 const plans = [
@@ -143,6 +145,7 @@ const seekerPlans = [
 
 const UpgradePlan = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const location = useLocation();
   const successMessage = location.state?.successMessage;
   const errorMessage = location.state?.errorMessage;
@@ -278,6 +281,10 @@ const UpgradePlan = () => {
       setErrorOpen(true);
     }
   }, [successMessage, errorMessage]);
+  
+  useEffect(() => {
+    refreshUser(dispatch);
+  }, []);  
 
   return (
     <Box className="upgrade-plan-container">
