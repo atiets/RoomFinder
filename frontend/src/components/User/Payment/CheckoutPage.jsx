@@ -23,23 +23,29 @@ const CheckoutPage = () => {
   const duration = params.get("duration") || "90 ngày";
   const price = Number(params.get("price")) || 0;
   const features = params.get("features")?.split(",");
+  const plan = params.get("plan");
 
   const taxRate = 0.08;
   const tax = price * taxRate;
   const total = price + tax;
 
+  const removeVietnameseTones = (str) => {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+  };
+  
   const generateOrderCode = () => {
-    const cleanTitle = (title || "GOI")
+    const cleanTitle = removeVietnameseTones(title || "GOI")
       .replace(/\s+/g, "")
       .toUpperCase()
       .slice(0, 4);
-    const timestamp = Date.now().toString().slice(-5); // 5 số cuối timestamp
+    const timestamp = Date.now().toString().slice(-5);
     return `${cleanTitle}${timestamp}`;
-  };
+  };  
 
   const handleBankTransfer = async () => {
     const orderCode = generateOrderCode();
     const amount = total;
+    const planId = plan;
 
     try {
       const res = await fetch("http://localhost:8000/v1/orders", {
@@ -48,14 +54,14 @@ const CheckoutPage = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ orderCode, amount }),
+        body: JSON.stringify({ orderCode, amount, planId }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
         navigate("/bank-transfer", {
-          state: { orderCode, amount },
+          state: { orderCode, amount, planId },
         });
       } else {
         console.error(data);

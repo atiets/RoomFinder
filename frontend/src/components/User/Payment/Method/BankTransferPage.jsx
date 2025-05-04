@@ -15,7 +15,7 @@ import Swal from "sweetalert2";
 
 const BankTransferPage = () => {
   const location = useLocation();
-  const { orderCode, amount } = location.state || {};
+  const { orderCode, amount, planId } = location.state || {};
   const formattedAmount = amount?.toLocaleString("vi-VN") + "đ";
   const [activeTab, setActiveTab] = useState("chuyenkhoan");
   const navigate = useNavigate();
