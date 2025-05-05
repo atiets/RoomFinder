@@ -10,8 +10,6 @@ export const createPost = async (postData, token) => {
       "Content-Type": "multipart/form-data",
     },
   });
-  console.log("Response status:", response.status);
-  console.log("Response data:", response.data);
   if (response.status === 201 || response.status === 200) {
     return response;
   } else {

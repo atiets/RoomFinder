@@ -21,6 +21,7 @@ import ResetPassword from "./components/ResetPassword/ResetPassword ";
 import AboutUs from "./components/User/AboutUs/AboutUs";
 import ChangePassword from "./components/User/ChangePassword/ChangePassword";
 import Chat from "./components/User/Chat/chat";
+import CompareChart from "./components/User/CompareArea/CompareChart";
 import ComplaintForm from "./components/User/ComplaintForm";
 import Header from "./components/User/Header/Header";
 import Home from "./components/User/Home/Home";
@@ -28,16 +29,15 @@ import ManageAcount from "./components/User/ManageAcount/ManageAcount";
 import UpdatePost from "./components/User/ManageAcount/UpdatePost";
 import NewsDetailUser from "./components/User/News/NewsDetail/NewsDetailUser";
 import NewsListUser from "./components/User/News/NewsList/NewsListUser";
+import CheckoutPage from "./components/User/Payment/CheckoutPage";
+import BankTransferPage from "./components/User/Payment/Method/BankTransferPage";
+import UpgradePlan from "./components/User/Payment/UpgradePlan";
 import PolicyTerms from "./components/User/PolicyTerms/PolicyTerms";
 import AddPost from "./components/User/Post/AddPost/AddPost";
 import PostDetail from "./components/User/Post/PostDetail";
 import PostsPage from "./components/User/Post/PostPage";
 import SearchPosts from "./components/User/Search/searchPosts";
 import SearchResultsPage from "./components/User/Search/searchResultPage";
-import CompareChart from "./components/User/CompareArea/CompareChart";
-import UpgradePlan from "./components/User/Payment/UpgradePlan";
-import CheckoutPage from "./components/User/Payment/CheckoutPage";
-import BankTransferPage from "./components/User/Payment/Method/BankTransferPage";
 
 function App() {
   return (
@@ -153,7 +153,6 @@ function App() {
                 <>
                   <Header />
                   <AddPost />
-                  <Footer />
                 </>
               }
             />

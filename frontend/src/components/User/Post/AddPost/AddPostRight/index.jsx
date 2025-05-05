@@ -1,6 +1,6 @@
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Button, FormControl, IconButton, InputAdornment, MenuItem, Select, TextField } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AddressModal from '../../../ModalAddress';
 import HouseFeatureSelector from '../HouseFeatureSelector';
 import ModalCategory from '../ModalCategory';
@@ -26,9 +26,8 @@ const bathroomOptions = [
     ...Array(10).fill().map((_, index) => (index + 1).toString()),
     'Nhiều hơn 10'
 ];
-const AddPostRight = () => {
+const AddPostRight = ({ onContentChange }) => {
     const [open, setOpen] = useState(false);
-    const [address, setAddress] = useState('');
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [openAddress, setOpenAddress] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('');
@@ -48,12 +47,108 @@ const AddPostRight = () => {
     const [typeOffice, setTypeOffice] = useState('');
     const [lanDirection, setLandDirection] = useState('');
     const [area, setArea] = useState('');
-    const [unit, setUnit] = useState('m²');
+    const [projectName, setProjectName] = useState('');
+    const [apartmentCode, setApartmentCode] = useState('');
+    const [subArea, setSubArea] = useState('');
+    const [block, setBlock] = useState('');
+    const [floor, setFloor] = useState('');
+    const [typeArea, setTypeArea] = useState('');
+    const [areaUse, setAreaUse] = useState('');
+    const [width, setWidth] = useState('');
+    const [length, setLength] = useState('');
+    const [price, setPrice] = useState('');
+    const [deposit, setDeposit] = useState('');
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    const [userType, setUserType] = useState('Cá nhân');
+    const [phone, setPhone] = useState('');
+    const [addressData, setAddressData] = useState({
+        province: null,
+        district: null,
+        ward: null,
+        exactaddress: ""
+    });
+
+    useEffect(() => {
+        const formData = {
+            selectedAddress,
+            selectedCategory,
+            apartmentType,
+            bedroomCount,
+            bathroomCount,
+            balconyDirection,
+            mainDoorDirection,
+            legalContract,
+            furnitureStatus,
+            transactionType,
+            propertyCategory,
+            floorCount,
+            selectedFeaturesOfHouse,
+            selectedFeaturesOfLand,
+            typeLand,
+            typeOffice,
+            lanDirection,
+            area,
+            projectName,
+            apartmentCode,
+            subArea,
+            block,
+            floor,
+            typeArea,
+            areaUse,
+            width,
+            length,
+            price,
+            deposit,
+            title,
+            content,
+            userType,
+            addressData,
+            phone
+        };
+
+        onContentChange(formData);
+    }, [
+        selectedAddress,
+        selectedCategory,
+        apartmentType,
+        bedroomCount,
+        bathroomCount,
+        balconyDirection,
+        mainDoorDirection,
+        legalContract,
+        furnitureStatus,
+        transactionType,
+        propertyCategory,
+        floorCount,
+        selectedFeaturesOfHouse,
+        selectedFeaturesOfLand,
+        typeLand,
+        typeOffice,
+        lanDirection,
+        area,
+        projectName,
+        apartmentCode,
+        subArea,
+        block,
+        floor,
+        typeArea,
+        areaUse,
+        width,
+        length,
+        price,
+        deposit,
+        title,
+        content,
+        userType,
+        addressData,
+        phone,
+        onContentChange,
+    ]);
 
     const handleLandDirection = (event) => {
         setLandDirection(event.target.value);
     };
-
 
     const handleTypeOffice = (event) => {
         setTypeOffice(event.target.value);
@@ -62,7 +157,6 @@ const AddPostRight = () => {
     const handleTypeLand = (event) => {
         setTypeLand(event.target.value);
     };
-
     const handleFloorCountChange = (event) => {
         const value = event.target.value;
         setFloorCount(value === '' ? 0 : Number(value));
@@ -176,6 +270,8 @@ const AddPostRight = () => {
                         }
                         size="small"
                         fullWidth
+                        value={projectName}
+                        onChange={(e) => setProjectName(e.target.value)}
                     />
                 )}
                 <TextField
@@ -183,16 +279,23 @@ const AddPostRight = () => {
                     size="small"
                     fullWidth
                     onClick={handleOpenAddress}
-                    value={selectedAddress || address}
+                    value={selectedAddress}
                 />
                 <AddressModal
                     open={openAddress}
                     onClose={handleCloseAddress}
-                    onConfirm={(fullAddress) => {
-                        setSelectedAddress(fullAddress);
-                        setAddress(fullAddress);
+                    onConfirm={(data) => {
+                        setAddressData({
+                            province: data.province,
+                            district: data.district,
+                            ward: data.ward,
+                            exactaddress: data.addressDetail
+                        });
+
+                        setSelectedAddress(data.fullAddress);
                     }}
                 />
+
             </div>
             {selectedCategory !== 'phòng trọ' && (
                 <div className='add-post-right-location'>
@@ -201,22 +304,22 @@ const AddPostRight = () => {
                         {selectedCategory === 'Nhà ở' || selectedCategory === 'Đất' ? (
                             <>
                                 <div>
-                                    <TextField label="Mã căn" variant="outlined" fullWidth size="small" />
+                                    <TextField label="Mã căn" variant="outlined" fullWidth size="small" value={apartmentCode} onChange={(e) => setApartmentCode(e.target.value)} />
                                 </div>
                                 <div>
-                                    <TextField label="Tên phân khu/lô" variant="outlined" fullWidth size="small" />
+                                    <TextField label="Tên phân khu/lô" variant="outlined" fullWidth size="small" value={subArea} onChange={(e) => setSubArea(e.target.value)} />
                                 </div>
                             </>
                         ) : (
                             <>
                                 <div>
-                                    <TextField label="Mã căn" variant="outlined" fullWidth size="small" />
+                                    <TextField label="Mã căn" variant="outlined" fullWidth size="small" value={apartmentCode} onChange={(e) => setApartmentCode(e.target.value)} />
                                 </div>
                                 <div>
-                                    <TextField label="Block, Tháp" variant="outlined" fullWidth size="small" />
+                                    <TextField label="Block, Tháp" variant="outlined" fullWidth size="small" value={block} onChange={(e) => setBlock(e.target.value)} />
                                 </div>
                                 <div>
-                                    <TextField label="Tầng số" variant="outlined" fullWidth size="small" />
+                                    <TextField label="Tầng số" variant="outlined" fullWidth size="small" value={floor} onChange={(e) => setFloor(e.target.value)} />
                                 </div>
                             </>
                         )}
@@ -378,8 +481,8 @@ const AddPostRight = () => {
                                     <InputAdornment position="end">
                                         <FormControl variant="standard" size="small">
                                             <Select
-                                                value={unit}
-                                                onChange={(e) => setUnit(e.target.value)}
+                                                value={typeArea}
+                                                onChange={(e) => setTypeArea(e.target.value)}
                                                 disableUnderline
                                                 sx={{ fontSize: '14px' }}
                                             >
@@ -399,16 +502,18 @@ const AddPostRight = () => {
                                 variant="outlined"
                                 fullWidth
                                 size="small"
+                                value={areaUse}
+                                onChange={(e) => setAreaUse(e.target.value)}
                             />
                         </div>
                     )}
                     {["Nhà ở", "Đất", "Văn phòng, mặt bằng kinh doanh"].includes(selectedCategory) && (
                         <>
                             <div className='add-post-right-price-container-item'>
-                                <TextField label={<span>Chiều ngang <span className="add-post-right-require">*</span></span>} variant="outlined" fullWidth size="small" />
+                                <TextField label={<span>Chiều ngang <span className="add-post-right-require">*</span></span>} variant="outlined" fullWidth size="small" value={width} onChange={(e) => setWidth(e.target.value)} />
                             </div>
                             <div className='add-post-right-price-container-item'>
-                                <TextField label={<span>Chiều dài <span className="add-post-right-require">*</span></span>} variant="outlined" fullWidth size="small" />
+                                <TextField label={<span>Chiều dài <span className="add-post-right-require">*</span></span>} variant="outlined" fullWidth size="small" value={length} onChange={(e) => setLength(e.target.value)} />
                             </div>
                         </>
                     )}
@@ -420,12 +525,16 @@ const AddPostRight = () => {
                             variant="outlined"
                             fullWidth
                             size="small"
+                            value={price}
+                            onChange={(e) => setPrice(e.target.value)}
                         />
                         <TextField
                             label={<>Tiền cọc <span className="add-post-right-require">*</span></>}
                             variant="outlined"
                             fullWidth
                             size="small"
+                            value={deposit}
+                            onChange={(e) => setDeposit(e.target.value)}
                         />
                     </>
                 )}
@@ -436,6 +545,8 @@ const AddPostRight = () => {
                         fullWidth
                         size="small"
                         sx={{ mt: 2 }}
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
                     />
                 )}
             </div>
@@ -444,7 +555,9 @@ const AddPostRight = () => {
                 <TextField
                     label={<>Tiêu đề<span className="add-post-right-require">*</span></>}
                     variant="outlined"
-                    fullWidth size='small' />
+                    fullWidth size='small'
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)} />
                 <TextField
                     label={<>Mô tả<span className="add-post-right-require">*</span></>}
                     multiline
@@ -452,15 +565,29 @@ const AddPostRight = () => {
                     fullWidth
                     variant="outlined"
                     size='small'
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
                 />
             </div>
             <div className='add-post-right-title-content'>
                 <p className='add-post-right-header-label'>Bạn là<span className="add-post-right-require">*</span></p>
                 <div className='add-post-right-header-container-transaction'>
-                    <Button className='add-post-right-transaction-btn'>Cá nhân</Button>
-                    <Button className='add-post-right-transaction-btn'>Mô giới</Button>
+                    <Button className={`add-post-right-transaction-btn ${userType === 'Cá nhân' ? 'selected' : ''}`} onClick={() => setUserType('Cá nhân')}>Cá nhân</Button>
+                    <Button className={`add-post-right-transaction-btn ${userType === 'Mô giới' ? 'selected' : ''}`} onClick={() => setUserType('Mô giới')}>Mô giới</Button>
                 </div>
             </div>
+            <div className='add-post-right-title-content'>
+                <TextField
+                    id="outlined-basic"
+                    label="Điện thoại"
+                    variant="outlined"
+                    size="small"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    type="number"
+                />
+            </div>
+            <div className='add-post-right-white'></div>
         </div>
     );
 };

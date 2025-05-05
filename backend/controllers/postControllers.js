@@ -8,87 +8,127 @@ exports.createPost = async (req, res) => {
     const {
       title,
       content,
-      address,
       category,
-      rentalPrice,
-      typePrice,
-      area,
-      rentalTarget,
-      maxOccupants,
-      youtubeLink,
+      transactionType,
+      address,
+      projectName,
+      locationDetails,
+      propertyDetails,
+      features,
+      legalContract,
+      furnitureStatus,
+      areaUse,
+      area = 'm²',
+      dimensions,
+      price,
+      deposit,
+      userType,
       contactInfo,
       defaultDaysToShow = 30,
     } = req.body;
 
     // Kiểm tra các trường bắt buộc
-    if (!title || !content || !address || !category || !rentalPrice || !area || !contactInfo) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!title || !content || !address || !category || !transactionType || !price || !contactInfo || !userType) {
+      return res.status(400).json({ message: "Thiếu thông tin bắt buộc" });
     }
 
-     // Lấy thông tin user từ token
-     const userId = req.user.id; // từ middlewareControllers.verifyToken
-     const user = await User.findById(userId);
- 
-     if (!user) {
-       return res.status(404).json({ message: "User not found" });
-     }
- 
-     // Kiểm tra quota còn không
-     if (user.postQuota <= 0) {
-       return res.status(403).json({
-         message: "Bạn đã hết lượt đăng bài miễn phí trong tháng này. Vui lòng đợi tới tháng sau hoặc nâng cấp tài khoản.",
-       });
-     }
+    // Parse các trường nếu là chuỗi JSON
+    const safeParse = (value, fallback = {}) => {
+      try {
+        return typeof value === 'string' ? JSON.parse(value) : value;
+      } catch (e) {
+        return fallback;
+      }
+    };
 
-    // Xử lý hình ảnh
-    const imageUrls = [];
-    if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        imageUrls.push(file.path);
+    const parsedAddress = safeParse(address);
+    const parsedLocationDetails = safeParse(locationDetails);
+    const parsedPropertyDetails = safeParse(propertyDetails);
+    const parsedDimensions = safeParse(dimensions);
+    const parsedFeatures = Array.isArray(features)
+      ? features
+      : safeParse(features, []);
+    const parsedContactInfo = safeParse(contactInfo);
+
+    // Lấy user từ token
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    if (user.postQuota <= 0) {
+      return res.status(403).json({
+        message: "Bạn đã hết lượt đăng bài miễn phí trong tháng này. Vui lòng đợi tới tháng sau hoặc nâng cấp tài khoản.",
       });
     }
+
+    if (!req.files?.images || req.files.images.length === 0) {
+      return res.status(400).json({ message: "Thiếu ảnh, vui lòng tải lên ít nhất một ảnh." });
+    }
+
+    // Xử lý hình ảnh
+    const imageUrls = (req.files?.images || []).map(file => file.path);
+
+    const videoUrls = (req.files?.videoUrl || []).map(file => file.path);
+    const videoUrl = videoUrls[0] || null;
 
     // Tạo bài đăng mới
     const newPost = new Post({
       title,
       content,
-      address: JSON.parse(address),
       category,
-      rentalPrice,
-      typePrice,
+      transactionType,
+      address: parsedAddress,
+      projectName,
+      locationDetails: parsedLocationDetails,
+      propertyDetails: parsedPropertyDetails,
+      features: parsedFeatures,
+      legalContract,
+      furnitureStatus,
+      areaUse,
       area,
-      rentalTarget,
-      maxOccupants,
-      youtubeLink,
-      contactInfo: JSON.parse(contactInfo),
+      dimensions: parsedDimensions,
+      price,
+      deposit,
+      userType,
+      videoUrl: videoUrl,
       images: imageUrls,
+      contactInfo: {
+        user: parsedContactInfo.user,
+        username: parsedContactInfo.username,
+        phoneNumber: parsedContactInfo.phoneNumber || "",
+      },
       defaultDaysToShow,
       daysRemaining: defaultDaysToShow,
       hoursRemaining: 0,
-      expiryDate:0,
+      expiryDate: null,
     });
 
-    // Trừ quota rồi lưu user lại
+    // Trừ quota và lưu user
     user.postQuota -= 1;
     await user.save();
 
     // Lưu bài đăng
+
     const savedPost = await newPost.save();
     res.status(201).json({
-      message: "Post created successfully",
+      message: "Tạo bài đăng thành công",
       post: savedPost
     });
   } catch (error) {
+    console.error("Lỗi khi tạo bài đăng:", error);
     if (error.name === 'ValidationError') {
-      return res.status(400).json({ message: "Validation error", error: error.message });
+      return res.status(400).json({ message: "Lỗi xác thực dữ liệu", error: error.message });
     }
-    console.error("Error creating post:", error);
     res.status(500).json({
-      message: "Server error",
+      message: "Lỗi máy chủ",
       error: error.message
     });
   }
 };
+
 
 exports.getAllPosts = async (req, res) => {
   try {
@@ -229,158 +269,158 @@ exports.updatePost = async (req, res) => {
 };
 
 exports.toggleVisibility = async (req, res) => {
-    const { postId } = req.params;
-  
-    try {
-      const post = await Post.findById(postId);
-      if (!post) {
-        return res.status(404).json({ message: 'Bài đăng không tồn tại' });
-      }
-      post.visibility = post.visibility === 'visible' ? 'hidden' : 'visible';
-      await post.save();
-  
-      res.json({ message: 'Trạng thái hiển thị đã được cập nhật', visibility: post.visibility });
-    } catch (error) {
-      res.status(500).json({ message: 'Lỗi server', error: error.message });
-    }
-  };
+  const { postId } = req.params;
 
-  exports.searchPosts = async (req, res) => {
-    try {
-      const { keyword, province, category, minPrice, maxPrice, minArea, maxArea } = req.query;
-      console.log("minPrice từ request:", minPrice);
-  
-      // Hàm chuyển đổi chuỗi thành số
-      const convertToNumber = (value) => {
-        if (!value) return null;
-        const numericValue = parseFloat(value.replace(/[^\d.-]/g, '')); // Loại bỏ tất cả ký tự không phải số
-        return isNaN(numericValue) ? null : numericValue;
-      };
-  
-      const filter = {
-        visibility: "visible",
-        status: "approved",
-      };
-  
-      const filtersExpr = [];
-  
-      // Lọc theo tỉnh
-      if (province) filter["address.province"] = province;
-  
-      // Lọc theo từ khóa
-      if (keyword) {
-        filter.$or = [
-          { category: { $regex: keyword, $options: "i" } },
-          { title: { $regex: keyword, $options: "i" } },
-          { content: { $regex: keyword, $options: "i" } },
-        ];
-      }
-  
-      // Lọc theo category
-      if (category) filter.category = category;
-  
-      // Lọc theo rentalPrice
-      if (minPrice || maxPrice) {
-        const numericMinPrice = convertToNumber(minPrice);
-        const numericMaxPrice = convertToNumber(maxPrice);
-  
-        if (numericMinPrice !== null || numericMaxPrice !== null) {
-          const rentalPriceFilter = {};
-  
-          if (numericMinPrice !== null) rentalPriceFilter.$gte = numericMinPrice;
-          if (numericMaxPrice !== null) rentalPriceFilter.$lte = numericMaxPrice;
-  
-          filtersExpr.push(
-            numericMinPrice !== null
-              ? {
-                  $gte: [
-                    {
-                      $toDouble: {
-                        $replaceAll: {
-                          input: { $arrayElemAt: [{ $split: ["$rentalPrice", " "] }, 0] },
-                          find: ",",
-                          replacement: ".",
-                        },
-                      },
-                    },
-                    numericMinPrice,
-                  ],
-                }
-              : null,
-            numericMaxPrice !== null
-              ? {
-                  $lte: [
-                    {
-                      $toDouble: {
-                        $replaceAll: {
-                          input: { $arrayElemAt: [{ $split: ["$rentalPrice", " "] }, 0] },
-                          find: ",",
-                          replacement: ".",
-                        },
-                      },
-                    },
-                    numericMaxPrice,
-                  ],
-                }
-              : null
-          );
-        }
-      }
-  
-      // Lọc theo area
-      if (minArea || maxArea) {
-        const numericMinArea = convertToNumber(minArea);
-        const numericMaxArea = convertToNumber(maxArea);
-  
-        if (numericMinArea !== null || numericMaxArea !== null) {
-          filtersExpr.push(
-            numericMinArea !== null
-              ? {
-                  $gte: [
-                    {
-                      $toDouble: {
-                        $replaceAll: {
-                          input: { $arrayElemAt: [{ $split: ["$area", " "] }, 0] },
-                          find: ",",
-                          replacement: ".",
-                        },
-                      },
-                    },
-                    numericMinArea,
-                  ],
-                }
-              : null,
-            numericMaxArea !== null
-              ? {
-                  $lte: [
-                    {
-                      $toDouble: {
-                        $replaceAll: {
-                          input: { $arrayElemAt: [{ $split: ["$area", " "] }, 0] },
-                          find: ",",
-                          replacement: ".",
-                        },
-                      },
-                    },
-                    numericMaxArea,
-                  ],
-                }
-              : null
-          );
-        }
-      }
-  
-      if (filtersExpr.length > 0) {
-        filter.$expr = { $and: filtersExpr.filter(Boolean) };
-      }
-  
-      const posts = await Post.find(filter).sort({ createdAt: -1 }); // Sắp xếp theo thứ tự từ mới nhất đến cũ nhất
-      res.status(200).json(posts);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+  try {
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Bài đăng không tồn tại' });
     }
-  };  
-   
+    post.visibility = post.visibility === 'visible' ? 'hidden' : 'visible';
+    await post.save();
+
+    res.json({ message: 'Trạng thái hiển thị đã được cập nhật', visibility: post.visibility });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
+exports.searchPosts = async (req, res) => {
+  try {
+    const { keyword, province, category, minPrice, maxPrice, minArea, maxArea } = req.query;
+    console.log("minPrice từ request:", minPrice);
+
+    // Hàm chuyển đổi chuỗi thành số
+    const convertToNumber = (value) => {
+      if (!value) return null;
+      const numericValue = parseFloat(value.replace(/[^\d.-]/g, '')); // Loại bỏ tất cả ký tự không phải số
+      return isNaN(numericValue) ? null : numericValue;
+    };
+
+    const filter = {
+      visibility: "visible",
+      status: "approved",
+    };
+
+    const filtersExpr = [];
+
+    // Lọc theo tỉnh
+    if (province) filter["address.province"] = province;
+
+    // Lọc theo từ khóa
+    if (keyword) {
+      filter.$or = [
+        { category: { $regex: keyword, $options: "i" } },
+        { title: { $regex: keyword, $options: "i" } },
+        { content: { $regex: keyword, $options: "i" } },
+      ];
+    }
+
+    // Lọc theo category
+    if (category) filter.category = category;
+
+    // Lọc theo rentalPrice
+    if (minPrice || maxPrice) {
+      const numericMinPrice = convertToNumber(minPrice);
+      const numericMaxPrice = convertToNumber(maxPrice);
+
+      if (numericMinPrice !== null || numericMaxPrice !== null) {
+        const rentalPriceFilter = {};
+
+        if (numericMinPrice !== null) rentalPriceFilter.$gte = numericMinPrice;
+        if (numericMaxPrice !== null) rentalPriceFilter.$lte = numericMaxPrice;
+
+        filtersExpr.push(
+          numericMinPrice !== null
+            ? {
+              $gte: [
+                {
+                  $toDouble: {
+                    $replaceAll: {
+                      input: { $arrayElemAt: [{ $split: ["$rentalPrice", " "] }, 0] },
+                      find: ",",
+                      replacement: ".",
+                    },
+                  },
+                },
+                numericMinPrice,
+              ],
+            }
+            : null,
+          numericMaxPrice !== null
+            ? {
+              $lte: [
+                {
+                  $toDouble: {
+                    $replaceAll: {
+                      input: { $arrayElemAt: [{ $split: ["$rentalPrice", " "] }, 0] },
+                      find: ",",
+                      replacement: ".",
+                    },
+                  },
+                },
+                numericMaxPrice,
+              ],
+            }
+            : null
+        );
+      }
+    }
+
+    // Lọc theo area
+    if (minArea || maxArea) {
+      const numericMinArea = convertToNumber(minArea);
+      const numericMaxArea = convertToNumber(maxArea);
+
+      if (numericMinArea !== null || numericMaxArea !== null) {
+        filtersExpr.push(
+          numericMinArea !== null
+            ? {
+              $gte: [
+                {
+                  $toDouble: {
+                    $replaceAll: {
+                      input: { $arrayElemAt: [{ $split: ["$area", " "] }, 0] },
+                      find: ",",
+                      replacement: ".",
+                    },
+                  },
+                },
+                numericMinArea,
+              ],
+            }
+            : null,
+          numericMaxArea !== null
+            ? {
+              $lte: [
+                {
+                  $toDouble: {
+                    $replaceAll: {
+                      input: { $arrayElemAt: [{ $split: ["$area", " "] }, 0] },
+                      find: ",",
+                      replacement: ".",
+                    },
+                  },
+                },
+                numericMaxArea,
+              ],
+            }
+            : null
+        );
+      }
+    }
+
+    if (filtersExpr.length > 0) {
+      filter.$expr = { $and: filtersExpr.filter(Boolean) };
+    }
+
+    const posts = await Post.find(filter).sort({ createdAt: -1 }); // Sắp xếp theo thứ tự từ mới nhất đến cũ nhất
+    res.status(200).json(posts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 //Lấy post của admin theo trạng thái có phân trang
 exports.getUserPostAd = async (req, res) => {
   try {
@@ -418,7 +458,7 @@ exports.getUserPostAd = async (req, res) => {
 };
 
 //Duyệt bài viết của admin
-exports.approvePost = async (req, res) => { 
+exports.approvePost = async (req, res) => {
   try {
     const postId = req.params.id;
     const post = await Post.findById(postId);

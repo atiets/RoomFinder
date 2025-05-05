@@ -1,8 +1,27 @@
-.container-add-post{
+.container-add-post {
+    background-color: #f0f2f5;
+    margin-top: -15px;
+    padding: 10px;
+}
+
+.container-add-post-content {
     display: flex;
     flex-direction: row;
     height: auto;
     width: 65vw;
     margin: 0 auto;
     margin-top: 80px;
+    background-color: white;
+    border: 1px solid #e6e6e6;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.container-add-post-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 12px 24px;
+    z-index: 999;
 }
