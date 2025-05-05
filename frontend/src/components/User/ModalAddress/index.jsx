@@ -70,15 +70,31 @@ const AddressModal = ({ open, onClose, onConfirm }) => {
     };
 
     const handleSubmit = () => {
-        const fullAddress = `${selectedProvince?.name || ""}, ${selectedDistrict?.name || ""}, ${selectedWard?.name || ""}, ${addressDetail}`;
-        onConfirm(fullAddress);
+        const fullAddress = [
+            addressDetail,
+            selectedWard?.name,
+            selectedDistrict?.name,
+            selectedProvince?.name
+        ]
+            .filter(Boolean)
+            .join(", ");
+
+        onConfirm({
+            province: selectedProvince?.name,
+            district: selectedDistrict?.name,
+            ward: selectedWard?.name,
+            addressDetail,
+            fullAddress
+        });
+
         onClose();
     };
 
+
     return (
-        <Dialog open={open} onClose={onClose} sx={{ '& .MuiDialog-paper': { width: '600px'} }}>
+        <Dialog open={open} onClose={onClose} sx={{ '& .MuiDialog-paper': { width: '600px' } }}>
             <DialogTitle>Chọn Địa chỉ</DialogTitle>
-            <DialogContent style={{display: "flex", flexDirection: "column", gap: 16 }}>
+            <DialogContent style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <SelectWithLabel
                     label="Tỉnh/Thành phố"
                     options={provinces}

@@ -7,7 +7,7 @@ import {
   TextField
 } from "@mui/material";
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { updateUserProfile } from "../../../redux/apiRequest";
@@ -16,9 +16,11 @@ import "./EditProfile.css";
 
 const EditProfile = ({ user }) => {
   document.title = "Chỉnh sửa thông tin cá nhân";
+  const currentUser = useSelector((state) => state.auth.login.currentUser);
+  const address = currentUser?.profile?.address || "";  
+
   const [picture, setAvatar] = useState(user?.profile?.picture || "");
   const [open, setOpen] = useState(false);
-  const [address, setAddress] = useState(user?.profile?.address || "");
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [username, setUsername] = useState(user?.username || "");
   const [phone, setPhone] = useState(user?.profile?.phone || "");
@@ -163,10 +165,10 @@ const EditProfile = ({ user }) => {
       <AddressModal
         open={open}
         onClose={handleClose}
-        onConfirm={(fullAddress) => {
-          setSelectedAddress(fullAddress);
-          setAddress(fullAddress);
-        }} />
+        onConfirm={(data) => {
+          setSelectedAddress(data.fullAddress);
+        }}
+      />
 
       <textarea
         placeholder="Viết vài dòng giới thiệu bản thân"
