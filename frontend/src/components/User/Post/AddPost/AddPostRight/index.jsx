@@ -1,7 +1,8 @@
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Button, FormControl, IconButton, InputAdornment, MenuItem, Select, TextField } from '@mui/material';
+import { Button, IconButton, InputAdornment, TextField } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import AddressModal from '../../../ModalAddress';
+import ValidatedTextField from '../../ValidatedTextField';
 import HouseFeatureSelector from '../HouseFeatureSelector';
 import ModalCategory from '../ModalCategory';
 import SelectValue from '../SelectValue/SelectValue';
@@ -26,7 +27,7 @@ const bathroomOptions = [
     ...Array(10).fill().map((_, index) => (index + 1).toString()),
     'Nhiều hơn 10'
 ];
-const AddPostRight = ({ onContentChange }) => {
+const AddPostRight = ({ onContentChange, isSubmitting }) => {
     const [open, setOpen] = useState(false);
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [openAddress, setOpenAddress] = useState(false);
@@ -147,51 +148,50 @@ const AddPostRight = ({ onContentChange }) => {
     ]);
 
     const handleLandDirection = (event) => {
-        setLandDirection(event.target.value);
+        setLandDirection(event);
     };
 
     const handleTypeOffice = (event) => {
-        setTypeOffice(event.target.value);
+        setTypeOffice(event);
     };
 
     const handleTypeLand = (event) => {
-        setTypeLand(event.target.value);
+        setTypeLand(event);
     };
     const handleFloorCountChange = (event) => {
-        const value = event.target.value;
-        setFloorCount(value === '' ? 0 : Number(value));
+        setFloorCount(event);
     };
 
     const handlePropertyCategoryChange = (event) => {
-        setPropertyCategory(event.target.value);
+        setPropertyCategory(event);
     };
 
     const handleFurnitureChange = (event) => {
-        setFurnitureStatus(event.target.value);
+        setFurnitureStatus(event);
     };
 
     const handleLegalContractChange = (event) => {
-        setLegalContract(event.target.value);
+        setLegalContract(event);
     };
 
     const handleMainDoorChange = (event) => {
-        setMainDoorDirection(event.target.value);
+        setMainDoorDirection(event);
     };
 
     const handleBalconyChange = (event) => {
-        setBalconyDirection(event.target.value);
+        setBalconyDirection(event);
     };
 
     const handleBathroomChange = (event) => {
-        setBathroomCount(event.target.value);
+        setBathroomCount(event);
     };
 
     const handleBedroomChange = (event) => {
-        setBedroomCount(event.target.value);
+        setBedroomCount(event);
     };
 
     const handleApartmentTypeChange = (event) => {
-        setApartmentType(event.target.value);
+        setApartmentType(event);
     };
 
     const handleOpen = () => setOpen(true);
@@ -205,7 +205,9 @@ const AddPostRight = ({ onContentChange }) => {
         handleClose();
     };
 
-
+    useEffect(() => {
+        
+    }, [isSubmitting]);
 
     return (
         <div className="container-add-post-right">
@@ -257,337 +259,334 @@ const AddPostRight = ({ onContentChange }) => {
                     </div>
                 )}
             </div>
-            <div className='add-post-right-address'>
-                <h2 className='add-post-right-title'>Địa chỉ</h2>
-                {selectedCategory !== 'phòng trọ' && (
-                    <TextField
-                        label={
-                            selectedCategory === 'Đất' ? (
-                                "Tên dự án đất nền"
-                            ) : (
-                                "Tên tòa nhà, khu dân cư"
-                            )
-                        }
-                        size="small"
-                        fullWidth
-                        value={projectName}
-                        onChange={(e) => setProjectName(e.target.value)}
-                    />
-                )}
-                <TextField
-                    label={<>Địa chỉ<span className="add-post-right-require">*</span></>}
-                    size="small"
-                    fullWidth
-                    onClick={handleOpenAddress}
-                    value={selectedAddress}
-                />
-                <AddressModal
-                    open={openAddress}
-                    onClose={handleCloseAddress}
-                    onConfirm={(data) => {
-                        setAddressData({
-                            province: data.province,
-                            district: data.district,
-                            ward: data.ward,
-                            exactaddress: data.addressDetail
-                        });
-
-                        setSelectedAddress(data.fullAddress);
-                    }}
-                />
-
-            </div>
-            {selectedCategory !== 'phòng trọ' && (
-                <div className='add-post-right-location'>
-                    <h2 className='add-post-right-title'>Vị trí bất động sản</h2>
-                    <div className="add-post-right-location-info">
-                        {selectedCategory === 'Nhà ở' || selectedCategory === 'Đất' ? (
-                            <>
-                                <div>
-                                    <TextField label="Mã căn" variant="outlined" fullWidth size="small" value={apartmentCode} onChange={(e) => setApartmentCode(e.target.value)} />
-                                </div>
-                                <div>
-                                    <TextField label="Tên phân khu/lô" variant="outlined" fullWidth size="small" value={subArea} onChange={(e) => setSubArea(e.target.value)} />
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div>
-                                    <TextField label="Mã căn" variant="outlined" fullWidth size="small" value={apartmentCode} onChange={(e) => setApartmentCode(e.target.value)} />
-                                </div>
-                                <div>
-                                    <TextField label="Block, Tháp" variant="outlined" fullWidth size="small" value={block} onChange={(e) => setBlock(e.target.value)} />
-                                </div>
-                                <div>
-                                    <TextField label="Tầng số" variant="outlined" fullWidth size="small" value={floor} onChange={(e) => setFloor(e.target.value)} />
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
-            {selectedCategory !== 'phòng trọ' && (
-                <div className='add-post-right-info-detail'>
-                    <h2 className='add-post-right-title'>Thông tin chi tiết</h2>
-                    <div className='add-post-right-info-detail-container'>
-                        <div className='add-post-right-info-detail-container-item full-width'>
-                            {selectedCategory === 'Nhà ở' ? (
-                                <SelectValue
-                                    label={<>Loại hình nhà ở<span className="add-post-right-require">*</span></>}
-                                    value={propertyCategory}
-                                    onChange={handlePropertyCategoryChange}
-                                    options={propertyCategories}
-                                />
-                            ) : selectedCategory === 'Căn hộ/chung cư' ? (
-                                <SelectValue
-                                    label={<>Loại hình căn hộ<span className="add-post-right-require">*</span></>}
-                                    value={apartmentType}
-                                    onChange={handleApartmentTypeChange}
-                                    options={apartmentTypes}
-                                />
-                            ) : selectedCategory === 'Đất' ? (
-                                <SelectValue
-                                    label={<>Loại hình đất<span className="add-post-right-require">*</span></>}
-                                    value={typeLand}
-                                    onChange={handleTypeLand}
-                                    options={typeOfLand}
-                                />
-                            ) : selectedCategory === 'Văn phòng, mặt bằng kinh doanh' ? (
-                                <SelectValue
-                                    label={<>Loại hình văn phòng<span className="add-post-right-require">*</span></>}
-                                    value={typeOffice}
-                                    onChange={handleTypeOffice}
-                                    options={typeOfOffice}
-                                />
-                            ) : null}
-                        </div>
-                        {(selectedCategory !== 'Đất' && selectedCategory !== 'Văn phòng, mặt bằng kinh doanh') ? (
-                            <>
-                                <div className='add-post-right-info-detail-container-item'>
-                                    <SelectValue
-                                        label="Số phòng ngủ"
-                                        value={bedroomCount}
-                                        onChange={handleBedroomChange}
-                                        options={bedroomOptions}
-                                    />
-                                </div>
-                                <div className='add-post-right-info-detail-container-item'>
-                                    <SelectValue
-                                        label="Số phòng vệ sinh"
-                                        value={bathroomCount}
-                                        onChange={handleBathroomChange}
-                                        options={bathroomOptions}
-                                    />
-                                </div>
-                                <div className='add-post-right-info-detail-container-item'>
-                                    {selectedCategory === 'Nhà ở' ? (
-                                        <TextField
-                                            label="Tổng số tầng"
-                                            type="number"
-                                            value={floorCount === 0 ? '' : floorCount}
-                                            onChange={handleFloorCountChange}
-                                            fullWidth
-                                            size="small"
-                                            InputProps={{
-                                                inputProps: { min: 0 },
-                                            }}
-                                        />
+            {selectedCategory ? (
+                <>
+                    <div className='add-post-right-address'>
+                        <h2 className='add-post-right-title'>Địa chỉ</h2>
+                        {selectedCategory !== 'phòng trọ' && (
+                            <TextField
+                                label={
+                                    selectedCategory === 'Đất' ? (
+                                        "Tên dự án đất nền"
                                     ) : (
-                                        <SelectValue
-                                            label="Hướng ban công"
-                                            value={balconyDirection}
-                                            onChange={handleBalconyChange}
-                                            options={directionOptions}
-                                        />
-                                    )}
-                                </div>
-                            </>
-                        ) : null}
-                        {selectedCategory !== 'Đất' ? (
-                            <div className='add-post-right-info-detail-container-item'>
-                                <SelectValue
-                                    label="Hướng cửa chính"
-                                    value={mainDoorDirection}
-                                    onChange={handleMainDoorChange}
-                                    options={directionOptions}
-                                />
-                            </div>
-                        ) : (
-                            <SelectValue
-                                label="Hướng đất"
-                                value={lanDirection}
-                                onChange={handleLandDirection}
-                                options={directionOptions}
-                            />)}
-                    </div>
-                </div>
-            )}
-            <div className='add-post-right-other-info'>
-                <h2 className='add-post-right-title'>Thông tin khác</h2>
-                <div className='add-post-right-other-info-container'>
-                    {!(
-                        (selectedCategory === 'Văn phòng, mặt bằng kinh doanh' && transactionType === 'Cho thuê') ||
-                        selectedCategory === 'phòng trọ'
-                    ) && (
-                            <div>
-                                <SelectValue
-                                    label={<>Giấy tờ pháp lý<span className="add-post-right-require">*</span></>}
-                                    value={legalContract}
-                                    onChange={handleLegalContractChange}
-                                    options={legalContractOptions}
-                                />
-                            </div>
-                        )}
-                    {selectedCategory !== 'Đất' && (
-                        <div>
-                            <SelectValue
-                                label="Tình trạng nội thất"
-                                value={furnitureStatus}
-                                onChange={handleFurnitureChange}
-                                options={furnitureOptions}
+                                        "Tên tòa nhà, khu dân cư"
+                                    )
+                                }
+                                value={projectName}
+                                onChange={(e) => setProjectName(e.target.value)}
+                                required={false}
+                                size='small'
                             />
-                        </div>
-                    )}
-                </div>
-                {selectedCategory === 'Nhà ở' && (
-                    <HouseFeatureSelector
-                        features={featuresOfHouse}
-                        selectedFeatures={selectedFeaturesOfHouse}
-                        setSelectedFeatures={setSelectedFeaturesOfHouse}
-                    />
-                )}
-                {selectedCategory === 'Đất' && (
-                    <HouseFeatureSelector
-                        features={featuresOfLand}
-                        selectedFeatures={selectedFeaturesOfLand}
-                        setSelectedFeatures={setSelectedFeaturesOfLand}
-                    />
-                )}
-            </div>
-            <div className='add-post-right-price'>
-                <h2 className='add-post-right-title'>Diện tích và giá</h2>
-                <div className='add-post-right-price-container'>
-                    <div className='add-post-right-price-container-item full-width'>
-                        <TextField
-                            label={<>Diện tích<span className="add-post-right-require">*</span></>}
-                            value={area}
-                            onChange={(e) => setArea(e.target.value)}
-                            type="number"
-                            fullWidth
-                            size="small"
-                            variant="outlined"
-                            InputProps={{
-                                endAdornment: selectedCategory === 'Đất' && (
-                                    <InputAdornment position="end">
-                                        <FormControl variant="standard" size="small">
-                                            <Select
-                                                value={typeArea}
-                                                onChange={(e) => setTypeArea(e.target.value)}
-                                                disableUnderline
-                                                sx={{ fontSize: '14px' }}
-                                            >
-                                                <MenuItem value="m²">m²</MenuItem>
-                                                <MenuItem value="hecta">hecta</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                    </InputAdornment>
-                                )
+                        )}
+                        <ValidatedTextField
+                            label="Địa chỉ"
+                            value={selectedAddress}
+                            onClick={handleOpenAddress}
+                            onChange={(e) => setSelectedAddress(e.target.value)}
+                            required={true}
+                            readOnly={true}
+                        />
+                        <AddressModal
+                            open={openAddress}
+                            onClose={handleCloseAddress}
+                            onConfirm={(data) => {
+                                setAddressData({
+                                    province: data.province,
+                                    district: data.district,
+                                    ward: data.ward,
+                                    exactaddress: data.addressDetail
+                                });
+
+                                setSelectedAddress(data.fullAddress);
                             }}
                         />
+
                     </div>
-                    {selectedCategory === 'Nhà ở' && (
-                        <div className='add-post-right-price-container-item full-width'>
-                            <TextField
-                                label={<>Diện tích đất sử dụng<span className="add-post-right-require">*</span></>}
-                                variant="outlined"
-                                fullWidth
-                                size="small"
-                                value={areaUse}
-                                onChange={(e) => setAreaUse(e.target.value)}
-                            />
+                    {selectedCategory !== 'phòng trọ' && (
+                        <div className='add-post-right-location'>
+                            <h2 className='add-post-right-title'>Vị trí bất động sản</h2>
+                            <div className="add-post-right-location-info">
+                                {selectedCategory === 'Nhà ở' || selectedCategory === 'Đất' ? (
+                                    <>
+                                        <div>
+                                            <TextField label="Mã căn" variant="outlined" fullWidth size="small" value={apartmentCode} onChange={(e) => setApartmentCode(e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <TextField label="Tên phân khu/lô" variant="outlined" fullWidth size="small" value={subArea} onChange={(e) => setSubArea(e.target.value)} />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div>
+                                            <TextField label="Mã căn" variant="outlined" fullWidth size="small" value={apartmentCode} onChange={(e) => setApartmentCode(e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <TextField label="Block, Tháp" variant="outlined" fullWidth size="small" value={block} onChange={(e) => setBlock(e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <TextField label="Tầng số" variant="outlined" fullWidth size="small" value={floor} onChange={(e) => setFloor(e.target.value)} />
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     )}
-                    {["Nhà ở", "Đất", "Văn phòng, mặt bằng kinh doanh"].includes(selectedCategory) && (
-                        <>
-                            <div className='add-post-right-price-container-item'>
-                                <TextField label={<span>Chiều ngang <span className="add-post-right-require">*</span></span>} variant="outlined" fullWidth size="small" value={width} onChange={(e) => setWidth(e.target.value)} />
+                    {selectedCategory !== 'phòng trọ' && (
+                        <div className='add-post-right-info-detail'>
+                            <h2 className='add-post-right-title'>Thông tin chi tiết</h2>
+                            <div className='add-post-right-info-detail-container'>
+                                <div className='add-post-right-info-detail-container-item full-width'>
+                                    {selectedCategory === 'Nhà ở' ? (
+                                        <SelectValue
+                                            label="Loại hình nhà ở"
+                                            value={propertyCategory}
+                                            onChange={handlePropertyCategoryChange}
+                                            options={propertyCategories}
+                                            required={true}
+                                            validationMessage="Vui lòng chọn loại hình nhà ở"
+                                        />
+                                    ) : selectedCategory === 'Căn hộ/chung cư' ? (
+                                        <SelectValue
+                                            label="Loại hình căn hộ"
+                                            value={apartmentType}
+                                            onChange={handleApartmentTypeChange}
+                                            options={apartmentTypes}
+                                            required={true}
+                                            validationMessage="Vui lòng chọn loại hình căn hộ"
+                                        />
+                                    ) : selectedCategory === 'Đất' ? (
+                                        <SelectValue
+                                            label="Loại hình đất"
+                                            value={typeLand}
+                                            onChange={handleTypeLand}
+                                            options={typeOfLand}
+                                            required={true}
+                                            validationMessage="Vui lòng chọn loại hình đất"
+                                        />
+                                    ) : selectedCategory === 'Văn phòng, mặt bằng kinh doanh' ? (
+                                        <SelectValue
+                                            label="Loại hình văn phòng, mặt bằng kinh doanh"
+                                            value={typeOffice}
+                                            onChange={handleTypeOffice}
+                                            options={typeOfOffice}
+                                            required={true}
+                                            validationMessage="Vui lòng chọn loại hình văn phòng, mặt bằng kinh doanh"
+                                        />
+                                    ) : null}
+                                </div>
+                                {(selectedCategory !== 'Đất' && selectedCategory !== 'Văn phòng, mặt bằng kinh doanh') ? (
+                                    <>
+                                        <div className='add-post-right-info-detail-container-item'>
+                                            <SelectValue
+                                                label="Số phòng ngủ"
+                                                value={bedroomCount}
+                                                onChange={handleBedroomChange}
+                                                options={bedroomOptions}
+                                                required={true}
+                                                validationMessage="Vui lòng chọn số phòng ngủ"
+                                            />
+                                        </div>
+                                        <div className='add-post-right-info-detail-container-item'>
+                                            <SelectValue
+                                                label="Số phòng vệ sinh"
+                                                value={bathroomCount}
+                                                onChange={handleBathroomChange}
+                                                options={bathroomOptions}
+                                            />
+                                        </div>
+                                        <div className='add-post-right-info-detail-container-item'>
+                                            {selectedCategory === 'Nhà ở' ? (
+                                                <ValidatedTextField
+                                                    label="Tổng số tầng"
+                                                    type="number"
+                                                    value={floorCount === 0 ? '' : floorCount}
+                                                    onChange={handleFloorCountChange}
+                                                    required={true}
+
+                                                />
+                                            ) : (
+                                                <SelectValue
+                                                    label="Hướng ban công"
+                                                    value={balconyDirection}
+                                                    onChange={handleBalconyChange}
+                                                    options={directionOptions}
+                                                />
+                                            )}
+                                        </div>
+                                    </>
+                                ) : null}
+                                {selectedCategory !== 'Đất' ? (
+                                    <div className='add-post-right-info-detail-container-item'>
+                                        <SelectValue
+                                            label="Hướng cửa chính"
+                                            value={mainDoorDirection}
+                                            onChange={handleMainDoorChange}
+                                            options={directionOptions}
+                                        />
+                                    </div>
+                                ) : (
+                                    <SelectValue
+                                        label="Hướng đất"
+                                        value={lanDirection}
+                                        onChange={handleLandDirection}
+                                        options={directionOptions}
+                                    />)}
                             </div>
-                            <div className='add-post-right-price-container-item'>
-                                <TextField label={<span>Chiều dài <span className="add-post-right-require">*</span></span>} variant="outlined" fullWidth size="small" value={length} onChange={(e) => setLength(e.target.value)} />
-                            </div>
-                        </>
+                        </div>
                     )}
-                </div>
-                {(selectedCategory === 'phòng trọ' || transactionType === 'Cho thuê') && (
-                    <>
-                        <TextField
-                            label={<>Giá thuê <span className="add-post-right-require">*</span></>}
-                            variant="outlined"
-                            fullWidth
-                            size="small"
-                            value={price}
-                            onChange={(e) => setPrice(e.target.value)}
+                    <div className='add-post-right-other-info'>
+                        <h2 className='add-post-right-title'>Thông tin khác</h2>
+                        <div className='add-post-right-other-info-container'>
+                            {!(
+                                (selectedCategory === 'Văn phòng, mặt bằng kinh doanh' && transactionType === 'Cho thuê') ||
+                                selectedCategory === 'phòng trọ'
+                            ) && (
+                                    <div>
+                                        <SelectValue
+                                            label="Giấy tờ pháp lý"
+                                            value={legalContract}
+                                            onChange={handleLegalContractChange}
+                                            options={legalContractOptions}
+                                            required={true}
+                                            validationMessage="Vui lòng chọn giấy tờ pháp lý"
+                                        />
+                                    </div>
+                                )}
+                            {selectedCategory !== 'Đất' && (
+                                <div>
+                                    <SelectValue
+                                        label="Tình trạng nội thất"
+                                        value={furnitureStatus}
+                                        onChange={handleFurnitureChange}
+                                        options={furnitureOptions}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        {selectedCategory === 'Nhà ở' && (
+                            <HouseFeatureSelector
+                                features={featuresOfHouse}
+                                selectedFeatures={selectedFeaturesOfHouse}
+                                setSelectedFeatures={setSelectedFeaturesOfHouse}
+                            />
+                        )}
+                        {selectedCategory === 'Đất' && (
+                            <HouseFeatureSelector
+                                features={featuresOfLand}
+                                selectedFeatures={selectedFeaturesOfLand}
+                                setSelectedFeatures={setSelectedFeaturesOfLand}
+                            />
+                        )}
+                    </div>
+                    <div className='add-post-right-price'>
+                        <h2 className='add-post-right-title'>Diện tích và giá</h2>
+                        <div className='add-post-right-price-container'>
+                            <div className='add-post-right-price-container-item full-width'>
+                                <ValidatedTextField
+                                    label="Diện tích"
+                                    value={area}
+                                    onChange={(val) => setArea(val)}
+                                    required
+                                    type="area"
+                                    selectedCategory={selectedCategory}
+                                    typeArea={typeArea}
+                                    setTypeArea={setTypeArea}
+                                />
+                            </div>
+                            {selectedCategory === 'Nhà ở' && (
+                                <div className='add-post-right-price-container-item full-width'>
+                                    <ValidatedTextField
+                                        label="Diện tích sử dụng"
+                                        variant="outlined"
+                                        fullWidth
+                                        size="small"
+                                        value={areaUse}
+                                        type='area'
+                                        onChange={(e) => setAreaUse(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            {["Nhà ở", "Đất", "Văn phòng, mặt bằng kinh doanh"].includes(selectedCategory) && (
+                                <>
+                                    <div className='add-post-right-price-container-item'>
+                                        <ValidatedTextField label="Chiều ngang" variant="outlined" fullWidth size="small" value={width} onChange={(e) => setWidth(e)} type='area' required />
+                                    </div>
+                                    <div className='add-post-right-price-container-item'>
+                                        <ValidatedTextField label="Chiều dài" variant="outlined" fullWidth size="small" value={length} onChange={(e) => setLength(e)} type='area' required />
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                        {(selectedCategory === 'phòng trọ' || transactionType === 'Cho thuê') && (
+                            <>
+                                <ValidatedTextField
+                                    label="Giá thuê"
+                                    value={price}
+                                    onChange={(e) => setPrice(e)}
+                                    required
+                                    type="number"
+                                />
+                                <ValidatedTextField
+                                    label="Tiền cọc"
+                                    value={deposit}
+                                    onChange={(e) => setDeposit(e)}
+                                    type='number'
+                                />
+                            </>
+                        )}
+                        {transactionType === 'Cần bán' && selectedCategory !== 'phòng trọ' && (
+                            <ValidatedTextField
+                                label="Giá bán"
+                                sx={{ mt: 2 }}
+                                value={price}
+                                onChange={(e) => setPrice(e)}
+                                required
+                                type="number"
+                            />
+                        )}
+                    </div>
+                    <div className='add-post-right-title-content'>
+                        <h2 className='add-post-right-title'>Tiêu đề và mô tả của tin đăng</h2>
+                        <ValidatedTextField
+                            label="Tiêu đề"
+                            value={title}
+                            onChange={(e) => setTitle(e)}
+                            required
                         />
-                        <TextField
-                            label={<>Tiền cọc <span className="add-post-right-require">*</span></>}
-                            variant="outlined"
+                        <ValidatedTextField
+                            label="Mô tả"
+                            multiline
+                            maxRows={10}
+                            rows={4}
                             fullWidth
-                            size="small"
-                            value={deposit}
-                            onChange={(e) => setDeposit(e.target.value)}
+                            value={content}
+                            onChange={(e) => setContent(e)}
+                            required
                         />
-                    </>
-                )}
-                {transactionType === 'Cần bán' && selectedCategory !== 'phòng trọ' && (
-                    <TextField
-                        label={<>Giá bán <span className="add-post-right-require">*</span></>}
-                        variant="outlined"
-                        fullWidth
-                        size="small"
-                        sx={{ mt: 2 }}
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                    />
-                )}
-            </div>
-            <div className='add-post-right-title-content'>
-                <h2 className='add-post-right-title'>Tiêu đề và mô tả của tin đăng</h2>
-                <TextField
-                    label={<>Tiêu đề<span className="add-post-right-require">*</span></>}
-                    variant="outlined"
-                    fullWidth size='small'
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)} />
-                <TextField
-                    label={<>Mô tả<span className="add-post-right-require">*</span></>}
-                    multiline
-                    rows={4}
-                    fullWidth
-                    variant="outlined"
-                    size='small'
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                />
-            </div>
-            <div className='add-post-right-title-content'>
-                <p className='add-post-right-header-label'>Bạn là<span className="add-post-right-require">*</span></p>
-                <div className='add-post-right-header-container-transaction'>
-                    <Button className={`add-post-right-transaction-btn ${userType === 'Cá nhân' ? 'selected' : ''}`} onClick={() => setUserType('Cá nhân')}>Cá nhân</Button>
-                    <Button className={`add-post-right-transaction-btn ${userType === 'Mô giới' ? 'selected' : ''}`} onClick={() => setUserType('Mô giới')}>Mô giới</Button>
+                    </div>
+                    <div className='add-post-right-title-content'>
+                        <p className='add-post-right-header-label'>Bạn là<span className="add-post-right-require">*</span></p>
+                        <div className='add-post-right-header-container-transaction'>
+                            <Button className={`add-post-right-transaction-btn ${userType === 'Cá nhân' ? 'selected' : ''}`} onClick={() => setUserType('Cá nhân')}>Cá nhân</Button>
+                            <Button className={`add-post-right-transaction-btn ${userType === 'Mô giới' ? 'selected' : ''}`} onClick={() => setUserType('Mô giới')}>Mô giới</Button>
+                        </div>
+                    </div>
+                    <div className='add-post-right-title-content'>
+                        <ValidatedTextField
+                            label="Điện thoại"
+                            value={phone}
+                            onChange={(e) => setPhone(e)}
+                            type="phone"
+                            required
+                        />
+                    </div>
+                    <div className='add-post-right-white'></div>
+                </>
+            ) : (
+                <div className='add-post-right-notice'>
+                    Vui lòng chọn loại bất động sản để tiếp tục.
                 </div>
-            </div>
-            <div className='add-post-right-title-content'>
-                <TextField
-                    id="outlined-basic"
-                    label="Điện thoại"
-                    variant="outlined"
-                    size="small"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    type="number"
-                />
-            </div>
-            <div className='add-post-right-white'></div>
+            )}
         </div>
     );
 };

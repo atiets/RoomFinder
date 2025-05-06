@@ -9,6 +9,7 @@ import './index.css';
 const AddPost = () => {
     const [mediaData, setMediaData] = useState(null);
     const [contentData, setContentData] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const currentUser = useSelector((state) => state.auth.login.currentUser);
     const accessToken = currentUser?.accessToken;
     const user = currentUser?._id;
@@ -24,6 +25,7 @@ const AddPost = () => {
     console.log('Media Data:', mediaData);
 
     const submitPost = async () => {
+        setIsSubmitting(true);
         try {
             // Tạo đối tượng dữ liệu cuối cùng
             const finalData = new FormData();
@@ -106,6 +108,8 @@ const AddPost = () => {
         } catch (error) {
             console.error("Đăng bài thất bại:", error);
             // Hiển thị thông báo lỗi
+        } finally {
+            setIsSubmitting(false); // Xóa dấu hiệu đang submit
         }
     };
 
@@ -121,7 +125,7 @@ const AddPost = () => {
         <div className="container-add-post">
             <div className="container-add-post-content">
                 <AddPostLeft onMediaChange={handleMediaChange} />
-                <AddPostRight onContentChange={handleContentChange} />
+                <AddPostRight onContentChange={handleContentChange} isSubmitting={isSubmitting}/>
             </div>
             <div className="container-add-post-footer">
                 <FooterAddPost onSubmit={submitPost} onPreview={previewPost} />
