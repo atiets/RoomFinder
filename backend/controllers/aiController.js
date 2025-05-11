@@ -1,0 +1,122 @@
+const axios = require("axios");
+require("dotenv").config();
+const Post = require('../models/Post');
+
+const suggestQuestions = async (req, res) => {
+    const { postContent } = req.body;
+
+    const prompt = `
+    Dựa trên nội dung sau đây của một bài đăng tìm phòng trọ, hãy gợi ý 5 câu hỏi mà người dùng có thể sẽ muốn hỏi trước khi thuê trọ:
+
+    Nội dung bài đăng: """${postContent}"""
+
+    Trả lời bằng danh sách các câu hỏi dạng gạch đầu dòng, không cần chú thích câu hỏi bằng dấu ngoặc.
+    `;
+
+    try {
+        const response = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+            {
+                contents: [
+                    {
+                        parts: [{ text: prompt }],
+                    },
+                ],
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+
+        const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!text) {
+            return res.status(500).json({ error: "Không nhận được phản hồi từ Gemini" });
+        }
+
+        res.json({ questions: text });
+    } catch (error) {
+        console.error("Lỗi khi gọi Gemini API:", error?.response?.data || error.message);
+        res.status(500).json({ error: "Lỗi khi gọi Gemini API" });
+    }
+};
+
+const checkPostModeration = async (post) => {
+    const moderationPrompt = `Bạn là một hệ thống kiểm duyệt nội dung bất động sản. Hãy đánh giá bài đăng sau theo các quy tắc sau:
+    
+    1. Không được chứa ngôn từ thù ghét, phân biệt chủng tộc, khiêu dâm.
+    2. Không được có nội dung spam, lặp lại vô nghĩa.
+    3. Không được chứa quảng cáo trá hình (spam link, nội dung không liên quan đến bất động sản).
+    
+    **Yêu cầu phản hồi theo đúng định dạng sau:**
+    Nhãn: OK | Cần kiểm duyệt | Từ chối  
+    Lý do: <nêu rõ lý do nếu nhãn là "Từ chối", nếu không thì ghi "Không có">
+    
+  **Thông tin bài đăng:**
+    - Tiêu đề: ${post.title}
+    - Nội dung: ${post.content}
+    - Loại bất động sản: ${post.category}
+    - Chi tiết loại hình: ${post.propertyDetails?.propertyCategory || 'Không có'} - ${post.propertyDetails?.apartmentType || 'Không có'}
+    - Số phòng ngủ: ${post.propertyDetails?.bedroomCount || 'Không có'}
+    - Số phòng vệ sinh: ${post.propertyDetails?.bathroomCount || 'Không có'}
+    - Số tầng: ${post.propertyDetails?.floorCount || 'Không có'}
+    - Hướng ban công: ${post.propertyDetails?.balconyDirection || 'Không có'}
+    - Hướng cửa chính: ${post.propertyDetails?.mainDoorDirection || 'Không có'}
+    - Hướng đất: ${post.propertyDetails?.landDirection || 'Không có'}
+    - Diện tích sử dụng: ${post.areaUse || 'Không có'} ${post.typeArea}
+    - Diện tích đất: ${post.area || 'Không có'} ${post.typeArea}
+    - Kích thước: ${post.dimensions?.width || 'N/A'}m x ${post.dimensions?.length || 'N/A'}m
+    - Giá: ${post.price} VNĐ
+    - Tiền cọc: ${post.deposit || 'Không có'}
+    - Giấy tờ pháp lý: ${post.legalContract || 'Không có'}
+    - Tình trạng nội thất: ${post.furnitureStatus || 'Không có'}
+    - Đặc điểm: ${Array.isArray(post.features) ? post.features.join(', ') : 'Không có'}
+    `;
+
+    try {
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: moderationPrompt }] }],
+                }),
+            }
+        );
+
+        const data = await response.json();
+        const resultText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+        if (!resultText) {
+            return { status: 'pending', reason: 'Không có phản hồi từ AI' };
+        }
+
+        // Tách kết quả
+        const labelMatch = resultText.match(/Nhãn:\s*(.*)/);
+        const reasonMatch = resultText.match(/Lý do:\s*(.*)/);
+
+        const label = labelMatch?.[1]?.trim();
+        const reason = reasonMatch?.[1]?.trim() || 'Không có';
+
+        if (label === 'OK') {
+            return { status: 'approved', reason: null };
+        } else if (label === 'Cần kiểm duyệt') {
+            return { status: 'pending', reason: null };
+        } else if (label === 'Từ chối') {
+            return { status: 'rejected', reason };
+        } else {
+            return { status: 'pending', reason: 'Phản hồi không hợp lệ từ AI' };
+        }
+    } catch (error) {
+        console.error('Lỗi kiểm duyệt AI:', error);
+        return { status: 'pending', reason: 'Lỗi hệ thống kiểm duyệt' };
+    }
+};
+
+module.exports = {
+    suggestQuestions,
+    checkPostModeration,
+};

@@ -2,6 +2,38 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const cloudinary = require('cloudinary').v2;
 const mongoose = require('mongoose');
+const sendEmail = require('../services/emailService');
+const { checkPostModeration } = require('./aiController');
+const { onlineUsers, getIO } = require('../congfig/websocket');
+
+function sendSocketNotification(userId, data) {
+  const io = getIO();
+  console.log("[Socket] Đang gửi notification:", data);
+  const socketId = onlineUsers[userId];
+  if (socketId) {
+    const socket = io.sockets.sockets.get(socketId);
+    if (socket) {
+      socket.emit('notification', data);
+      console.log(`[Socket] Gửi notification đến userId=${userId}:`, data);
+    } else {
+      console.log(`[Socket] Không tìm thấy socket cho userId=${userId}`);
+    }
+  } else {
+    console.log(`[Socket] Người dùng không trực tuyến: ${userId}`);
+  }
+}
+
+const sendEmailToAdmin = (post) => {
+  const subject = "Bài đăng có nghi vấn cần kiểm duyệt";
+  const message = `Có một bài đăng mới cần được kiểm duyệt. Chi tiết bài đăng:
+
+  - Tiêu đề: ${post.title}
+  - Nội dung: ${post.content}
+  - Tình trạng: Chờ duyệt
+
+  Vui lòng xem và duyệt bài đăng này.`;
+  sendEmail('tranthituongvy9012003@gmail.com', subject, message);
+};
 
 exports.createPost = async (req, res) => {
   try {
@@ -117,6 +149,43 @@ exports.createPost = async (req, res) => {
       message: "Tạo bài đăng thành công",
       post: savedPost
     });
+
+    (async () => {
+      try {
+        const moderationResult = await checkPostModeration(savedPost);
+
+        savedPost.status = moderationResult.status;
+        savedPost.rejectionReason = moderationResult.reason;
+
+        if (moderationResult.status === 'approved') {
+          savedPost.visibility = 'visible';
+        }
+
+        await savedPost.save();
+
+        if (moderationResult.status === 'approved') {
+          sendSocketNotification(userId, {
+            message: `Bài đăng của bạn với tiêu đề "${savedPost.title}" đã được duyệt và sẽ hiển thị công khai.`
+          });
+          console.log(`[Socket] Đã gửi notification duyệt bài cho userId=${userId}`);
+        } 
+        else if (moderationResult.status === 'rejected') {
+          sendSocketNotification(userId, {
+            message: `Bài đăng của bạn với tiêu đề "${savedPost.title}" bị từ chối. Lý do: ${moderationResult.reason}`
+          });
+          console.log(`[Socket] Đã gửi notification từ chối bài cho userId=${userId}`);
+        }else if (moderationResult.status === 'pending') {
+          sendSocketNotification(userId, {
+            message: `Bài đăng của bạn với tiêu đề "${savedPost.title}" đang đợi admin duyệt. `
+          });
+          console.log(`[Socket] Đã gửi notification từ chối bài cho userId=${userId}`);
+        }
+      } catch (err) {
+        console.error("Lỗi xử lý hậu kiểm duyệt:", err);
+      }
+    })();
+
+
   } catch (error) {
     console.error("Lỗi khi tạo bài đăng:", error);
     if (error.name === 'ValidationError') {
@@ -128,7 +197,6 @@ exports.createPost = async (req, res) => {
     });
   }
 };
-
 
 exports.getAllPosts = async (req, res) => {
   try {

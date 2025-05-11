@@ -1,6 +1,7 @@
 const postController = require("../controllers/postControllers");
 const uploadCloud = require('../congfig/cloudinaryConfig');
 const middlewareControllers = require("../controllers/middlewareControllers");
+const { checkPostModeration } = require("../controllers/aiController");
 const router = require("express").Router();
 
 // Lấy tất cả bài đăng
@@ -64,4 +65,16 @@ router.get('/favorites', middlewareControllers.verifyToken, postController.getFa
 
 //Route cập nhật số ngày hiển thị tất cả bài post trên trang chủ
 router.put('/update-default-days', middlewareControllers.verifyTokenAndAdminAuth, postController.updateDefaultDaysToShow);
+
+//test route ai kiểm duyệt 
+router.post('/moderate-test', async (req, res) => {
+    try {
+        const post = req.body; // Lấy dữ liệu bài đăng từ body
+        const status = await checkPostModeration(post); // Gọi hàm kiểm duyệt
+        res.json({ status }); // Trả về kết quả
+    } catch (error) {
+        console.error('Lỗi khi test kiểm duyệt:', error);
+        res.status(500).json({ error: 'Lỗi máy chủ' });
+    }
+});
 module.exports = router;
