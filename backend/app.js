@@ -13,7 +13,7 @@ const uploadRoutes = require('./routes/upload');
 const webhookRoutes = require("./routes/webhook");
 const orderRoutes = require("./routes/order");
 const http = require('http');
-const initializeSocket = require("./congfig/websocket");
+const { initializeSocket } = require("./congfig/websocket");
 require('./congfig/cronJobs');
 
 dotenv.config();
@@ -68,7 +68,7 @@ app.use("/v1/webhook", webhookRoutes);
 app.use("/v1/orders", orderRoutes);
 
 const server = http.createServer(app);
-initializeSocket(server); 
+initializeSocket(server);
 
 server.listen(8000, () => {
   console.log("Server is running")
