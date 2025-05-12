@@ -12,7 +12,7 @@ const PostSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['Căn hộ/chung cư', 'Nhà ở', 'Đất', 'Văn phòng, mặt bằng kinh doanh', 'phòng trọ'],
+      enum: ['Căn hộ/chung cư', 'Nhà ở', 'Đất', 'Văn phòng, mặt bằng kinh doanh', 'phòng trọ', 'Nhà trọ, phòng trọ'],
       required: true,
     },
     transactionType: {
@@ -147,6 +147,18 @@ const PostSchema = new mongoose.Schema(
     rejectionReason: {
       type: String,
       default: null,
+    },
+    report_count: {
+      type: Number,
+      default: 0,
+    },
+    is_flagged: {
+      type: Boolean,
+      default: false,
+    },
+    is_priority: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

@@ -5,11 +5,11 @@ import EventIcon from '@mui/icons-material/Event';
 import HouseOutlinedIcon from "@mui/icons-material/HouseOutlined";
 import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
+import OutlinedFlagOutlinedIcon from '@mui/icons-material/OutlinedFlagOutlined';
 import PeopleOutlineOutlinedIcon from "@mui/icons-material/PeopleOutlineOutlined";
 import RoomOutlinedIcon from "@mui/icons-material/RoomOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-
 import {
   Avatar,
   Box,
@@ -29,6 +29,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
 import Swal from "sweetalert2";
@@ -38,6 +39,7 @@ import Header from "../Header/Header";
 import AddReviewForm from "../Review/ReviewForm/ReviewForm";
 import ReviewsList from "../Review/ReviewList/ReviewsList";
 import ModalAppointment from "./ModalAppointment";
+import ComplaintModal from "./ModalComplaint";
 import "./PostDetail.css";
 import ShareMenu from "./ShareMenu";
 
@@ -58,6 +60,7 @@ const PostDetail = ({ onToggleFavorite }) => {
   const [favoriteCount, setFavoriteCount] = useState(0);
   const [showFullPhone, setShowFullPhone] = useState(false);
   const [showModalAppointment, setShowModalAppointment] = useState(false);
+  const [openModalComplaint, setOpenModalComplaint] = useState(false);
 
   let axiosJWT = axios.create({
     baseURL: process.env.REACT_APP_BASE_URL_API,
@@ -191,6 +194,7 @@ const PostDetail = ({ onToggleFavorite }) => {
   console.log('apom:', showModalAppointment)
   return (
     <div className="post-detail-container">
+      <ToastContainer position="top-right" autoClose={5000} />
       {user && (user.admin === "true" || user.admin === true) ? (
         <AdminHeader />
       ) : (
@@ -315,6 +319,9 @@ const PostDetail = ({ onToggleFavorite }) => {
             title={post.title}
           />
         </div>
+        <div className="post-detail-container-complaint">
+          <OutlinedFlagOutlinedIcon onClick={() => setOpenModalComplaint(true)} />
+        </div>
       </Box>
       <div className="post-detail-container-comment">
         <AddReviewForm />
@@ -327,6 +334,7 @@ const PostDetail = ({ onToggleFavorite }) => {
           post={post}
         />
       )}
+      <ComplaintModal isOpen={openModalComplaint} handleClose={() => setOpenModalComplaint(false)} postID={post._id} />
     </div>
   );
 };

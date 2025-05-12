@@ -12,6 +12,7 @@ const conversationRoutes = require("./routes/chat");
 const uploadRoutes = require('./routes/upload');
 const webhookRoutes = require("./routes/webhook");
 const orderRoutes = require("./routes/order");
+const reportRoutes = require("./routes/reportRoutes");
 const http = require('http');
 const { initializeSocket } = require("./congfig/websocket");
 require('./congfig/cronJobs');
@@ -66,6 +67,7 @@ app.use("/v1/conversations", conversationRoutes);
 app.use("/v1/upload", uploadRoutes);
 app.use("/v1/webhook", webhookRoutes);
 app.use("/v1/orders", orderRoutes);
+app.use("/v1/report", reportRoutes);
 
 const server = http.createServer(app);
 initializeSocket(server);
