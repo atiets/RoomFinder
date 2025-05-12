@@ -8,13 +8,11 @@ const { onlineUsers, getIO } = require('../congfig/websocket');
 
 function sendSocketNotification(userId, data) {
   const io = getIO();
-  console.log("[Socket] Đang gửi notification:", data);
   const socketId = onlineUsers[userId];
   if (socketId) {
     const socket = io.sockets.sockets.get(socketId);
     if (socket) {
       socket.emit('notification', data);
-      console.log(`[Socket] Gửi notification đến userId=${userId}:`, data);
     } else {
       console.log(`[Socket] Không tìm thấy socket cho userId=${userId}`);
     }
@@ -166,19 +164,15 @@ exports.createPost = async (req, res) => {
         if (moderationResult.status === 'approved') {
           sendSocketNotification(userId, {
             message: `Bài đăng của bạn với tiêu đề "${savedPost.title}" đã được duyệt và sẽ hiển thị công khai.`
-          });
-          console.log(`[Socket] Đã gửi notification duyệt bài cho userId=${userId}`);
-        } 
+          });        } 
         else if (moderationResult.status === 'rejected') {
           sendSocketNotification(userId, {
             message: `Bài đăng của bạn với tiêu đề "${savedPost.title}" bị từ chối. Lý do: ${moderationResult.reason}`
           });
-          console.log(`[Socket] Đã gửi notification từ chối bài cho userId=${userId}`);
         }else if (moderationResult.status === 'pending') {
           sendSocketNotification(userId, {
             message: `Bài đăng của bạn với tiêu đề "${savedPost.title}" đang đợi admin duyệt. `
           });
-          console.log(`[Socket] Đã gửi notification từ chối bài cho userId=${userId}`);
         }
       } catch (err) {
         console.error("Lỗi xử lý hậu kiểm duyệt:", err);
