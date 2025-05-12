@@ -26,7 +26,7 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import "slick-carousel/slick/slick-theme.css";
@@ -39,9 +39,11 @@ import AddReviewForm from "../Review/ReviewForm/ReviewForm";
 import ReviewsList from "../Review/ReviewList/ReviewsList";
 import ModalAppointment from "./ModalAppointment";
 import "./PostDetail.css";
+import ShareMenu from "./ShareMenu";
 
 const PostDetail = ({ onToggleFavorite }) => {
   const navigate = useNavigate();
+  const URL_POST = `${process.env.REACT_APP_BASE_URL_FRONTEND}/posts/`;
 
   document.title = "Chi tiết bài đăng";
   const { id } = useParams();
@@ -82,7 +84,7 @@ const PostDetail = ({ onToggleFavorite }) => {
       },
     });
   };
-  
+
   useEffect(() => {
     const fetchPostDetail = async () => {
       try {
@@ -307,6 +309,12 @@ const PostDetail = ({ onToggleFavorite }) => {
           </Button>
           <Typography className="favorite-count">{favoriteCount}</Typography>
         </Box>
+        <div className="share-container">
+          <ShareMenu
+            url={`${URL_POST}${post._id}`}
+            title={post.title}
+          />
+        </div>
       </Box>
       <div className="post-detail-container-comment">
         <AddReviewForm />
