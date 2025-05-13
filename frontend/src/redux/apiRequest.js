@@ -125,7 +125,7 @@ export const registerUser = async (
 };
 
 export const getAllUsers = async (accessToken, dispatch, axiosJWT) => {
-  console.log("Access Token:", accessToken);
+  // console.log("Access Token:", accessToken);
   dispatch(getUserStart());
   try {
     const res = await axiosJWT.get("/v1/user", {

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const PostSchema = new mongoose.Schema(
   {
@@ -12,12 +12,18 @@ const PostSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['Căn hộ/chung cư', 'Nhà ở', 'Đất', 'Văn phòng, mặt bằng kinh doanh', 'phòng trọ'],
+      enum: [
+        "Căn hộ/chung cư",
+        "Nhà ở",
+        "Đất",
+        "Văn phòng, mặt bằng kinh doanh",
+        "phòng trọ",
+      ],
       required: true,
     },
     transactionType: {
       type: String,
-      enum: ['Cho thuê', 'Cần bán'],
+      enum: ["Cho thuê", "Cần bán"],
       required: true,
     },
     address: {
@@ -70,12 +76,12 @@ const PostSchema = new mongoose.Schema(
       type: Number, // Diện tích đất sử dụng
     },
     area: {
-      type: Number, // Diện tích đất 
+      type: Number, // Diện tích đất
     },
     typeArea: {
       type: String,
-      enum: ['m²', 'hecta'],
-      default: 'm²',
+      enum: ["m²", "hecta"],
+      default: "m²",
     },
     dimensions: {
       width: { type: Number }, // Chiều ngang
@@ -90,7 +96,7 @@ const PostSchema = new mongoose.Schema(
     },
     userType: {
       type: String,
-      enum: ['Cá nhân', 'Mô giới'],
+      enum: ["Cá nhân", "Mô giới"],
       required: true,
     },
     images: {
@@ -102,7 +108,7 @@ const PostSchema = new mongoose.Schema(
     contactInfo: {
       user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: "User",
         required: true,
       },
       username: {
@@ -144,8 +150,16 @@ const PostSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    latitude: {
+      type: Number,
+      required: false,
+    },
+    longitude: {
+      type: Number,
+      required: false,
+    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Post', PostSchema);
+module.exports = mongoose.model("Post", PostSchema);

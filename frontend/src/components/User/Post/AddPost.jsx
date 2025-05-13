@@ -19,8 +19,17 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { createPost } from "../../../redux/postAPI";
+import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 import "./AddPost.css";
 
+const centerDefault = {
+  lat: 21.0285, // Hà Nội
+  lng: 105.8542
+};
+const containerStyle = {
+  width: '100%',
+  height: '400px'
+};
 const SelectWithLabel = ({ label, options, value, onChange }) => {
   document.title = "Thêm bài đăng mới";
   return (
@@ -55,6 +64,35 @@ const AddPost = () => {
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [selectedWard, setSelectedWard] = useState(null);
   const [address, setAddress] = useState("");
+   const [coordinates, setCoordinates] = useState(null);
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: 'AIzaSyB-UYTKiIkSNR95uHsvcf0t6I7TrIvakgk', 
+  });
+
+  // Hàm lấy tọa độ từ địa chỉ
+  const geocodeAddress = async () => {
+    try {
+      const response = await axios.get(
+        'https://maps.googleapis.com/maps/api/geocode/json',
+        {
+          params: {
+            address: address,
+            key: 'YOUR_GOOGLE_MAPS_API_KEY',
+          },
+        }
+      );
+      const location = response.data.results[0]?.geometry.location;
+      if (location) {
+        setCoordinates(location);
+      } else {
+        alert('Không tìm thấy tọa độ');
+      }
+    } catch (error) {
+      console.error('Lỗi khi geocode:', error);
+    }
+  };
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const currentUser = useSelector((state) => state.auth.login.currentUser);
@@ -707,6 +745,20 @@ const AddPost = () => {
                 marginTop: 2,
               }}
             >
+               <button type="button" onClick={geocodeAddress}>
+          Lấy tọa độ
+        </button>
+        <br /><br />
+        {coordinates && isLoaded && (
+          <GoogleMap
+            mapContainerStyle={containerStyle}
+            center={coordinates}
+            zoom={15}
+          >
+            <Marker position={coordinates} />
+          </GoogleMap>
+        )}
+        <br />
               <Button
                 type="submit"
                 variant="contained"

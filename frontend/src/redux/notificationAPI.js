@@ -36,8 +36,8 @@ export const markNotificationAsRead = async (
   process.env.REACT_APP_BASE_URL_API;
   dispatch(markAsReadStart());
   try {
-    console.log("Notification ID:", notificationId);
-    console.log("Access Token:", accessToken);
+    // console.log("Notification ID:", notificationId);
+    // console.log("Access Token:", accessToken);
     const response = await axios.put(
       `/v1/user/notifications/${notificationId}`,
       {},

@@ -10,7 +10,7 @@ const middlewareControllers = {
         if (authHeader) {
             const accessToken = authHeader.split(" ")[1];
 
-            console.log("Access Token:", accessToken);
+            // console.log("Access Token:", accessToken);
 
             jwt.verify(accessToken, process.env.JWT_ACCESS_KEY, (err, user) => {
                 if (err) {
@@ -28,7 +28,7 @@ const middlewareControllers = {
                     }
                 }
 
-                console.log("Authenticated user:", user);
+               // console.log("Authenticated user:", user);
                 req.user = user; 
                 next();  
             });

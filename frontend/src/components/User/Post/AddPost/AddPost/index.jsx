@@ -22,7 +22,7 @@ const AddPost = () => {
     const handleContentChange = useCallback((data) => {
         setContentData(data);
     }, []);
-    console.log('Media Data:', mediaData);
+    // console.log('Media Data:', mediaData);
 
     const submitPost = async () => {
         setIsSubmitting(true);

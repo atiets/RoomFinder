@@ -2,6 +2,40 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const cloudinary = require('cloudinary').v2;
 const mongoose = require('mongoose');
+const axios = require('axios');
+
+async function getCoordinates(addressString) {
+  const encodedAddress = encodeURIComponent(addressString);
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&addressdetails=1&limit=1`;
+
+  console.log("📌 URL gửi đến Nominatim:", url);
+
+  try {
+    const res = await axios.get(url, {
+      headers: {
+        'User-Agent': 'PhongTroXinh/1.0 (nguyenanhtuyet03.nbk@gmail.com)'
+      }
+    });
+
+    const results = res.data;
+
+    if (results.length === 0) {
+      console.warn("⚠️ Không tìm thấy kết quả tọa độ cho địa chỉ:", addressString);
+      return null;
+    }
+
+    const { lat, lon } = results[0];
+    console.log("📍 Tọa độ lấy được từ Nominatim:", { latitude: lat, longitude: lon });
+
+    return {
+      latitude: parseFloat(lat),
+      longitude: parseFloat(lon),
+    };
+  } catch (error) {
+    console.error("❌ Lỗi khi gọi Nominatim API:", error.message);
+    return null;
+  }
+}
 
 exports.createPost = async (req, res) => {
   try {
@@ -24,7 +58,9 @@ exports.createPost = async (req, res) => {
       deposit,
       userType,
       contactInfo,
-      defaultDaysToShow = 30,
+      defaultDaysToShow = 7,
+      latitude,
+  longitude
     } = req.body;
 
     // Kiểm tra các trường bắt buộc
@@ -42,6 +78,11 @@ exports.createPost = async (req, res) => {
     };
 
     const parsedAddress = safeParse(address);
+    const fullAddress = `${parsedAddress.exactaddress}, ${parsedAddress.ward}, ${parsedAddress.district}, ${parsedAddress.province}`;
+    console.log("📌 Địa chỉ đầy đủ gửi tới getCoordinates:", fullAddress);
+
+    console.log("🏃‍♂️ Gọi hàm getCoordinates với địa chỉ:", fullAddress);
+    const coordinates = await getCoordinates(fullAddress);
     const parsedLocationDetails = safeParse(locationDetails);
     const parsedPropertyDetails = safeParse(propertyDetails);
     const parsedDimensions = safeParse(dimensions);
@@ -104,6 +145,8 @@ exports.createPost = async (req, res) => {
       daysRemaining: defaultDaysToShow,
       hoursRemaining: 0,
       expiryDate: null,
+      latitude: coordinates?.latitude || null,
+longitude: coordinates?.longitude || null,
     });
 
     // Trừ quota và lưu user
@@ -128,7 +171,6 @@ exports.createPost = async (req, res) => {
     });
   }
 };
-
 
 exports.getAllPosts = async (req, res) => {
   try {
