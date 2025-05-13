@@ -158,7 +158,24 @@ const PostSchema = new mongoose.Schema(
       type: Number,
       required: false,
     },
+    rejectionReason: {
+      type: String,
+      default: null,
+    },
+    report_count: {
+      type: Number,
+      default: 0,
+    },
+    is_flagged: {
+      type: Boolean,
+      default: false,
+    },
+    is_priority: {
+      type: Boolean,
+      default: false,
+    },
   },
+
   { timestamps: true }
 );
 
