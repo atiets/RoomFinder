@@ -19,6 +19,7 @@ import { uploadImages } from '../../../redux/uploadApi';
 import ModalMap from '../ModalMap';
 import './chat.css';
 import MessageLocation from './MessageLocation';
+import SuggestedQuestions from './SuggestedQuestions';
 
 const Chat = () => {
     const location = useLocation();
@@ -56,6 +57,8 @@ const Chat = () => {
     const [typeConversation, setTypeConversation] = useState("");
 
     const conversationId = selectedChat?._id || null;
+
+    console.log('title', title);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -269,6 +272,7 @@ const Chat = () => {
             });
         }
         setSelectedChat(msg);
+        setNewMessage("");
     };
 
     const handleCloseIconClick = () => {
@@ -513,18 +517,11 @@ const Chat = () => {
                     )}
                 </div>
                 <div className='chat-box-left-idea'>
-                    <div className='chat-box-left-idea-body' style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
-                        {["Phòng này hiện còn trống không ạ?", "Tình trạng giấy tờ thế nào ạ?", "Tôi có thể trả góp không?", "Giá thuê phòng là bao nhiêu? Có bao gồm điện, nước không?", "Phòng có nội thất hay không? Nếu có thì bao gồm những gì?", "Hợp đồng thuê tối thiểu bao lâu? Có thể trả theo tháng không?"].map((question, index) => (
-                            <Button
-                                key={index}
-                                variant="outlined"
-                                size="small"
-                                style={{ color: '#444444', textTransform: 'none', borderColor: '#444444', borderRadius: '15px', alignItems: 'center', margin: '0 5px', marginTop: '5px' }}
-                            >
-                                {question}
-                            </Button>
-                        ))}
-                    </div>
+                    <SuggestedQuestions
+                        postContent={title || selectedChat?.postId?.title}
+                        selectChat={selectedChat}
+                        onSelectQuestion={(question) => setNewMessage(question)}
+                    />
                 </div>
                 <div className="image-preview-container">
                     {selectedImages.map((image, index) => (

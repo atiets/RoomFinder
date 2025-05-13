@@ -1,0 +1,111 @@
+.complaint-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.complaint-modal {
+    background: white;
+    border-radius: 4px;
+    width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 20px;
+    position: relative;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.complaint-modal-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.complaint-modal-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.complaint-modal-reason {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 15px;
+}
+
+.complaint-modal-container-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 5px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.section-title {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.required {
+    color: red;
+}
+
+.radio-option {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.complaint-modal-input-phone, .complaint-modal-input-email{
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.submit-btn {
+    background-color: #ff6600;
+    color: white;
+    padding: 12px;
+    width: 100%;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.complaint-modal-note {
+    margin-top: 5px;
+}
+
+.modal-complaint-custom-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-top: 5px;
+}

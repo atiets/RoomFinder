@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import useSocket from '../../../../../hooks/useSocket';
 import { createPost } from '../../../../../redux/postAPI';
 import AddPostLeft from '../AddPostLeft/index';
 import AddPostRight from '../AddPostRight';
@@ -14,6 +15,27 @@ const AddPost = () => {
     const accessToken = currentUser?.accessToken;
     const user = currentUser?._id;
     const userName = currentUser?.username;
+    const [notifications, setNotifications] = useState("");
+    
+    const socket = useSocket(user);
+    
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleIncomingNotification = (message) => {
+            console.log("📥 Notification received:", message);
+            setNotifications(message);
+        };
+
+        socket.on("notification", handleIncomingNotification);
+
+        return () => {
+            socket.off("notification", handleIncomingNotification);
+        };
+    }, [socket]);
+
+
+    console.log("Notifications:", notifications);
 
     const handleMediaChange = (data) => {
         setMediaData(data);
@@ -125,7 +147,7 @@ const AddPost = () => {
         <div className="container-add-post">
             <div className="container-add-post-content">
                 <AddPostLeft onMediaChange={handleMediaChange} />
-                <AddPostRight onContentChange={handleContentChange} isSubmitting={isSubmitting}/>
+                <AddPostRight onContentChange={handleContentChange} isSubmitting={isSubmitting} />
             </div>
             <div className="container-add-post-footer">
                 <FooterAddPost onSubmit={submitPost} onPreview={previewPost} />
