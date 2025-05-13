@@ -30,8 +30,7 @@ import {
   deleteUserSuccess,
   getUsersFailed,
   getUsersSuccess,
-  getUserStart,
-  setUser,
+  getUserStart
 } from "./userSlice";
 
 export const loginUser = async (user, dispatch, navigate, setErrorMessage) => {
@@ -65,7 +64,7 @@ export const loginUser = async (user, dispatch, navigate, setErrorMessage) => {
       } else {
         setErrorMessage(
           err.response.data.message ||
-            "Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.",
+          "Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.",
         );
       }
     } else if (err.request) {
