@@ -1,8 +1,8 @@
-import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedMenu } from "../../../redux/menuSlice";
 import AdminDashboard from "../AdminDashboard/AdminDashboard";
 import AdminHeader from "../AdminHeader/AdminHeader";
+import AdminReports from "../ManageReport";
 import ManageUsers from "../ManageUsers/ManageUsers";
 import UserPosts from "../ManageUsers/UserPosts";
 import NewsForm from "../News/NewsForm/NewsForm";
@@ -39,6 +39,8 @@ const HomeAdmin = () => {
         return <NewsManagement />;
       case "userPost":
         return <UserPosts />;
+      case "report":
+        return <AdminReports />;
       default:
         return <AdminDashboard />;
     }

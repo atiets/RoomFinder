@@ -1,5 +1,5 @@
 import { ExpandLess, ExpandMore } from "@mui/icons-material"; // Import các icon từ MUI
-import React, { useState } from "react";
+import { useState } from "react";
 import "./Sidebar.css"; // Đảm bảo rằng bạn đã tạo file CSS
 
 const Sidebar = ({ setSelectedMenu }) => {
@@ -45,6 +45,12 @@ const Sidebar = ({ setSelectedMenu }) => {
             🏡 Quản lý bài đăng
           </li>
           <li
+            className={selectedMenu === "report" ? "active" : ""}
+            onClick={() => handleMenuClick("report")}
+          >
+            🏡 Khíu nại, phản hồi
+          </li>
+          <li
             className={selectedMenu === "news" ? "active" : ""}
             onClick={handleNewsClick}
           >
@@ -55,6 +61,10 @@ const Sidebar = ({ setSelectedMenu }) => {
               <ExpandMore className="MuiSvgIcon-root" />
             )}
           </li>
+          <li
+            className={selectedMenu === "news" ? "active" : ""}
+            onClick={handleNewsClick}
+          ></li>
           {showNewsOptions && (
             <ul className="submenu">
               <li

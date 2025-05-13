@@ -9,6 +9,7 @@ import {
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import useSocket from "../../../hooks/useSocket";
 import {
   fetchNotifications,
   markNotificationAsRead,
@@ -32,6 +33,7 @@ const Notification = ({
   const loading = useSelector((state) => state.notifications.loading);
   const error = useSelector((state) => state.notifications.error);
   const [refresh, setRefresh] = React.useState(false);
+  const socket = useSocket(userId);
 
   const getNotifications = async () => {
     try {
@@ -51,6 +53,20 @@ const Notification = ({
   useEffect(() => {
     getNotifications();
   }, [refresh]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleIncomingNotification = (message) => {
+      console.log("📩 Received new notification:", message);
+      getNotifications();
+    };
+
+    socket.on("postModerationStatus", handleIncomingNotification);
+
+    return () => {
+      socket.off("postModerationStatus", handleIncomingNotification);
+    };
+  }, [socket]);
 
   const handleNotificationClick = async (notificationId, postId) => {
     try {
@@ -82,8 +98,8 @@ const Notification = ({
   const sortedNotifications =
     notifications && notifications.length > 0
       ? [...notifications].sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-        )
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      )
       : [];
 
   return (

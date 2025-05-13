@@ -79,3 +79,23 @@ export const getFilteredConversations = async (userId, type, token) => {
         throw error;
     }
 };
+
+export const fetchSuggestedQuestions = async (postContent, accessToken) => {
+    try {
+        const response = await axios.post(`${BASE_URL}/suggest-questions`,
+            {
+                postContent,
+
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            }
+        );
+        return response;
+    } catch (error) {
+        console.error('Lỗi khi gọi API gợi ý câu hỏi:', error);
+        return null;
+    }
+};

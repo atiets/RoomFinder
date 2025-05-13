@@ -4,15 +4,16 @@ const Conversation = require("../models/Conversation");
 const mongoose = require("mongoose");
 const { markConversationAsRead } = require("../controllers/chatController");
 
+let onlineUsers = {};
+let io;
+
 function initializeSocket(server) {
-    const io = new Server(server, {
+    io = new Server(server, {
         cors: {
             origin: ["http://localhost:3000"],
             methods: ["GET", "POST"]
         }
     });
-
-    const onlineUsers = {};
 
     io.on("connection", (socket) => {
         // console.log("User connected:", socket.id);
@@ -115,8 +116,13 @@ function initializeSocket(server) {
             io.emit("onlineUsers", getOnlineUserIds());
         });
     });
+}
 
+function getIO() {
+    if (!io) {
+        throw new Error("Socket.io not initialized!");
+    }
     return io;
 }
 
-module.exports = initializeSocket;
+module.exports = { initializeSocket, onlineUsers, getIO };

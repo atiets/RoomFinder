@@ -502,7 +502,7 @@ const AddPostRight = ({ onContentChange, isSubmitting }) => {
                                         size="small"
                                         value={areaUse}
                                         type='area'
-                                        onChange={(e) => setAreaUse(e.target.value)}
+                                        onChange={(val) => setAreaUse(val)}
                                     />
                                 </div>
                             )}
