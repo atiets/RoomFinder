@@ -19,16 +19,16 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { createPost } from "../../../redux/postAPI";
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "./AddPost.css";
 
 const centerDefault = {
   lat: 21.0285, // Hà Nội
-  lng: 105.8542
+  lng: 105.8542,
 };
 const containerStyle = {
-  width: '100%',
-  height: '400px'
+  width: "100%",
+  height: "400px",
 };
 const SelectWithLabel = ({ label, options, value, onChange }) => {
   document.title = "Thêm bài đăng mới";
@@ -39,7 +39,7 @@ const SelectWithLabel = ({ label, options, value, onChange }) => {
         value={value || ""}
         onChange={(event) => {
           const selected = options.find(
-            (option) => option.code === event.target.value,
+            (option) => option.code === event.target.value
           );
           onChange(selected);
         }}
@@ -64,21 +64,21 @@ const AddPost = () => {
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [selectedWard, setSelectedWard] = useState(null);
   const [address, setAddress] = useState("");
-   const [coordinates, setCoordinates] = useState(null);
+  const [coordinates, setCoordinates] = useState(null);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: 'AIzaSyB-UYTKiIkSNR95uHsvcf0t6I7TrIvakgk', 
+    googleMapsApiKey: "AIzaSyB-UYTKiIkSNR95uHsvcf0t6I7TrIvakgk",
   });
 
   // Hàm lấy tọa độ từ địa chỉ
   const geocodeAddress = async () => {
     try {
       const response = await axios.get(
-        'https://maps.googleapis.com/maps/api/geocode/json',
+        "https://maps.googleapis.com/maps/api/geocode/json",
         {
           params: {
             address: address,
-            key: 'YOUR_GOOGLE_MAPS_API_KEY',
+            key: "YOUR_GOOGLE_MAPS_API_KEY",
           },
         }
       );
@@ -86,10 +86,10 @@ const AddPost = () => {
       if (location) {
         setCoordinates(location);
       } else {
-        alert('Không tìm thấy tọa độ');
+        alert("Không tìm thấy tọa độ");
       }
     } catch (error) {
-      console.error('Lỗi khi geocode:', error);
+      console.error("Lỗi khi geocode:", error);
     }
   };
 
@@ -218,7 +218,7 @@ const AddPost = () => {
             reader.onerror = reject;
             reader.readAsDataURL(file);
           });
-        }),
+        })
       )
         .then((newImages) => {
           setSelectedImages((prevImages) => [...prevImages, ...newImages]);
@@ -264,7 +264,7 @@ const AddPost = () => {
     const fetchProvinces = async () => {
       try {
         const response = await axios.get(
-          "https://provinces.open-api.vn/api/?depth=3",
+          "https://provinces.open-api.vn/api/?depth=3"
         );
         setProvinces(response.data);
       } catch (error) {
@@ -317,7 +317,7 @@ const AddPost = () => {
         province: selectedProvince ? selectedProvince.name : "",
         district: selectedDistrict ? selectedDistrict.name : "",
         ward: selectedWard ? selectedWard.name : "",
-      }),
+      })
     );
     formData.append("category", propertyType);
     formData.append("title", title);
@@ -328,7 +328,7 @@ const AddPost = () => {
         user: user,
         username: currentUser?.username,
         phoneNumber: phone,
-      }),
+      })
     );
     formData.append("rentalPrice", rentalPrice);
     formData.append("typePrice", typePrice);
@@ -745,20 +745,21 @@ const AddPost = () => {
                 marginTop: 2,
               }}
             >
-               <button type="button" onClick={geocodeAddress}>
-          Lấy tọa độ
-        </button>
-        <br /><br />
-        {coordinates && isLoaded && (
-          <GoogleMap
-            mapContainerStyle={containerStyle}
-            center={coordinates}
-            zoom={15}
-          >
-            <Marker position={coordinates} />
-          </GoogleMap>
-        )}
-        <br />
+              <button type="button" onClick={geocodeAddress}>
+                Lấy tọa độ
+              </button>
+              <br />
+              <br />
+              {coordinates && isLoaded && (
+                <GoogleMap
+                  mapContainerStyle={containerStyle}
+                  center={coordinates}
+                  zoom={15}
+                >
+                  <Marker position={coordinates} />
+                </GoogleMap>
+              )}
+              <br />
               <Button
                 type="submit"
                 variant="contained"

@@ -1,11 +1,11 @@
 import { Favorite, FavoriteBorder } from "@mui/icons-material";
 import Diversity3OutlinedIcon from "@mui/icons-material/Diversity3Outlined";
 import EmailIcon from "@mui/icons-material/Email";
-import EventIcon from '@mui/icons-material/Event';
+import EventIcon from "@mui/icons-material/Event";
 import HouseOutlinedIcon from "@mui/icons-material/HouseOutlined";
 import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
-import OutlinedFlagOutlinedIcon from '@mui/icons-material/OutlinedFlagOutlined';
+import OutlinedFlagOutlinedIcon from "@mui/icons-material/OutlinedFlagOutlined";
 import PeopleOutlineOutlinedIcon from "@mui/icons-material/PeopleOutlineOutlined";
 import RoomOutlinedIcon from "@mui/icons-material/RoomOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -42,6 +42,7 @@ import ModalAppointment from "./ModalAppointment";
 import ComplaintModal from "./ModalComplaint";
 import "./PostDetail.css";
 import ShareMenu from "./ShareMenu";
+import PostMap from "../MapIntegration/PostMap";
 
 const PostDetail = ({ onToggleFavorite }) => {
   const navigate = useNavigate();
@@ -83,7 +84,7 @@ const PostDetail = ({ onToggleFavorite }) => {
         image: post.images?.[0],
         price: post.rentalPrice,
         typePrice: post.typePrice,
-        contactInfo: post.contactInfo?.user
+        contactInfo: post.contactInfo?.user,
       },
     });
   };
@@ -146,7 +147,7 @@ const PostDetail = ({ onToggleFavorite }) => {
 
   const prevImage = () => {
     setCurrentIndex(
-      (prevIndex) => (prevIndex - 1 + post.images.length) % post.images.length,
+      (prevIndex) => (prevIndex - 1 + post.images.length) % post.images.length
     );
   };
 
@@ -190,8 +191,7 @@ const PostDetail = ({ onToggleFavorite }) => {
     );
 
   const isFavorite = favorites.some((fav) => fav._id === id);
-
-  console.log('apom:', showModalAppointment)
+  // console.log('apom:', showModalAppointment)
   return (
     <div className="post-detail-container">
       <ToastContainer position="top-right" autoClose={5000} />
@@ -235,8 +235,9 @@ const PostDetail = ({ onToggleFavorite }) => {
             </Typography>
           </Box>
           <Button startIcon={<RoomOutlinedIcon />} className="address-detail">
-            {post.address?.exactaddress || "Địa chỉ chưa có"} {post.address?.ward}{" "}
-            {post.address?.district} {post.address?.province}
+            {post.address?.exactaddress || "Địa chỉ chưa có"}{" "}
+            {post.address?.ward} {post.address?.district}{" "}
+            {post.address?.province}
           </Button>
           <div dangerouslySetInnerHTML={{ __html: post.content }} />
           <TableContainer component={Paper} className="container-table">
@@ -290,12 +291,18 @@ const PostDetail = ({ onToggleFavorite }) => {
             <Divider></Divider>
             <Button variant="outlined" className="room-post-button">
               <LocalPhoneIcon className="style-icon" />
-              {showFullPhone ? post.contactInfo?.phoneNumber : getHiddenPhoneNumber(post.contactInfo?.phoneNumber)}
+              {showFullPhone
+                ? post.contactInfo?.phoneNumber
+                : getHiddenPhoneNumber(post.contactInfo?.phoneNumber)}
               <IconButton onClick={togglePhoneVisibility}>
                 {showFullPhone ? <VisibilityOffIcon /> : <VisibilityIcon />}
               </IconButton>
             </Button>
-            <Button variant="outlined" className="room-post-button" onClick={() => handleChat(post)}>
+            <Button
+              variant="outlined"
+              className="room-post-button"
+              onClick={() => handleChat(post)}
+            >
               <EmailIcon className="style-icon" /> Gửi tin nhắn
             </Button>
             <Button
@@ -314,13 +321,12 @@ const PostDetail = ({ onToggleFavorite }) => {
           <Typography className="favorite-count">{favoriteCount}</Typography>
         </Box>
         <div className="share-container">
-          <ShareMenu
-            url={`${URL_POST}${post._id}`}
-            title={post.title}
-          />
+          <ShareMenu url={`${URL_POST}${post._id}`} title={post.title} />
         </div>
         <div className="post-detail-container-complaint">
-          <OutlinedFlagOutlinedIcon onClick={() => setOpenModalComplaint(true)} />
+          <OutlinedFlagOutlinedIcon
+            onClick={() => setOpenModalComplaint(true)}
+          />
         </div>
       </Box>
       <div className="post-detail-container-comment">
@@ -334,7 +340,19 @@ const PostDetail = ({ onToggleFavorite }) => {
           post={post}
         />
       )}
-      <ComplaintModal isOpen={openModalComplaint} handleClose={() => setOpenModalComplaint(false)} postID={post._id} />
+      <ComplaintModal
+        isOpen={openModalComplaint}
+        handleClose={() => setOpenModalComplaint(false)}
+        postID={post._id}
+      />
+      {post.latitude && post.longitude && (
+        <PostMap
+          latitude={post.latitude}
+          longitude={post.longitude}
+          title={post.title}
+          address={post.address}
+        />
+      )}
     </div>
   );
 };
