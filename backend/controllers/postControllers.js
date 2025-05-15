@@ -4,6 +4,69 @@ const cloudinary = require("cloudinary").v2;
 const mongoose = require("mongoose");
 const axios = require("axios");
 
+const sendEmail = require("../services/emailService");
+const { checkPostModeration } = require("./aiController");
+const { onlineUsers, getIO } = require("../congfig/websocket");
+
+function sendSocketNotification(userId, data) {
+  const io = getIO();
+  const socketId = onlineUsers[userId];
+  if (socketId) {
+    const socket = io.sockets.sockets.get(socketId);
+    if (socket) {
+      socket.emit("notification", data);
+    } else {
+      console.log(`[Socket] Không tìm thấy socket cho userId=${userId}`);
+    }
+  } else {
+    console.log(`[Socket] Người dùng không trực tuyến: ${userId}`);
+  }
+}
+
+const sendEmailToAdmin = (post) => {
+  const subject = "Bài đăng có nghi vấn cần kiểm duyệt";
+  const message = `Có một bài đăng mới cần được kiểm duyệt. Chi tiết bài đăng:
+
+  - Tiêu đề: ${post.title}
+  - Nội dung: ${post.content}
+  - Tình trạng: Chờ duyệt
+
+  Vui lòng xem và duyệt bài đăng này.`;
+  sendEmail("tranthituongvy9012003@gmail.com", subject, message);
+};
+
+// async function getCoordinates(addressString) {
+//   const encodedAddress = encodeURIComponent(addressString);
+//   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+//   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
+
+//   console.log("📌 URL gửi đến Google Maps API:", url);
+
+//   try {
+//     const res = await axios.get(url);
+//     const results = res.data.results;
+
+//     if (!results || results.length === 0) {
+//       console.warn("⚠️ Không tìm thấy tọa độ cho địa chỉ:", addressString);
+//       return null;
+//     }
+
+//     const { lat, lng } = results[0].geometry.location;
+//     console.log("📍 Tọa độ lấy được từ Google Maps:", {
+//       latitude: lat,
+//       longitude: lng,
+//     });
+
+//     return {
+//       latitude: lat,
+//       longitude: lng,
+//     };
+//   } catch (error) {
+//     console.error("❌ Lỗi khi gọi Google Maps API:", error.message);
+//     return null;
+//   }
+// }
+
 async function getCoordinates(addressString) {
   const encodedAddress = encodeURIComponent(addressString);
   const url = `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&addressdetails=1&limit=1`;
@@ -42,37 +105,6 @@ async function getCoordinates(addressString) {
     return null;
   }
 }
-
-const sendEmail = require("../services/emailService");
-const { checkPostModeration } = require("./aiController");
-const { onlineUsers, getIO } = require("../congfig/websocket");
-
-function sendSocketNotification(userId, data) {
-  const io = getIO();
-  const socketId = onlineUsers[userId];
-  if (socketId) {
-    const socket = io.sockets.sockets.get(socketId);
-    if (socket) {
-      socket.emit("notification", data);
-    } else {
-      console.log(`[Socket] Không tìm thấy socket cho userId=${userId}`);
-    }
-  } else {
-    console.log(`[Socket] Người dùng không trực tuyến: ${userId}`);
-  }
-}
-
-const sendEmailToAdmin = (post) => {
-  const subject = "Bài đăng có nghi vấn cần kiểm duyệt";
-  const message = `Có một bài đăng mới cần được kiểm duyệt. Chi tiết bài đăng:
-
-  - Tiêu đề: ${post.title}
-  - Nội dung: ${post.content}
-  - Tình trạng: Chờ duyệt
-
-  Vui lòng xem và duyệt bài đăng này.`;
-  sendEmail("tranthituongvy9012003@gmail.com", subject, message);
-};
 
 exports.createPost = async (req, res) => {
   try {
