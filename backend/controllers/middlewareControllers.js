@@ -14,13 +14,13 @@ const middlewareControllers = {
 
             jwt.verify(accessToken, process.env.JWT_ACCESS_KEY, (err, user) => {
                 if (err) {
-                    console.error("Error verifying JWT: ", err);
+                    // console.error("Error verifying JWT: ", err);
 
                     if (err.name === "TokenExpiredError") {
                         console.error("JWT expired: ", err);
                         return res.status(401).json("Token has expired");
                     } else if (err.name === "JsonWebTokenError") {
-                        console.error("JWT invalid: ", err);
+                        // console.error("JWT invalid: ", err);
                         return res.status(403).json("Token is not valid");
                     } else {
                         console.error("JWT verification error: ", err);

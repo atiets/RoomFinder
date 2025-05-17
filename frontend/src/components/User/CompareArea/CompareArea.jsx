@@ -1,23 +1,17 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import MapView from "./Map";
-import { FaMoneyBillWave, FaChartLine } from 'react-icons/fa';
-import tick from "../../../assets//images/tick.gif";
-import Swal from "sweetalert2";
-import { useDispatch, useSelector } from "react-redux";
-import { searchPosts, getApprovedPosts } from "../../../redux/postAPI";
+import tick from "../../../assets/images/tick.gif";
+import {
+  searchPosts,
+  getDistrictCoordinatesByCity,
+} from "../../../redux/postAPI";
 import "./Compare.css";
-
-const centerVN = { lat: 14.0583, lng: 108.2772 }; // Tâm Việt Nam
 
 const ErrorBoundary = ({ children }) => {
   const [hasError, setHasError] = useState(false);
   const staticErrorMessage = "Có lỗi xảy ra!";
-
-  const componentDidCatch = (error, info) => {
-    setHasError(true);
-    console.error("Lỗi bị bắt:", error, info);
-  };
 
   if (hasError) {
     return <div>{staticErrorMessage}</div>;
@@ -26,97 +20,125 @@ const ErrorBoundary = ({ children }) => {
   return children;
 };
 
+const centerVN = { lat: 14.0583, lng: 108.2772 };
+
 const CompareArea = () => {
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [selectedAreas, setSelectedAreas] = useState([]);
   const [mapCenter, setMapCenter] = useState(centerVN);
   const [mapZoom, setMapZoom] = useState(6);
-  const [posts, setPosts] = useState([]); 
-  const navigate = useNavigate();
-  const currentUser = useSelector((state) => state.auth.login.currentUser);
-  const token = currentUser?.accessToken;
+  const [posts, setPosts] = useState([]);
   const [provinces, setProvinces] = useState([]);
+  const [districtCoordinatesData, setDistrictCoordinatesData] = useState({});
+  const [districts, setDistricts] = useState([]);
+  const [selectedPriceInfo, setSelectedPriceInfo] = useState(null);
 
-  //lấy danh sách tỉnh
+  const navigate = useNavigate();
+
+  // ✅ Lấy dữ liệu tọa độ từ API khi component mount
   useEffect(() => {
-    const fetchProvinces = async () => {
+    const fetchDistrictCoordinates = async () => {
       try {
-        const data = await getApprovedPosts();
-        const posts = data?.posts || [];
+        const data = await getDistrictCoordinatesByCity();
+        console.log("✅ Dữ liệu lấy từ API:", data);
+        setDistrictCoordinatesData(data);
 
-        const provincesRaw = posts.map((post) => post.address?.province);
-        const uniqueProvinces = [...new Set(provincesRaw.filter(Boolean))];
-
-        console.log("✅ Các tỉnh/thành phố lấy được:", uniqueProvinces);
-
-        setProvinces(uniqueProvinces);
+        const allProvinces = Object.keys(data);
+        console.log("🌍 Danh sách tỉnh thành:", allProvinces);
+        setProvinces(allProvinces);
       } catch (err) {
-        console.error("❌ Lỗi khi gọi getApprovedPosts:", err);
+        console.error("❌ Lỗi khi gọi API:", err);
       }
     };
 
-    fetchProvinces();
+    fetchDistrictCoordinates();
   }, []);
 
-  const handleProvinceChange = (e) => {
-    setSelectedProvince(e.target.value);
+  // ✅ Khi chọn tỉnh, cập nhật danh sách quận
+  useEffect(() => {
+    if (!selectedProvince || !districtCoordinatesData) {
+      setDistricts([]);
+      return;
+    }
+
+    const provinceDistricts = districtCoordinatesData[selectedProvince];
+
+    if (provinceDistricts) {
+      const formattedDistricts = Object.entries(provinceDistricts).map(
+        ([district, coordinates]) => ({
+          district,
+          coordinates,
+        })
+      );
+      setDistricts(formattedDistricts);
+    } else {
+      setDistricts([]);
+    }
+  }, [selectedProvince, districtCoordinatesData]);
+
+  const handleProvinceChange = async (e) => {
+    const province = e.target.value;
+    setSelectedProvince(province);
+    setSelectedDistrict(null);
+    setSelectedAreas([]);
+    setMapCenter(centerVN);
+    setMapZoom(6);
+
+    try {
+      const result = await searchPosts({ province });
+      setPosts(result);
+    } catch (err) {
+      console.error("Lỗi khi lấy bài đăng:", err);
+    }
+  };
+
+  // Xử lý khi chọn quận/huyện
+  const handleToggleArea = (districtObj) => {
+    const districtName = districtObj.district;
+    const areaKey = `${selectedProvince} - ${districtName}`;
+
+    if (selectedAreas.includes(areaKey)) {
+      setSelectedAreas([]);
+      setSelectedDistrict(null);
+      setMapCenter(centerVN);
+      setMapZoom(6);
+      setSelectedPriceInfo(null);
+    } else {
+      setSelectedAreas([areaKey]);
+      setSelectedDistrict(districtName);
+      setMapCenter({
+        lat: districtObj.coordinates.lat,
+        lng: districtObj.coordinates.lng,
+      });
+      setMapZoom(13);
+
+      // Lấy thông tin giá cho quận/huyện được chọn
+      setSelectedPriceInfo({
+        commonPrice: districtObj.coordinates.commonPrice,
+        priceFluctuation: districtObj.coordinates.priceFluctuation,
+      });
+    }
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!selectedProvince) return;
-
+    const fetchDistrictCoordinates = async () => {
       try {
-        const result = await searchPosts({ province: selectedProvince }, token);
-        setPosts(result); // Lưu dữ liệu vào state
-        console.log("Bài đăng theo tỉnh:", result);
-      } catch (error) {
-        console.error("Không thể lấy bài đăng theo tỉnh:", error);
+        console.log("🚀 Gọi API lấy districtCoordinates...");
+        const data = await getDistrictCoordinatesByCity();
+        console.log("✅ Dữ liệu lấy từ API:", data);
+        setDistrictCoordinatesData(data);
+
+        const allProvinces = Object.keys(data);
+        console.log("🌍 Danh sách tỉnh thành:", allProvinces);
+        setProvinces(allProvinces);
+      } catch (err) {
+        console.error("❌ Lỗi khi gọi API:", err);
       }
     };
 
-    fetchData();
-  }, [selectedProvince, token]);
-
-  // const handleToggleArea = (district) => {
-  //   const areaName = `${selectedProvince} - ${district}`;
-    
-  //   // Nếu đã chọn quận này, thì bỏ chọn (deselect)
-  //   if (selectedAreas.includes(areaName)) {
-  //     setSelectedAreas([]); // Bỏ chọn tất cả
-  //     setSelectedDistrict(null); // Bỏ thông tin quận
-  //   } else {
-  //     // Nếu chưa chọn quận này, thì chọn quận mới và bỏ chọn quận cũ
-  //     setSelectedAreas([areaName]); // Chỉ lưu 1 quận duy nhất
-  //     const districtPos = area[selectedProvince]?.districts[district];
-  //     if (districtPos) {
-  //       setMapCenter(districtPos);
-  //       setMapZoom(13);
-  //       setSelectedDistrict(districtPos); // Lưu thông tin quận đã chọn
-  //     }
-  //   }
-  // };  
-
-  // const handleViewPrice = () => {
-  //   if (selectedAreas.length > 0) {
-  //     navigate("/compare-chart", {
-  //       state: { selectedAreas, area },
-  //     });
-  //   } else {
-  //     Swal.fire({
-  //       title: "Chưa chọn khu vực",
-  //       text: "Vui lòng chọn ít nhất một khu vực để xem biểu đồ.",
-  //       icon: "warning",
-  //       showCancelButton: true,
-  //       confirmButtonText: "Chọn khu vực",
-  //       cancelButtonText: "Hủy",
-  //     }).then((result) => {
-  //       if (result.isConfirmed) {
-  //       }
-  //     });
-  //   }
-  // };
+    fetchDistrictCoordinates();
+  }, []);
 
   return (
     <div className="compare-wrapper">
@@ -127,99 +149,109 @@ const CompareArea = () => {
         </p>
 
         <div className="select-section">
-      <label htmlFor="province-select" className="select-label">
-        Chọn tỉnh/thành phố:
-      </label>
-      <select
-        id="province-select"
-        className="province-select"
-        value={selectedProvince}
-        onChange={handleProvinceChange}
-      >
-        <option value="">-- Chọn tỉnh/thành --</option>
-        {provinces.map((province) => (
-          <option key={province} value={province}>
-            {province}
-          </option>
-        ))}
-      </select>
-    </div>
+          <label htmlFor="province-select" className="select-label">
+            Chọn tỉnh/thành phố:
+          </label>
+          <select
+            id="province-select"
+            className="province-select"
+            value={selectedProvince}
+            onChange={handleProvinceChange}
+          >
+            <option value="">-- Chọn tỉnh/thành --</option>
+            {provinces.map((province) => (
+              <option key={province} value={province}>
+                {province}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        {/* {selectedProvince && area[selectedProvince] && area[selectedProvince].districts && (
+        {/* ✅ Danh sách quận */}
+        {districts.length > 0 && (
           <div className="district-buttons">
-            {Object.keys(area[selectedProvince].districts).map((district) => {
-              const areaKey = `${selectedProvince} - ${district}`;
+            {districts.map((districtObj) => {
+              const areaKey = `${selectedProvince} - ${districtObj.district}`;
               return (
                 <button
-                  key={district}
-                  className={`district-btn ${selectedAreas.includes(areaKey) ? "selected" : ""}`}
-                  onClick={() => handleToggleArea(district)}
+                  key={districtObj.district}
+                  className={`district-btn ${
+                    selectedAreas.includes(areaKey) ? "selected" : ""
+                  }`}
+                  onClick={() => handleToggleArea(districtObj)}
                 >
-                  {district}
+                  {districtObj.district}
                 </button>
               );
             })}
           </div>
-        )} */}
+        )}
 
-        {/* <button className="view-price-btn" onClick={handleViewPrice}>
-          Xem giá ngay
-        </button> */}
+        {selectedDistrict && (
+          <div style={{ marginTop: "20px" }}>
+            <button
+              className="btn-compare"
+              onClick={() => {
+                navigate("/compare-chart", {
+                  state: {
+                    selectedProvince,
+                    selectedDistrict,
+                    selectedAreas,
+                  },
+                });
+              }}
+            >
+              Xem giá ngay
+            </button>
+          </div>
+        )}
 
         <div className="compare-info">
-  <p>
-    <img src={tick} alt="tick" className="compare-icon" />
-    Dữ liệu từ 100 triệu tin đăng BĐS
-  </p>
-  <p>
-    <img src={tick} alt="tick" className="compare-icon" />
-    Giá giao dịch thực tế
-  </p>
-  <p>
-    <img src={tick} alt="tick" className="compare-icon" />
-    Chi tiết đến quận, phường, đường
-  </p>
-  <p>
-    <img src={tick} alt="tick" className="compare-icon" />
-    Cập nhật hằng tháng
-  </p>
-</div>
-
-{posts.length > 0 && (
-        <div className="post-list">
-          <h3>Bài đăng ở tỉnh: {selectedProvince}</h3>
-          <ul>
-            {posts.map((post) => (
-              <li key={post._id}>
-                <strong>{post.title}</strong> – {post.address?.district}, {post.address?.province}
-              </li>
-            ))}
-          </ul>
+          <p>
+            <img src={tick} alt="tick" className="compare-icon" /> Dữ liệu từ
+            100 triệu tin đăng BĐS
+          </p>
+          <p>
+            <img src={tick} alt="tick" className="compare-icon" /> Giá giao dịch
+            thực tế
+          </p>
+          <p>
+            <img src={tick} alt="tick" className="compare-icon" /> Chi tiết đến
+            quận, phường, đường
+          </p>
+          <p>
+            <img src={tick} alt="tick" className="compare-icon" /> Cập nhật hằng
+            tháng
+          </p>
         </div>
-      )}
-
-
       </div>
 
       <div className="compare-right">
         <MapView
-          selectedArea={{
-            coords: [mapCenter.lat, mapCenter.lng], 
-            zoomLevel: mapZoom,
-            info: selectedDistrict
-          }}
+          selectedArea={
+            selectedDistrict
+              ? {
+                  coords: [mapCenter.lat, mapCenter.lng],
+                  zoomLevel: mapZoom,
+                  info: selectedDistrict,
+                  priceInfo: selectedPriceInfo,
+                }
+              : {
+                  coords: [centerVN.lat, centerVN.lng],
+                  zoomLevel: 6,
+                  info: null,
+                }
+          }
         />
       </div>
     </div>
   );
 };
 
-const CompareAreaWithErrorBoundary = () => {
-  return (
-    <ErrorBoundary>
-      <CompareArea />
-    </ErrorBoundary>
-  );
-};
+const CompareAreaWithErrorBoundary = () => (
+  <ErrorBoundary>
+    <CompareArea />
+  </ErrorBoundary>
+);
 
 export default CompareAreaWithErrorBoundary;

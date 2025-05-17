@@ -37,6 +37,16 @@ export const getAllPosts = async (
   }
 };
 
+//get posts for compare price
+export const getDistrictCoordinatesByCity = async () => {
+  try {
+    const response = await axios.get(`${API_URL}district-coordinates`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Không thể lấy dữ liệu tọa độ quận/huyện: " + error.message);
+  }
+};
+
 export const getApprovedPosts = async () => {
   try {
     const response = await axios.get(`${API_URL}posts-by-status`, {

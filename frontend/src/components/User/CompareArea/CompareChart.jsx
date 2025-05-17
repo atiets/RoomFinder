@@ -10,7 +10,7 @@ import {
   Legend,
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
-import area from "../../../mockData/area";
+import { getDistrictCoordinatesByCity } from "../../../redux/postAPI"; 
 import "./CompareChart.css";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -18,30 +18,49 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 const CompareChart = () => {
   const location = useLocation();
   const initialSelectedAreas = location.state?.selectedAreas || [];
+  const initialSelectedDistrict = location.state?.selectedDistrict || null;
+  const initialSelectedProvince = location.state?.selectedProvince || "";
 
-  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedProvince, setSelectedProvince] = useState(initialSelectedProvince);
   const [selectedAreas, setSelectedAreas] = useState(initialSelectedAreas);
+  const [districtCoordinatesData, setDistrictCoordinatesData] = useState({});
+  const [provinces, setProvinces] = useState([]);
 
   useEffect(() => {
-    if (initialSelectedAreas.length > 0) {
-      const [province, district] = initialSelectedAreas[0].split(" - ");
-      setSelectedProvince(province);
+    const fetchData = async () => {
+      try {
+        const data = await getDistrictCoordinatesByCity();
+        setDistrictCoordinatesData(data);
+        setProvinces(Object.keys(data));
+      } catch (err) {
+        console.error("Lỗi khi gọi API:", err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (initialSelectedDistrict && initialSelectedProvince) {
+      const areaKey = `${initialSelectedProvince} - ${initialSelectedDistrict}`;
+      if (!selectedAreas.includes(areaKey)) {
+        setSelectedAreas([areaKey]);
+      }
     }
-  }, [initialSelectedAreas]);
+  }, [initialSelectedDistrict, initialSelectedProvince, selectedAreas]);
+
+  const handleToggleArea = (district) => {
+    const areaName = `${selectedProvince} - ${district}`;
+    if (selectedAreas.includes(areaName)) {
+      setSelectedAreas([]);
+    } else {
+      setSelectedAreas([areaName]);
+    }
+  };
 
   const handleProvinceChange = (e) => {
     const province = e.target.value;
     setSelectedProvince(province);
-    setSelectedAreas([]); // Reset areas when province changes
-  };
-
-  const handleToggleArea = (district) => {
-    const areaName = `${selectedProvince} - ${district}`;
-    setSelectedAreas((prevSelected) =>
-      prevSelected.includes(areaName)
-        ? prevSelected.filter((area) => area !== areaName) // Remove if already selected
-        : [...prevSelected, areaName] // Add if not selected
-    );
+    setSelectedAreas([]);
   };
 
   const getChartData = () => {
@@ -50,12 +69,13 @@ const CompareChart = () => {
     const priceData = [];
 
     selectedAreas.forEach((areaStr) => {
-      const [city, district] = areaStr.split(" - ");
-      const data = area[city]?.districts[district];
+      const [province, district] = areaStr.split(" - ");
+      const data = districtCoordinatesData[province]?.[district];
+
       if (data) {
-        labels.push(`${district} (${city})`);
-        fluctuationData.push(data.priceFluctuation);
-        priceData.push(data.commonPrice);
+        labels.push(`${district} (${province})`);
+        fluctuationData.push(data.priceFluctuation || 0);
+        priceData.push(data.commonPrice || 0);
       }
     });
 
@@ -83,9 +103,13 @@ const CompareChart = () => {
 
         <div className="select-section">
           <label htmlFor="province-select">Tỉnh / Thành phố:</label>
-          <select id="province-select" value={selectedProvince} onChange={handleProvinceChange}>
+          <select
+            id="province-select"
+            value={selectedProvince}
+            onChange={handleProvinceChange}
+          >
             <option value="">-- Chọn tỉnh/thành --</option>
-            {Object.keys(area).map((province) => (
+            {provinces.map((province) => (
               <option key={province} value={province}>
                 {province}
               </option>
@@ -93,22 +117,25 @@ const CompareChart = () => {
           </select>
         </div>
 
-        {selectedProvince && (
-          <div className="district-buttons">
-            {Object.keys(area[selectedProvince].districts).map((district) => {
-              const areaKey = `${selectedProvince} - ${district}`;
-              return (
-                <button
-                  key={district}
-                  className={`district-btn ${selectedAreas.includes(areaKey) ? "selected" : ""}`}
-                  onClick={() => handleToggleArea(district)}
-                >
-                  {district}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {selectedProvince &&
+          districtCoordinatesData[selectedProvince] && (
+            <div className="district-buttons">
+              {Object.keys(districtCoordinatesData[selectedProvince]).map(
+                (district) => {
+                  const areaKey = `${selectedProvince} - ${district}`;
+                  return (
+                    <button
+                      key={district}
+                      className={`district-btn ${selectedAreas.includes(areaKey) ? "selected" : ""}`}
+                      onClick={() => handleToggleArea(district)}
+                    >
+                      {district}
+                    </button>
+                  );
+                }
+              )}
+            </div>
+          )}
       </div>
 
       <div className="right">
