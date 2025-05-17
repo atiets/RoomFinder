@@ -7,6 +7,9 @@ const router = require("express").Router();
 // Lấy tất cả bài đăng
 router.get("/posts", middlewareControllers.verifyTokenAndAdminAuth, postController.getAllPosts);
 
+//lấy bài đăng cho ss giá
+router.get('/district-coordinates', postController.getDistrictCoordinatesByCity);
+
 //Lấy bài đăng theo trạng thái của admin
 router.get("/list-pending", middlewareControllers.verifyTokenAndAdminAuth, postController.getUserPostAd);
 
