@@ -83,7 +83,7 @@ export default function MapView({ selectedArea }) {
                 paddingBottom: "6px",
               }}
             >
-              Thông tin giá: {selectedArea.info}
+              {selectedArea.info}
             </h3>
             {selectedArea.priceInfo && (
               <>
