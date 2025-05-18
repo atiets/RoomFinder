@@ -1,208 +1,314 @@
 .compare-wrapper {
   display: flex;
-  gap: 20px;
-  padding: 20px;
+  gap: 30px;
+  padding: 25px;
+  background-color: transparent;
 }
 
 .compare-left {
   flex: 1;
-  padding-right: 10px;
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .compare-right {
   flex: 1;
   height: 600px;
-}
-
-.map-container {
-  width: 100%;
-  height: 100%;
-  border-radius: 10px;
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
+/* Tiêu đề và phụ đề */
 .compare-title {
-  text-align: center; 
-  font-size: 32px; 
-  font-weight: 700; 
-  color: #2c3e50; 
-  margin-bottom: 15px; 
-  font-family: 'Roboto', sans-serif; 
-  text-transform: uppercase; 
-  letter-spacing: 1px; 
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  font-family: "Roboto", sans-serif;
+  position: relative;
 }
 
 .compare-subtitle {
-  text-align: center; 
-  font-size: 18px; 
-  color: #7f8c8d; 
+  text-align: center;
+  font-size: 16px;
+  color: #7f8c8d;
   font-weight: 400;
-  margin-top: 0; 
-  margin-bottom: 30px; 
-  font-family: 'Open Sans', sans-serif; 
-  line-height: 1.6; 
+  margin-top: 0;
+  margin-bottom: 30px;
+  font-family: "Open Sans", sans-serif;
 }
 
-.compare-title, .compare-subtitle {
-  animation: fadeIn 1s ease-out; 
+/* Section styling với đường phân cách */
+.filter-section {
+  margin-bottom: 25px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #eaeaea;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.select-section {
-  margin: 20px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.select-label {
+.filter-title {
   font-size: 16px;
   font-weight: 600;
+  margin-bottom: 12px;
   color: #333;
-  margin-right: 10px; 
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
 }
 
-.province-select {
-  padding: 10px 20px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  width: 250px;
-  background-color: #fff;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  outline: none; /* Bỏ viền mặc định của trình duyệt */
+.filter-title::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  background-color: #4caf50;
+  margin-right: 8px;
+  border-radius: 4px;
 }
 
-.province-select:focus {
-  border-color: #4caf50;
-  box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); 
+/* Row Layout với ngăn cách */
+.filter-row {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 0;
+  position: relative;
 }
 
-.province-select option {
-  padding: 10px;
-  font-size: 16px;
+/* Đường ngăn cách giữa 2 phần */
+.filter-row::after {
+  content: "";
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  left: 50%;
+  width: 1px;
+  background-color: #eaeaea;
 }
 
+.filter-half {
+  flex: 1;
+  padding: 0 10px;
+}
+
+/* Card cho Category */
+.category-buttons,
+.transaction-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.category-card,
+.transaction-card {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  width: auto;
+  height: auto;
+  padding: 8px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+/* Category cards - xanh lá pastel */
+.category-card {
+  background-color: #f0f9f0;
+  border: 1px solid #d7ebd7;
+}
+
+.category-card:hover {
+  background-color: #e0f2e0;
+  border-color: #bde3bd;
+  transform: translateY(-2px);
+}
+
+.category-card.selected {
+  background-color: #c8e6c9;
+  border-color: #81c784;
+}
+
+/* Transaction cards - cam pastel */
+.transaction-card {
+  background-color: #fff5eb;
+  border: 1px solid #ffe0cc;
+}
+
+.transaction-card:hover {
+  background-color: #ffe8d6;
+  border-color: #ffd0a8;
+  transform: translateY(-2px);
+}
+
+.transaction-card.selected {
+  background-color: #ffe0b2;
+  border-color: #ffb74d;
+}
+
+/* Icon styling */
+.category-icon,
+.transaction-icon {
+  font-size: 17px;
+  margin-right: 8px;
+}
+
+.category-icon {
+  color: #388e3c;
+}
+
+.transaction-icon {
+  color: #f57c00;
+}
+
+.category-name,
+.transaction-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* District buttons */
 .district-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  justify-content: center;
-  margin-bottom: 20px;
+  padding: 5px;
 }
 
 .district-btn {
-  padding: 10px 15px;
-  background-color: #f1f1f1;
-  border: 1px solid #ccc;
+  padding: 8px 16px;
   border-radius: 20px;
-  cursor: pointer;
+  background-color: #f0f9f0;
+  border: 1px solid #d7ebd7;
   font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
+}
+
+.district-btn:hover {
+  background-color: #e0f2e0;
+  border-color: #bde3bd;
+  transform: translateY(-2px);
 }
 
 .district-btn.selected {
-  background-color: #4caf50;
-  color: white;
-  border-color: #4caf50;
+  background-color: #c8e6c9;
+  border-color: #81c784;
+  color: #2e7d32;
 }
 
-.view-price-btn {
-  display: block;
-  margin: 0 auto 15px auto;
-  padding: 12px 25px;
-  background-color: #ff6600;
+.district-btn.no-data {
+  opacity: 0.5;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.data-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #ff9800;
   color: white;
-  font-size: 16px;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
   font-weight: bold;
-  border: none;
-  border-radius: 25px;
+}
+
+/* Province select */
+.province-select {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: 1px solid #d7ebd7;
+  font-size: 15px;
+  background-color: #fff;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
 }
 
-.view-price-btn:hover {
-  background-color: #ff8533;
+.province-select:hover,
+.province-select:focus {
+  border-color: #81c784;
 }
 
-.compare-info {
-  font-size: 16px;
-  color: #333;
+/* Action button */
+.action-section {
+  margin: 30px 0 20px;
   display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap; 
-  margin-left: 120px;
-  border-top: 1px dashed #ccc;
+  justify-content: center;
+}
+
+.btn-compare {
+  padding: 12px 30px;
+  border-radius: 25px;
+  background-color: #ff9800;
+  background-image: linear-gradient(to right, #ff9800, #fb8c00);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 0 auto;
+}
+
+.btn-compare:hover {
+  background-image: linear-gradient(to right, #fb8c00, #f57c00);
+  transform: translateY(-3px);
+}
+
+/* Info section */
+.compare-info {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #eaeaea;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
 }
 
 .compare-info p {
   display: flex;
   align-items: center;
-  margin: 10px 0;
-  font-weight: 500;
-  width: 48%;
+  margin: 5px 0;
+  font-size: 14px;
+  color: #555;
 }
 
 .compare-icon {
   width: 20px;
   height: 20px;
   margin-right: 10px;
-  display: inline-block;
 }
 
-.district-info {
-  background: rgb(0 0 0 / 74%);
-  border-radius: 12px;
-  padding: 20px; 
-  color: #fff; 
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); 
-  max-width: 300px; 
-  margin-top: 20px; 
-  animation: fadeIn 0.5s ease; 
+/* Responsive */
+@media (max-width: 992px) {
+  .compare-wrapper {
+    flex-direction: column;
+  }
+
+  .compare-right {
+    height: 400px;
+  }
+
+  .filter-row::after {
+    display: none;
+  }
 }
 
-.district-info h3 {
-  font-size: 22px;
-  margin-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* gạch dưới nhạt */
-  padding-bottom: 8px;
-}
+@media (max-width: 768px) {
+  .filter-row {
+    flex-direction: column;
+    gap: 20px;
+  }
 
-.district-info p {
-  font-size: 16px;
-  margin: 8px 0;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.district-info-icon {
-  margin-right: 8px;
-  font-size: 18px;
-}
-
-.btn-compare {
-  transition: background-color 0.3s ease;
-  background-color: #fd7e14 !important; 
-  border-radius: 8px !important; 
-  padding: 12px 24px !important; 
-  font-weight: 600 !important; 
-  color: white !important; 
-  font-size: 14px !important;
-  border: none;
-  cursor: pointer;
-  margin-bottom: 20px;
-  margin-left: 320px;
-}
-
-.btn-compare:hover {
-  background-color: #e67700 !important; 
+  .compare-info {
+    grid-template-columns: 1fr;
+  }
 }
