@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import MapView from "./Map";
 import tick from "../../../assets/images/tick.gif";
-import {
-  searchPosts,
-  getDistrictCoordinatesByCity,
-} from "../../../redux/postAPI";
+import { getDistrictCoordinatesByCity } from "../../../redux/postAPI";
 import "./Compare.css";
+import {
+  FaBuilding,
+  FaHome,
+  FaMapMarkedAlt,
+  FaStore,
+  FaBed,
+  FaSignature,
+  FaMoneyBillWave,
+  FaExchangeAlt,
+  FaCity,
+  FaMapSigns,
+} from "react-icons/fa";
 
 const ErrorBoundary = ({ children }) => {
   const [hasError, setHasError] = useState(false);
   const staticErrorMessage = "Có lỗi xảy ra!";
 
   if (hasError) {
-    return <div>{staticErrorMessage}</div>;
+    return <div className="error-message">{staticErrorMessage}</div>;
   }
 
   return children;
@@ -22,9 +30,28 @@ const ErrorBoundary = ({ children }) => {
 
 const centerVN = { lat: 14.0583, lng: 108.2772 };
 
+const categories = [
+  { id: "Căn hộ/chung cư", name: "Căn hộ", icon: <FaBuilding /> },
+  { id: "Nhà ở", name: "Nhà ở", icon: <FaHome /> },
+  { id: "Đất", name: "Đất", icon: <FaMapMarkedAlt /> },
+  {
+    id: "Văn phòng, mặt bằng kinh doanh",
+    name: "Văn phòng",
+    icon: <FaStore />,
+  },
+  { id: "phòng trọ", name: "Phòng trọ", icon: <FaBed /> },
+];
+
+const transactionTypes = [
+  { id: "Cho thuê", name: "Cho thuê", icon: <FaSignature /> },
+  { id: "Cần bán", name: "Cần bán", icon: <FaMoneyBillWave /> },
+];
+
 const CompareArea = () => {
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [selectedAreas, setSelectedAreas] = useState([]);
   const [mapCenter, setMapCenter] = useState(centerVN);
   const [mapZoom, setMapZoom] = useState(6);
@@ -33,50 +60,37 @@ const CompareArea = () => {
   const [districtCoordinatesData, setDistrictCoordinatesData] = useState({});
   const [districts, setDistricts] = useState([]);
   const [selectedPriceInfo, setSelectedPriceInfo] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  // ✅ Lấy dữ liệu tọa độ từ API khi component mount
+  // Kiểm tra xem đã chọn đủ thông tin chưa
+  const isAllSelected =
+    selectedCategory &&
+    selectedTransaction &&
+    selectedProvince &&
+    selectedDistrict;
+
+  // API calls and data fetching...
   useEffect(() => {
     const fetchDistrictCoordinates = async () => {
+      setIsLoading(true);
       try {
         const data = await getDistrictCoordinatesByCity();
-        console.log("✅ Dữ liệu lấy từ API:", data);
         setDistrictCoordinatesData(data);
-
         const allProvinces = Object.keys(data);
-        console.log("🌍 Danh sách tỉnh thành:", allProvinces);
         setProvinces(allProvinces);
       } catch (err) {
         console.error("❌ Lỗi khi gọi API:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchDistrictCoordinates();
   }, []);
 
-  // ✅ Khi chọn tỉnh, cập nhật danh sách quận
-  useEffect(() => {
-    if (!selectedProvince || !districtCoordinatesData) {
-      setDistricts([]);
-      return;
-    }
-
-    const provinceDistricts = districtCoordinatesData[selectedProvince];
-
-    if (provinceDistricts) {
-      const formattedDistricts = Object.entries(provinceDistricts).map(
-        ([district, coordinates]) => ({
-          district,
-          coordinates,
-        })
-      );
-      setDistricts(formattedDistricts);
-    } else {
-      setDistricts([]);
-    }
-  }, [selectedProvince, districtCoordinatesData]);
-
+  // Handlers...
   const handleProvinceChange = async (e) => {
     const province = e.target.value;
     setSelectedProvince(province);
@@ -84,16 +98,9 @@ const CompareArea = () => {
     setSelectedAreas([]);
     setMapCenter(centerVN);
     setMapZoom(6);
-
-    try {
-      const result = await searchPosts({ province });
-      setPosts(result);
-    } catch (err) {
-      console.error("Lỗi khi lấy bài đăng:", err);
-    }
+    setSelectedPriceInfo(null);
   };
 
-  // Xử lý khi chọn quận/huyện
   const handleToggleArea = (districtObj) => {
     const districtName = districtObj.district;
     const areaKey = `${selectedProvince} - ${districtName}`;
@@ -113,50 +120,126 @@ const CompareArea = () => {
       });
       setMapZoom(13);
 
-      // Lấy thông tin giá cho quận/huyện được chọn
-      setSelectedPriceInfo({
-        commonPrice: districtObj.coordinates.commonPrice,
-        priceFluctuation: districtObj.coordinates.priceFluctuation,
-      });
+      if (
+        selectedCategory &&
+        selectedTransaction &&
+        districtObj.coordinates.byCategoryAndTransaction &&
+        districtObj.coordinates.byCategoryAndTransaction[selectedCategory] &&
+        districtObj.coordinates.byCategoryAndTransaction[selectedCategory][
+          selectedTransaction
+        ]
+      ) {
+        const priceData =
+          districtObj.coordinates.byCategoryAndTransaction[selectedCategory][
+            selectedTransaction
+          ];
+        setSelectedPriceInfo({
+          commonPrice: priceData.commonPrice,
+          priceFluctuation: priceData.priceFluctuation,
+          count: priceData.count,
+        });
+      } else {
+        setSelectedPriceInfo(null);
+      }
     }
   };
 
+  // Category and transaction selection handlers...
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category === selectedCategory ? null : category);
+    setSelectedPriceInfo(null);
+    setSelectedDistrict(null);
+    setSelectedAreas([]);
+  };
+
+  const handleTransactionSelect = (transaction) => {
+    setSelectedTransaction(
+      transaction === selectedTransaction ? null : transaction
+    );
+    setSelectedPriceInfo(null);
+    setSelectedDistrict(null);
+    setSelectedAreas([]);
+  };
+
+  // Update districts when province changes
   useEffect(() => {
-    const fetchDistrictCoordinates = async () => {
-      try {
-        console.log("🚀 Gọi API lấy districtCoordinates...");
-        const data = await getDistrictCoordinatesByCity();
-        console.log("✅ Dữ liệu lấy từ API:", data);
-        setDistrictCoordinatesData(data);
+    if (!selectedProvince || !districtCoordinatesData) {
+      setDistricts([]);
+      return;
+    }
 
-        const allProvinces = Object.keys(data);
-        console.log("🌍 Danh sách tỉnh thành:", allProvinces);
-        setProvinces(allProvinces);
-      } catch (err) {
-        console.error("❌ Lỗi khi gọi API:", err);
-      }
-    };
-
-    fetchDistrictCoordinates();
-  }, []);
+    const provinceDistricts = districtCoordinatesData[selectedProvince];
+    if (provinceDistricts) {
+      const formattedDistricts = Object.entries(provinceDistricts).map(
+        ([district, coordinates]) => ({
+          district,
+          coordinates,
+        })
+      );
+      setDistricts(formattedDistricts);
+    } else {
+      setDistricts([]);
+    }
+  }, [selectedProvince, districtCoordinatesData]);
 
   return (
     <div className="compare-wrapper">
       <div className="compare-left">
-        <h2 className="compare-title">So sánh giá phòng trọ</h2>
+        <h2 className="compare-title">So sánh giá bất động sản</h2>
         <p className="compare-subtitle">
-          Cập nhật dữ liệu giá mới nhất tháng 04/2025 tại các thành phố lớn
+          Cập nhật dữ liệu giá mới nhất tháng 05/2025
         </p>
 
-        <div className="select-section">
-          <label htmlFor="province-select" className="select-label">
-            Chọn tỉnh/thành phố:
-          </label>
+        {/* Layout hai cột với ngăn cách */}
+        <div className="filter-row">
+          <div className="filter-section filter-half">
+            <h3 className="filter-title">
+              <FaBuilding style={{ marginRight: "8px" }} /> Loại bất động sản
+            </h3>
+            <div className="category-buttons">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  className={`category-card ${selectedCategory === category.id ? "selected" : ""}`}
+                  onClick={() => handleCategorySelect(category.id)}
+                >
+                  <span className="category-icon">{category.icon}</span>
+                  <span className="category-name">{category.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-section filter-half">
+            <h3 className="filter-title">
+              <FaExchangeAlt style={{ marginRight: "8px" }} /> Loại giao dịch
+            </h3>
+            <div className="transaction-buttons">
+              {transactionTypes.map((transaction) => (
+                <button
+                  key={transaction.id}
+                  className={`transaction-card ${selectedTransaction === transaction.id ? "selected" : ""}`}
+                  onClick={() => handleTransactionSelect(transaction.id)}
+                >
+                  <span className="transaction-icon">{transaction.icon}</span>
+                  <span className="transaction-name">{transaction.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Chọn tỉnh/thành phố */}
+        <div className="filter-section">
+          <h3 className="filter-title">
+            <FaCity style={{ marginRight: "8px" }} /> Tỉnh/Thành phố
+          </h3>
           <select
             id="province-select"
             className="province-select"
             value={selectedProvince}
             onChange={handleProvinceChange}
+            disabled={isLoading}
           >
             <option value="">-- Chọn tỉnh/thành --</option>
             {provinces.map((province) => (
@@ -167,28 +250,55 @@ const CompareArea = () => {
           </select>
         </div>
 
-        {/* ✅ Danh sách quận */}
+        {/* Chọn quận/huyện */}
         {districts.length > 0 && (
-          <div className="district-buttons">
-            {districts.map((districtObj) => {
-              const areaKey = `${selectedProvince} - ${districtObj.district}`;
-              return (
-                <button
-                  key={districtObj.district}
-                  className={`district-btn ${
-                    selectedAreas.includes(areaKey) ? "selected" : ""
-                  }`}
-                  onClick={() => handleToggleArea(districtObj)}
-                >
-                  {districtObj.district}
-                </button>
-              );
-            })}
+          <div className="filter-section">
+            <h3 className="filter-title">
+              <FaMapSigns style={{ marginRight: "8px" }} /> Quận/Huyện
+            </h3>
+            <div className="district-buttons">
+              {districts.map((districtObj) => {
+                const areaKey = `${selectedProvince} - ${districtObj.district}`;
+                const hasData =
+                  selectedCategory &&
+                  selectedTransaction &&
+                  districtObj.coordinates.byCategoryAndTransaction &&
+                  districtObj.coordinates.byCategoryAndTransaction[
+                    selectedCategory
+                  ] &&
+                  districtObj.coordinates.byCategoryAndTransaction[
+                    selectedCategory
+                  ][selectedTransaction];
+
+                return (
+                  <button
+                    key={districtObj.district}
+                    className={`district-btn ${selectedAreas.includes(areaKey) ? "selected" : ""} 
+                              ${hasData ? "" : "no-data"}`}
+                    onClick={() => handleToggleArea(districtObj)}
+                    disabled={!hasData}
+                    title={hasData ? "" : "Không có dữ liệu cho lựa chọn này"}
+                  >
+                    {districtObj.district}
+                    {hasData && (
+                      <span className="data-badge">
+                        {
+                          districtObj.coordinates.byCategoryAndTransaction[
+                            selectedCategory
+                          ][selectedTransaction].count
+                        }
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
-        {selectedDistrict && (
-          <div style={{ marginTop: "20px" }}>
+        {/* Hiển thị nút khi đã chọn đủ thông tin */}
+        {isAllSelected && selectedPriceInfo && (
+          <div className="action-section">
             <button
               className="btn-compare"
               onClick={() => {
@@ -196,7 +306,9 @@ const CompareArea = () => {
                   state: {
                     selectedProvince,
                     selectedDistrict,
-                    selectedAreas,
+                    selectedCategory,
+                    selectedTransaction,
+                    selectedPriceInfo,
                   },
                 });
               }}
@@ -209,7 +321,7 @@ const CompareArea = () => {
         <div className="compare-info">
           <p>
             <img src={tick} alt="tick" className="compare-icon" /> Dữ liệu từ
-            100 triệu tin đăng BĐS
+            100 triệu tin đăng
           </p>
           <p>
             <img src={tick} alt="tick" className="compare-icon" /> Giá giao dịch
@@ -217,11 +329,11 @@ const CompareArea = () => {
           </p>
           <p>
             <img src={tick} alt="tick" className="compare-icon" /> Chi tiết đến
-            quận, phường, đường
+            từng quận/phường
           </p>
           <p>
-            <img src={tick} alt="tick" className="compare-icon" /> Cập nhật hằng
-            tháng
+            <img src={tick} alt="tick" className="compare-icon" /> Cập nhật dữ
+            liệu hằng tháng
           </p>
         </div>
       </div>
@@ -233,8 +345,10 @@ const CompareArea = () => {
               ? {
                   coords: [mapCenter.lat, mapCenter.lng],
                   zoomLevel: mapZoom,
-                  info: selectedDistrict,
+                  info: `${selectedDistrict} - ${selectedProvince}`,
                   priceInfo: selectedPriceInfo,
+                  category: selectedCategory,
+                  transaction: selectedTransaction,
                 }
               : {
                   coords: [centerVN.lat, centerVN.lng],
