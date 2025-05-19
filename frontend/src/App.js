@@ -38,6 +38,7 @@ import PostDetail from "./components/User/Post/PostDetail";
 import PostsPage from "./components/User/Post/PostPage";
 import SearchPosts from "./components/User/Search/searchPosts";
 import SearchResultsPage from "./components/User/Search/searchResultPage";
+import ChatTest from "./components/User/Chatbot";
 
 function App() {
   return (
@@ -155,6 +156,10 @@ function App() {
                   <AddPost />
                 </>
               }
+            />
+            <Route
+              path="/test"
+              element={ <ChatTest />}
             />
             <Route
               path="/posts/:id"

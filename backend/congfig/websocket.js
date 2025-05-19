@@ -3,6 +3,7 @@ const Message = require("../models/Message");
 const Conversation = require("../models/Conversation");
 const mongoose = require("mongoose");
 const { markConversationAsRead } = require("../controllers/chatController");
+const { handleIncomingMessage } = require("../bot/queues/autoReply.worker");
 
 let onlineUsers = {};
 let io;
@@ -101,10 +102,13 @@ function initializeSocket(server) {
             }
         });
 
+        socket.on('clientMessage', msg => {
+            handleIncomingMessage(io, socket.id, msg);
+        });
+
         socket.on("readConversation", async ({ conversationId, userId }) => {
             await markConversationAsRead(conversationId, userId, socket);
         });
-
 
         socket.on("disconnect", () => {
             for (let userId in onlineUsers) {
@@ -125,4 +129,4 @@ function getIO() {
     return io;
 }
 
-module.exports = { initializeSocket, onlineUsers, getIO };
+module.exports = { initializeSocket, onlineUsers, io: getIO };
