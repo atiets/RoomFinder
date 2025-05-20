@@ -21,7 +21,7 @@ import ResetPassword from "./components/ResetPassword/ResetPassword ";
 import AboutUs from "./components/User/AboutUs/AboutUs";
 import ChangePassword from "./components/User/ChangePassword/ChangePassword";
 import Chat from "./components/User/Chat/chat";
-import CompareChart from "./components/User/CompareArea/CompareChart";
+import CompareChart from "./components/User/CompareArea/CompareChart/CompareChart";
 import ComplaintForm from "./components/User/ComplaintForm";
 import Header from "./components/User/Header/Header";
 import Home from "./components/User/Home/Home";

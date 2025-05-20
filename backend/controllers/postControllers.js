@@ -286,197 +286,411 @@ exports.createPost = async (req, res) => {
   }
 };
 
-// Lấy danh sách bài đăng để so sánh giá
+// controllers/postController.js
+
+// Hàm chung để xử lý dữ liệu quận/huyện
+const processDistrictData = async () => {
+  // Sửa vấn đề múi giờ bằng cách chỉ định rõ các thành phần ngày tháng
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+
+  const firstDayCurrentMonth = new Date(currentYear, currentMonth, 1);
+  const firstDayPreviousMonth = new Date(currentYear, currentMonth - 1, 1);
+
+  console.log(`Tháng hiện tại: ${firstDayCurrentMonth.toISOString()}`);
+  console.log(`Tháng trước: ${firstDayPreviousMonth.toISOString()}`);
+
+  // Lấy tất cả bài đăng đã được phê duyệt và hiển thị với các trường cần thiết
+  const posts = await Post.find(
+    {
+      status: "approved",
+      visibility: "visible",
+      latitude: { $ne: null },
+      longitude: { $ne: null },
+      price: { $gt: 0 },
+      area: { $gt: 0 },
+    },
+    {
+      "address.province": 1,
+      "address.district": 1,
+      latitude: 1,
+      longitude: 1,
+      price: 1,
+      area: 1,
+      createdAt: 1,
+      category: 1,
+      transactionType: 1,
+    }
+  );
+
+  console.log(`Tổng số bài đăng tìm thấy: ${posts.length}`);
+
+  // Cấu trúc dữ liệu mới để lưu trữ theo từng loại BĐS và loại giao dịch
+  const districtData = {};
+
+  // Danh sách các loại bất động sản và giao dịch
+  const categories = [
+    "Căn hộ/chung cư",
+    "Nhà ở",
+    "Đất",
+    "Văn phòng, mặt bằng kinh doanh",
+    "phòng trọ",
+  ];
+
+  const transactionTypes = ["Cho thuê", "Cần bán"];
+
+  // Xử lý từng bài đăng
+  posts.forEach((post) => {
+    const province = post.address.province;
+    const district = post.address.district;
+    const category = post.category;
+    const transactionType = post.transactionType;
+    const postDate = new Date(post.createdAt);
+    const pricePerSqM = post.price / post.area;
+
+    // Khởi tạo dữ liệu tỉnh/thành nếu chưa tồn tại
+    if (!districtData[province]) {
+      districtData[province] = {};
+    }
+
+    // Khởi tạo dữ liệu quận/huyện nếu chưa tồn tại
+    if (!districtData[province][district]) {
+      districtData[province][district] = {
+        lat: post.latitude,
+        lng: post.longitude,
+        latestTimestamp: 0,
+        byCategoryAndTransaction: {},
+      };
+
+      // Khởi tạo cho từng cặp loại BĐS + loại giao dịch
+      categories.forEach((cat) => {
+        districtData[province][district].byCategoryAndTransaction[cat] = {};
+        transactionTypes.forEach((trans) => {
+          districtData[province][district].byCategoryAndTransaction[cat][
+            trans
+          ] = {
+            currentMonth: { total: 0, count: 0 },
+            previousMonth: { total: 0, count: 0 },
+          };
+        });
+      });
+    }
+
+    // Cập nhật tọa độ nếu đây là bài đăng mới nhất cho quận/huyện
+    const postTimestamp = postDate.getTime();
+    if (postTimestamp > districtData[province][district].latestTimestamp) {
+      districtData[province][district].lat = post.latitude;
+      districtData[province][district].lng = post.longitude;
+      districtData[province][district].latestTimestamp = postTimestamp;
+    }
+
+    // Xác định thời gian của bài đăng
+    const isCurrentMonth = postDate >= firstDayCurrentMonth;
+    const isPreviousMonth =
+      postDate >= firstDayPreviousMonth && postDate < firstDayCurrentMonth;
+
+    // Cập nhật dữ liệu theo loại BĐS và loại giao dịch
+    if (isCurrentMonth) {
+      districtData[province][district].byCategoryAndTransaction[category][
+        transactionType
+      ].currentMonth.total += pricePerSqM;
+      districtData[province][district].byCategoryAndTransaction[category][
+        transactionType
+      ].currentMonth.count += 1;
+    } else if (isPreviousMonth) {
+      districtData[province][district].byCategoryAndTransaction[category][
+        transactionType
+      ].previousMonth.total += pricePerSqM;
+      districtData[province][district].byCategoryAndTransaction[category][
+        transactionType
+      ].previousMonth.count += 1;
+    }
+  });
+
+  // Tính toán giá trung bình và biến động giá
+  const result = {};
+
+  for (const province in districtData) {
+    result[province] = {};
+
+    for (const district in districtData[province]) {
+      const data = districtData[province][district];
+
+      // Khởi tạo kết quả cho quận/huyện
+      result[province][district] = {
+        lat: data.lat,
+        lng: data.lng,
+        byCategoryAndTransaction: {},
+      };
+
+      // Tính toán giá trung bình và biến động giá cho từng cặp loại BĐS + giao dịch
+      for (const cat of categories) {
+        result[province][district].byCategoryAndTransaction[cat] = {};
+
+        for (const trans of transactionTypes) {
+          const combinedData = data.byCategoryAndTransaction[cat][trans];
+          const combinedCurrentAvg =
+            combinedData.currentMonth.count > 0
+              ? combinedData.currentMonth.total /
+                combinedData.currentMonth.count
+              : 0;
+
+          const combinedPrevAvg =
+            combinedData.previousMonth.count > 0
+              ? combinedData.previousMonth.total /
+                combinedData.previousMonth.count
+              : 0;
+
+          let combinedPriceFluctuation = 0;
+          if (combinedCurrentAvg > 0 && combinedPrevAvg > 0) {
+            combinedPriceFluctuation =
+              ((combinedCurrentAvg - combinedPrevAvg) / combinedPrevAvg) *
+              100;
+          }
+
+          // Chỉ thêm vào kết quả nếu có dữ liệu
+          if (combinedCurrentAvg > 0 || combinedData.currentMonth.count > 0) {
+            result[province][district].byCategoryAndTransaction[cat][trans] =
+              {
+                commonPrice: parseFloat(combinedCurrentAvg.toFixed(2)),
+                priceFluctuation: parseFloat(
+                  combinedPriceFluctuation.toFixed(2)
+                ),
+                count: combinedData.currentMonth.count,
+              };
+          }
+        }
+
+        // Xóa loại BĐS nếu không có dữ liệu
+        if (
+          Object.keys(
+            result[province][district].byCategoryAndTransaction[cat]
+          ).length === 0
+        ) {
+          delete result[province][district].byCategoryAndTransaction[cat];
+        }
+      }
+    }
+  }
+
+  return result;
+};
+
+// API endpoint 1: Lấy danh sách bài đăng để so sánh giá
 exports.getDistrictCoordinatesByCity = async (req, res) => {
   try {
-    // Sửa vấn đề múi giờ bằng cách chỉ định rõ các thành phần ngày tháng
+    const result = await processDistrictData();
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Lỗi trong getDistrictCoordinatesByCity:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// API endpoint 2: Lấy data cho compare chart
+exports.getCompareChartData = async (req, res) => {
+  try {
+    const { province, district, category, transactionType } = req.query;
+
+    // Kiểm tra các tham số bắt buộc
+    if (!province || !district || !category || !transactionType) {
+      return res.status(400).json({ 
+        message: "Vui lòng cung cấp đầy đủ thông tin tỉnh, quận, loại BĐS và loại giao dịch" 
+      });
+    }
+
+    // Lấy thời gian hiện tại
     const currentDate = new Date();
-    // Bắt buộc tháng hiện tại là tháng 5 (để kiểm tra)
-    const currentMonth = 4; // Tháng 5 (chỉ số bắt đầu từ 0)
-    const currentYear = 2025;
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
 
-    const firstDayCurrentMonth = new Date(currentYear, currentMonth, 1);
-    const firstDayPreviousMonth = new Date(currentYear, currentMonth - 1, 1);
-
-    console.log(`Tháng hiện tại: ${firstDayCurrentMonth.toISOString()}`);
-    console.log(`Tháng trước: ${firstDayPreviousMonth.toISOString()}`);
-
-    // Lấy tất cả bài đăng đã được phê duyệt và hiển thị với các trường cần thiết
-    const posts = await Post.find(
-      {
-        status: "approved",
-        visibility: "visible",
-        latitude: { $ne: null },
-        longitude: { $ne: null },
-        price: { $gt: 0 },
-        area: { $gt: 0 },
-      },
-      {
-        "address.province": 1,
-        "address.district": 1,
-        latitude: 1,
-        longitude: 1,
-        price: 1,
-        area: 1,
-        createdAt: 1,
-        category: 1,
-        transactionType: 1,
+    // Tạo mảng chứa 12 tháng gần nhất
+    const last12Months = [];
+    for (let i = 0; i < 12; i++) {
+      let month = currentMonth - i;
+      let year = currentYear;
+      if (month < 0) {
+        month += 12;
+        year -= 1;
       }
-    );
+      const startDate = new Date(year, month, 1);
+      const endDate = new Date(year, month + 1, 0);
+      
+      last12Months.push({
+        month: month + 1,
+        year,
+        startDate,
+        endDate,
+        label: `${month + 1}/${year}`,
+        data: {
+          count: 0,
+          totalPrice: 0,
+          minPrice: Infinity,
+          maxPrice: 0
+        }
+      });
+    }
+    
+    // Lấy tất cả bài đăng trong 12 tháng qua theo điều kiện lọc
+    const startDate = new Date(last12Months[11].startDate);
+    const posts = await Post.find({
+      status: "approved",
+      visibility: "visible",
+      'address.province': province,
+      'address.district': district,
+      category: category,
+      transactionType: transactionType,
+      createdAt: { $gte: startDate },
+      price: { $gt: 0 },
+      area: { $gt: 0 }
+    }, {
+      price: 1,
+      area: 1,
+      createdAt: 1,
+      'address.ward': 1
+    });
 
-    console.log(`Tổng số bài đăng tìm thấy: ${posts.length}`);
+    // Xử lý dữ liệu tổng quan
+    let totalPosts = 0;
+    let totalPricePerSqm = 0;
+    let minPrice = Infinity;
+    let maxPrice = 0;
+    let wardData = {};
 
-    // Cấu trúc dữ liệu mới để lưu trữ theo từng loại BĐS và loại giao dịch
-    const districtData = {};
-
-    // Danh sách các loại bất động sản và giao dịch
-    const categories = [
-      "Căn hộ/chung cư",
-      "Nhà ở",
-      "Đất",
-      "Văn phòng, mặt bằng kinh doanh",
-      "phòng trọ",
-    ];
-
-    const transactionTypes = ["Cho thuê", "Cần bán"];
-
-    // Xử lý từng bài đăng
-    posts.forEach((post) => {
-      const province = post.address.province;
-      const district = post.address.district;
-      const category = post.category;
-      const transactionType = post.transactionType;
+    // Xử lý dữ liệu biểu đồ theo thời gian
+    posts.forEach(post => {
+      const pricePerSqm = post.price / post.area;
       const postDate = new Date(post.createdAt);
-      const pricePerSqM = post.price / post.area;
-
-      // Khởi tạo dữ liệu tỉnh/thành nếu chưa tồn tại
-      if (!districtData[province]) {
-        districtData[province] = {};
-      }
-
-      // Khởi tạo dữ liệu quận/huyện nếu chưa tồn tại
-      if (!districtData[province][district]) {
-        districtData[province][district] = {
-          lat: post.latitude,
-          lng: post.longitude,
-          latestTimestamp: 0,
-          byCategoryAndTransaction: {},
+      
+      // Cập nhật thống kê tổng quan
+      totalPosts++;
+      totalPricePerSqm += pricePerSqm;
+      minPrice = Math.min(minPrice, pricePerSqm);
+      maxPrice = Math.max(maxPrice, pricePerSqm);
+      
+      // Cập nhật dữ liệu theo phường/xã
+      const ward = post.address.ward;
+      if (!wardData[ward]) {
+        wardData[ward] = {
+          count: 0,
+          totalPrice: 0,
+          minPrice: Infinity,
+          maxPrice: 0
         };
-
-        // Khởi tạo cho từng cặp loại BĐS + loại giao dịch
-        categories.forEach((cat) => {
-          districtData[province][district].byCategoryAndTransaction[cat] = {};
-          transactionTypes.forEach((trans) => {
-            districtData[province][district].byCategoryAndTransaction[cat][
-              trans
-            ] = {
-              currentMonth: { total: 0, count: 0 },
-              previousMonth: { total: 0, count: 0 },
-            };
-          });
-        });
       }
-
-      // Cập nhật tọa độ nếu đây là bài đăng mới nhất cho quận/huyện
-      const postTimestamp = postDate.getTime();
-      if (postTimestamp > districtData[province][district].latestTimestamp) {
-        districtData[province][district].lat = post.latitude;
-        districtData[province][district].lng = post.longitude;
-        districtData[province][district].latestTimestamp = postTimestamp;
-      }
-
-      // Xác định thời gian của bài đăng
-      const isCurrentMonth = postDate >= firstDayCurrentMonth;
-      const isPreviousMonth =
-        postDate >= firstDayPreviousMonth && postDate < firstDayCurrentMonth;
-
-      // Cập nhật dữ liệu theo loại BĐS và loại giao dịch
-      if (isCurrentMonth) {
-        districtData[province][district].byCategoryAndTransaction[category][
-          transactionType
-        ].currentMonth.total += pricePerSqM;
-        districtData[province][district].byCategoryAndTransaction[category][
-          transactionType
-        ].currentMonth.count += 1;
-      } else if (isPreviousMonth) {
-        districtData[province][district].byCategoryAndTransaction[category][
-          transactionType
-        ].previousMonth.total += pricePerSqM;
-        districtData[province][district].byCategoryAndTransaction[category][
-          transactionType
-        ].previousMonth.count += 1;
+      wardData[ward].count++;
+      wardData[ward].totalPrice += pricePerSqm;
+      wardData[ward].minPrice = Math.min(wardData[ward].minPrice, pricePerSqm);
+      wardData[ward].maxPrice = Math.max(wardData[ward].maxPrice, pricePerSqm);
+      
+      // Cập nhật dữ liệu theo tháng
+      for (const monthData of last12Months) {
+        if (postDate >= monthData.startDate && postDate <= monthData.endDate) {
+          monthData.data.count++;
+          monthData.data.totalPrice += pricePerSqm;
+          monthData.data.minPrice = Math.min(monthData.data.minPrice, pricePerSqm);
+          monthData.data.maxPrice = Math.max(monthData.data.maxPrice, pricePerSqm);
+          break;
+        }
       }
     });
 
-    // Tính toán giá trung bình và biến động giá
-    const result = {};
+    // Tính giá trung bình và định dạng dữ liệu theo tháng
+    const timelineData = last12Months.map(monthData => {
+      const avgPrice = monthData.data.count > 0 
+        ? monthData.data.totalPrice / monthData.data.count 
+        : null;
+      
+      return {
+        label: monthData.label,
+        avgPrice: avgPrice ? parseFloat(avgPrice.toFixed(2)) : null,
+        minPrice: monthData.data.minPrice !== Infinity ? parseFloat(monthData.data.minPrice.toFixed(2)) : null,
+        maxPrice: monthData.data.maxPrice > 0 ? parseFloat(monthData.data.maxPrice.toFixed(2)) : null,
+        count: monthData.data.count
+      };
+    });
 
-    for (const province in districtData) {
-      result[province] = {};
+    // Định dạng dữ liệu theo phường/xã
+    const formattedWardData = {};
+    for (const ward in wardData) {
+      const data = wardData[ward];
+      formattedWardData[ward] = {
+        avgPrice: data.count > 0 ? parseFloat((data.totalPrice / data.count).toFixed(2)) : 0,
+        minPrice: data.minPrice !== Infinity ? parseFloat(data.minPrice.toFixed(2)) : 0,
+        maxPrice: data.maxPrice > 0 ? parseFloat(data.maxPrice.toFixed(2)) : 0,
+        count: data.count
+      };
+    }
 
-      for (const district in districtData[province]) {
-        const data = districtData[province][district];
-
-        // Khởi tạo kết quả cho quận/huyện
-        result[province][district] = {
-          lat: data.lat,
-          lng: data.lng,
-          byCategoryAndTransaction: {},
-        };
-
-        // Tính toán giá trung bình và biến động giá cho từng cặp loại BĐS + giao dịch
-        for (const cat of categories) {
-          result[province][district].byCategoryAndTransaction[cat] = {};
-
-          for (const trans of transactionTypes) {
-            const combinedData = data.byCategoryAndTransaction[cat][trans];
-            const combinedCurrentAvg =
-              combinedData.currentMonth.count > 0
-                ? combinedData.currentMonth.total /
-                  combinedData.currentMonth.count
-                : 0;
-
-            const combinedPrevAvg =
-              combinedData.previousMonth.count > 0
-                ? combinedData.previousMonth.total /
-                  combinedData.previousMonth.count
-                : 0;
-
-            let combinedPriceFluctuation = 0;
-            if (combinedCurrentAvg > 0 && combinedPrevAvg > 0) {
-              combinedPriceFluctuation =
-                ((combinedCurrentAvg - combinedPrevAvg) / combinedPrevAvg) *
-                100;
-            }
-
-            // Chỉ thêm vào kết quả nếu có dữ liệu
-            if (combinedCurrentAvg > 0 || combinedData.currentMonth.count > 0) {
-              result[province][district].byCategoryAndTransaction[cat][trans] =
-                {
-                  commonPrice: parseFloat(combinedCurrentAvg.toFixed(2)),
-                  priceFluctuation: parseFloat(
-                    combinedPriceFluctuation.toFixed(2)
-                  ),
-                  count: combinedData.currentMonth.count,
-                };
-            }
-          }
-
-          // Xóa loại BĐS nếu không có dữ liệu
-          if (
-            Object.keys(
-              result[province][district].byCategoryAndTransaction[cat]
-            ).length === 0
-          ) {
-            delete result[province][district].byCategoryAndTransaction[cat];
-          }
+    // Lấy dữ liệu các quận/huyện lân cận
+    // Gọi hàm processDistrictData thay vì getDistrictCoordinatesByCity
+    const districtData = await processDistrictData();
+    const neighboringDistricts = {};
+    
+    if (districtData[province]) {
+      for (const [neighborDistrict, data] of Object.entries(districtData[province])) {
+        if (neighborDistrict !== district && data.byCategoryAndTransaction && 
+            data.byCategoryAndTransaction[category] && 
+            data.byCategoryAndTransaction[category][transactionType]) {
+          
+          neighboringDistricts[neighborDistrict] = {
+            commonPrice: data.byCategoryAndTransaction[category][transactionType].commonPrice,
+            priceFluctuation: data.byCategoryAndTransaction[category][transactionType].priceFluctuation,
+            count: data.byCategoryAndTransaction[category][transactionType].count
+          };
         }
       }
     }
 
+    // Lấy dữ liệu phân tích theo loại BĐS
+    const categoryAnalysis = {};
+    if (districtData[province] && districtData[province][district]) {
+      const districtInfo = districtData[province][district];
+      for (const [cat, transactions] of Object.entries(districtInfo.byCategoryAndTransaction)) {
+        for (const [trans, data] of Object.entries(transactions)) {
+          if (!categoryAnalysis[cat]) {
+            categoryAnalysis[cat] = {};
+          }
+          categoryAnalysis[cat][trans] = {
+            commonPrice: data.commonPrice,
+            priceFluctuation: data.priceFluctuation,
+            count: data.count
+          };
+        }
+      }
+    }
+
+    // Tính toán giá trung bình và xu hướng
+    const avgPrice = totalPosts > 0 ? parseFloat((totalPricePerSqm / totalPosts).toFixed(2)) : 0;
+    const currentPriceData = districtData[province]?.[district]?.byCategoryAndTransaction?.[category]?.[transactionType];
+    const trend = currentPriceData?.priceFluctuation > 0 ? "up" : 
+                 currentPriceData?.priceFluctuation < 0 ? "down" : "stable";
+
+    // Cấu trúc dữ liệu trả về
+    const result = {
+      overview: {
+        province,
+        district,
+        category,
+        transactionType,
+        currentPrice: currentPriceData?.commonPrice || avgPrice,
+        priceFluctuation: currentPriceData?.priceFluctuation || 0,
+        trend,
+        totalPosts,
+        minPrice: minPrice !== Infinity ? parseFloat(minPrice.toFixed(2)) : 0,
+        maxPrice: parseFloat(maxPrice.toFixed(2)),
+        wardCount: Object.keys(wardData).length
+      },
+      timelineData,
+      neighboringDistricts,
+      wardAnalysis: formattedWardData,
+      categoryAnalysis
+    };
+
     res.status(200).json(result);
   } catch (error) {
-    console.error("Lỗi trong getDistrictCoordinatesByCity:", error);
+    console.error("Lỗi trong getCompareChartData:", error);
     res.status(500).json({ message: error.message });
   }
 };
