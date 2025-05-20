@@ -10,6 +10,9 @@ router.get("/posts", middlewareControllers.verifyTokenAndAdminAuth, postControll
 //lấy bài đăng cho ss giá
 router.get('/district-coordinates', postController.getDistrictCoordinatesByCity);
 
+//lấy data cho compare chart
+router.get('/compare-chart', postController.getCompareChartData);
+
 //Lấy bài đăng theo trạng thái của admin
 router.get("/list-pending", middlewareControllers.verifyTokenAndAdminAuth, postController.getUserPostAd);
 

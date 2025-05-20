@@ -47,6 +47,39 @@ export const getDistrictCoordinatesByCity = async () => {
   }
 };
 
+//get data for compare chart
+export const getCompareChartData = async (province, district, category, transactionType) => {
+  try {
+    // Kiểm tra các tham số bắt buộc
+    if (!province || !district || !category || !transactionType) {
+      throw new Error("Vui lòng cung cấp đầy đủ thông tin tỉnh, quận, loại BĐS và loại giao dịch.");
+    }
+
+    const response = await axios.get(`${API_URL}compare-chart`, {
+      params: {
+        province,
+        district,
+        category,
+        transactionType
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    // Xử lý lỗi chi tiết hơn
+    if (error.response) {
+      // Lỗi do server trả về với status code không thành công
+      throw new Error(`Không thể lấy dữ liệu biểu đồ: ${error.response.data.message || error.response.statusText}`);
+    } else if (error.request) {
+      // Lỗi do không nhận được response từ server
+      throw new Error("Không thể kết nối với máy chủ. Vui lòng kiểm tra kết nối internet của bạn.");
+    } else {
+      // Lỗi khác
+      throw error;
+    }
+  }
+};
+
 export const getApprovedPosts = async () => {
   try {
     const response = await axios.get(`${API_URL}posts-by-status`, {
