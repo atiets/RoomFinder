@@ -1,4 +1,4 @@
-// src/components/forum/ThreadCard.jsx
+// src/components/User/forum/ThreadCard.jsx
 import React from 'react';
 import { 
   Card, CardHeader, CardContent, CardActions, 
@@ -29,7 +29,7 @@ const ThreadCard = ({ thread, onClick }) => {
     tags = [], 
     likes = 0, 
     comments = 0, 
-    image = null, // Thêm trường hình ảnh
+    image = null, 
   } = thread;
 
   // Màu pastel theo yêu cầu
@@ -56,15 +56,15 @@ const ThreadCard = ({ thread, onClick }) => {
       <CardHeader
         avatar={
           <Avatar 
-            alt={author.name} 
-            src={author.avatar}
+            alt={author?.name || 'User'} 
+            src={author?.avatar || ''}
             sx={{ 
               width: 38, 
               height: 38,
               bgcolor: pastelGreen 
             }}
           >
-            {author.name.charAt(0).toUpperCase()}
+            {author?.name ? author.name.charAt(0).toUpperCase() : 'U'}
           </Avatar>
         }
         action={
@@ -74,12 +74,12 @@ const ThreadCard = ({ thread, onClick }) => {
         }
         title={
           <Typography variant="subtitle2" fontWeight="500">
-            {author.name}
+            {author?.name || 'Người dùng'}
           </Typography>
         }
         subheader={
           <Typography variant="body2" color="text.secondary" fontSize="12px">
-            {getRelativeTime(createdAt)}
+            {createdAt ? getRelativeTime(createdAt) : 'Vừa xong'}
           </Typography>
         }
         sx={{ pb: 1 }}
@@ -125,7 +125,7 @@ const ThreadCard = ({ thread, onClick }) => {
         )}
         
         {/* Tags */}
-        {tags.length > 0 && (
+        {tags && tags.length > 0 && (
           <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
             {tags.map((tag, index) => (
               <Box 

@@ -1,4 +1,4 @@
-// src/components/forum/ThreadList.jsx
+// src/components/User/forum/ThreadList.jsx
 import React from 'react';
 import { Box, Typography, Pagination, Skeleton } from '@mui/material';
 import ThreadCard from './ThreadCard';
@@ -11,7 +11,8 @@ const ThreadList = ({ threads, loading, onThreadClick, page, totalPages, onPageC
     </Box>
   );
   
-  if (loading) {
+  // Hiển thị loading skeletons khi đang tải lần đầu
+  if (loading && threads.length === 0) {
     return (
       <Box>
         {[...Array(3)].map((_, index) => (
@@ -21,7 +22,8 @@ const ThreadList = ({ threads, loading, onThreadClick, page, totalPages, onPageC
     );
   }
   
-  if (threads.length === 0) {
+  // Hiển thị trạng thái không có bài viết
+  if (!loading && threads.length === 0) {
     return (
       <Box 
         sx={{ 
@@ -43,13 +45,46 @@ const ThreadList = ({ threads, loading, onThreadClick, page, totalPages, onPageC
   
   return (
     <Box>
-      {threads.map((thread) => (
-        <ThreadCard 
-          key={thread.id} 
-          thread={thread} 
-          onClick={() => onThreadClick(thread.id)} 
-        />
-      ))}
+      {/* Hiển thị skeleton overlay khi đang tải dữ liệu mới */}
+      {loading && threads.length > 0 && (
+        <Box 
+          sx={{ 
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '100%',
+            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1,
+          }}
+        >
+          <Skeleton variant="circular" width={40} height={40} />
+        </Box>
+      )}
+      
+      {/* Danh sách threads */}
+      <Box sx={{ position: 'relative' }}>
+        {threads.map((thread) => (
+          <ThreadCard 
+            key={thread._id} 
+            thread={{
+              id: thread._id,
+              title: thread.title,
+              content: thread.content,
+              author: thread.author,
+              createdAt: thread.created_at,
+              tags: thread.tags || [],
+              likes: thread.likes?.length || 0,
+              comments: thread.commentCount || 0,
+              image: thread.image || null
+            }} 
+            onClick={() => onThreadClick(thread._id)} 
+          />
+        ))}
+      </Box>
       
       {/* Phân trang */}
       {totalPages > 1 && (
@@ -60,6 +95,7 @@ const ThreadList = ({ threads, loading, onThreadClick, page, totalPages, onPageC
             onChange={onPageChange}
             color="primary"
             shape="rounded"
+            disabled={loading}
           />
         </Box>
       )}
