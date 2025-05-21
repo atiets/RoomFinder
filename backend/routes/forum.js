@@ -2,14 +2,17 @@
 const express = require('express');
 const router = express.Router();
 const threadController = require('../controllers/threadController');
-const { protect } = require('../middleware/auth');
+const { protect, optionalAuth } = require('../middleware/auth');
 const { validateThread } = require('../middleware/threadValidation');
 
 // Tạo thread mới - cần đăng nhập và validate dữ liệu
 router.post('/threads', protect, validateThread, threadController.createThread);
 
-// Lấy danh sách threads - không cần đăng nhập
+// Route lấy danh sách threads
 router.get('/threads', threadController.getAllThreads);
+
+// Route lấy chi tiết thread - Public với xử lý quyền xem
+router.get('/threads/:id', threadController.getThreadById);
 
 // Export router
 module.exports = router;
