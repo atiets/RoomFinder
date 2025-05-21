@@ -39,6 +39,7 @@ import PostsPage from "./components/User/Post/PostPage";
 import SearchPosts from "./components/User/Search/searchPosts";
 import SearchResultsPage from "./components/User/Search/searchResultPage";
 import ChatTest from "./components/User/Chatbot";
+import { ForumHome } from "./pages/forum";
 
 function App() {
   return (
@@ -346,6 +347,16 @@ function App() {
                 <>
                   <Header />
                   <BankTransferPage />
+                  <Footer />
+                </>
+              }
+            />
+            <Route
+              path="/forum"
+              element={
+                <>
+                  <Header />
+                  <ForumHome />
                   <Footer />
                 </>
               }

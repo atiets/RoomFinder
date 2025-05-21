@@ -158,6 +158,13 @@ const Header = () => {
               Đăng tin mới
             </Button>
 
+            <Button
+              className="user-header-btn"
+              onClick={() => navigate("/forum")}
+            >
+              Diễn đàn
+            </Button>
+
             {currentUser && (
               <Button className="user-header-btn" onClick={() => navigate("/chat")}>
                 <Badge
