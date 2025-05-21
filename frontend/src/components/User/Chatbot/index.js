@@ -23,6 +23,8 @@ const ChatTest = () => {
         return () => socket.off("receiveMessage", onReceive);
     }, [socket]);
 
+    console.log("tin nhắn nhận được", messages);
+
     const handleSend = () => {
         if (!input.trim() || !socket) return;
 
