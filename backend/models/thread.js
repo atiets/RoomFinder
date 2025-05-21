@@ -1,0 +1,57 @@
+// models/Thread.js
+const mongoose = require('mongoose');
+
+const ThreadSchema = new mongoose.Schema({
+  title: { 
+    type: String, 
+    required: [true, 'Tiêu đề là bắt buộc'],
+    trim: true,
+    maxlength: [200, 'Tiêu đề không được vượt quá 200 ký tự'] 
+  },
+  content: { 
+    type: String, 
+    required: [true, 'Nội dung là bắt buộc'], 
+    trim: true 
+  },
+  author: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
+  },
+  tags: [{ 
+    type: String,
+    trim: true 
+  }],
+  likes: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
+  }],
+  dislikes: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
+  }],
+  viewCount: { 
+    type: Number, 
+    default: 0 
+  },
+  status: { 
+    type: String, 
+    enum: ['pending', 'approved', 'rejected'], 
+    default: 'pending' 
+  },
+  created_at: { 
+    type: Date, 
+    default: Date.now 
+  },
+  updated_at: { 
+    type: Date, 
+    default: Date.now 
+  }
+}, {
+  timestamps: { 
+    createdAt: 'created_at', 
+    updatedAt: 'updated_at' 
+  }
+});
+
+module.exports = mongoose.model('Thread', ThreadSchema);
