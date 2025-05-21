@@ -1,8 +1,7 @@
 const { autoReplyQueue } = require('./bullmq');
 const rules = require('../rules');
 const { getReplyFromAI } = require('../aiProxy');
-const User = require('../../models/User');
-const { onlineUsers } = require("../../congfig/websocket");
+const {getRandomOnlineAdmin} = require("../randomAdmin");
 const mongoose = require('mongoose');
 const Conversation = require('../../models/Conversation');
 const Message = require('../../models/Message');
@@ -15,22 +14,7 @@ const Message = require('../../models/Message');
  */
 botId = process.env.BOT_ID || null; // id bot, nếu có
 
-async function getAllAdminIds() {
-    const admins = await User.find({ admin: 'true' }).select('_id');
-    return admins.map(a => a._id.toString());
-}
-
-let ADMIN_IDS = [];
-getAllAdminIds().then(ids => ADMIN_IDS = ids);
-
-function getRandomOnlineAdmin() {
-    const onlineAdminIds = ADMIN_IDS.filter(id => onlineUsers[id]);
-    if (onlineAdminIds.length === 0) return null;
-    const randIdx = Math.floor(Math.random() * onlineAdminIds.length);
-    return onlineAdminIds[randIdx];
-}
-
-async function handleIncomingMessage(io, socketId, { sender, content }) {
+async function handleIncomingMessage(io, socketId, { sender, content }, onlineUsers) {
     try {
         // 1. Tìm hoặc tạo conversation user + bot (hoặc user đơn giản)
         const participantIds = [mongoose.Types.ObjectId(sender)];
@@ -70,8 +54,7 @@ async function handleIncomingMessage(io, socketId, { sender, content }) {
         if (needsAdmin) {
             // Nếu conversation chưa có admin claim
             if (!conversation.claimedByAdmin) {
-                const adminId = await getRandomOnlineAdmin(); // lấy admin có thể claim
-
+                const adminId = await getRandomOnlineAdmin(onlineUsers); // lấy admin có thể claim
                 if (adminId) {
                     conversation.claimedByAdmin = adminId;
                     await conversation.save();
@@ -91,8 +74,6 @@ async function handleIncomingMessage(io, socketId, { sender, content }) {
             io.to(socketId).emit("receiveMessage", userMessage);
 
             // Bạn có thể gửi thêm thông báo "admin sẽ trả lời bạn sớm" cho user ở đây nếu muốn
-
-            return; // dừng xử lý tiếp, chờ admin trả lời thủ công
         }
 
         // 7. Nếu AI trả lời được, lưu tin trả lời vào DB

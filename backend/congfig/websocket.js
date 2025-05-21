@@ -103,7 +103,8 @@ function initializeSocket(server) {
         });
 
         socket.on('clientMessage', msg => {
-            handleIncomingMessage(io, socket.id, msg);
+            const onlineUsers = getOnlineUsers();
+            handleIncomingMessage(io, socket.id, msg, onlineUsers);
         });
 
         socket.on("readConversation", async ({ conversationId, userId }) => {
@@ -129,4 +130,8 @@ function getIO() {
     return io;
 }
 
-module.exports = { initializeSocket, onlineUsers, io: getIO };
+function getOnlineUsers() {
+    return onlineUsers;
+}
+
+module.exports = { initializeSocket, onlineUsers, io: getIO, getOnlineUsers };
