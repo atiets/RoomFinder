@@ -2,20 +2,21 @@
 import React from 'react';
 import { 
   Card, CardHeader, CardContent, CardActions, 
-  Avatar, Typography, Box, Button
+  Avatar, Typography, Box, IconButton, CardMedia,
+  Divider
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
-import ThumbDownOutlinedIcon from '@mui/icons-material/ThumbDownOutlined';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 const StyledCard = styled(Card)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-  transition: 'transform 0.2s ease-in-out',
+  marginBottom: theme.spacing(3),
+  borderRadius: '8px',
+  boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
+  transition: 'box-shadow 0.3s ease-in-out',
   '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow: theme.shadows[3],
+    boxShadow: '0px 3px 8px rgba(0, 0, 0, 0.12)',
   },
 }));
 
@@ -27,9 +28,8 @@ const ThreadCard = ({ thread, onClick }) => {
     createdAt, 
     tags = [], 
     likes = 0, 
-    dislikes = 0, 
     comments = 0, 
-    views = 0 
+    image = null, // Thêm trường hình ảnh
   } = thread;
 
   // Màu pastel theo yêu cầu
@@ -51,56 +51,89 @@ const ThreadCard = ({ thread, onClick }) => {
   };
   
   return (
-    <StyledCard onClick={onClick}>
+    <StyledCard>
+      {/* Header với avatar, tên tác giả, thời gian và menu */}
       <CardHeader
         avatar={
           <Avatar 
             alt={author.name} 
             src={author.avatar}
-            sx={{ bgcolor: pastelGreen }} // Fallback khi không có avatar
+            sx={{ 
+              width: 38, 
+              height: 38,
+              bgcolor: pastelGreen 
+            }}
           >
             {author.name.charAt(0).toUpperCase()}
           </Avatar>
         }
+        action={
+          <IconButton aria-label="settings">
+            <MoreVertIcon />
+          </IconButton>
+        }
         title={
-          <Typography variant="subtitle1" fontWeight="bold">
-            {title}
+          <Typography variant="subtitle2" fontWeight="500">
+            {author.name}
           </Typography>
         }
         subheader={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              {author.name}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              • {getRelativeTime(createdAt)}
-            </Typography>
-          </Box>
+          <Typography variant="body2" color="text.secondary" fontSize="12px">
+            {getRelativeTime(createdAt)}
+          </Typography>
         }
+        sx={{ pb: 1 }}
       />
       
-      <CardContent sx={{ py: 1 }}>
-        <Typography variant="body2" color="text.secondary" 
-          sx={{ 
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-          }}
+      {/* Nội dung bài viết */}
+      <CardContent sx={{ pt: 0, pb: 1.5 }} onClick={onClick}>
+        {/* Tiêu đề bài viết */}
+        {title && (
+          <Typography 
+            variant="h6" 
+            component="h2" 
+            fontWeight="bold" 
+            color="text.primary"
+            sx={{ mb: 1 }}
+          >
+            {title}
+          </Typography>
+        )}
+        
+        {/* Nội dung văn bản */}
+        <Typography 
+          variant="body1" 
+          color="text.primary"
+          sx={{ mb: image ? 2 : 0 }}
         >
           {content}
         </Typography>
         
+        {/* Hình ảnh nếu có */}
+        {image && (
+          <CardMedia
+            component="img"
+            image={image}
+            alt={title || "Thread image"}
+            sx={{ 
+              mt: 2, 
+              borderRadius: '4px',
+              maxHeight: '400px',
+              objectFit: 'contain'
+            }}
+          />
+        )}
+        
+        {/* Tags */}
         {tags.length > 0 && (
-          <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
             {tags.map((tag, index) => (
               <Box 
                 key={index}
                 sx={{
                   backgroundColor: index % 2 === 0 ? pastelGreen : pastelOrange,
                   color: '#333',
-                  px: 1,
+                  px: 1.5,
                   py: 0.5,
                   borderRadius: '16px',
                   fontSize: '0.75rem',
@@ -114,47 +147,56 @@ const ThreadCard = ({ thread, onClick }) => {
         )}
       </CardContent>
       
+      {/* Phần tương tác */}
+      <Divider />
       <CardActions 
         sx={{ 
           px: 2, 
           py: 1,
-          bgcolor: 'background.default',
-          borderTop: '1px solid',
-          borderColor: 'divider'
+          display: 'flex',
+          justifyContent: 'space-around',
         }}
       >
-        <Button
-          size="small"
-          startIcon={<ThumbUpOutlinedIcon />}
-          color="default"
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: 1,
+            cursor: 'pointer',
+            py: 0.5,
+            borderRadius: 1,
+            '&:hover': {
+              bgcolor: 'rgba(0, 0, 0, 0.04)',
+            }
+          }}
         >
-          {likes}
-        </Button>
+          <ThumbUpOutlinedIcon fontSize="small" color="action" sx={{ mr: 1 }} />
+          <Typography variant="body2" color="text.secondary">
+            {likes > 0 ? `Thích (${likes})` : 'Thích'}
+          </Typography>
+        </Box>
         
-        <Button
-          size="small"
-          startIcon={<ThumbDownOutlinedIcon />}
-          color="default"
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: 1,
+            cursor: 'pointer',
+            py: 0.5,
+            borderRadius: 1,
+            '&:hover': {
+              bgcolor: 'rgba(0, 0, 0, 0.04)',
+            }
+          }}
+          onClick={onClick}
         >
-          {dislikes}
-        </Button>
-        
-        <Button
-          size="small"
-          startIcon={<ChatBubbleOutlineIcon />}
-          color="default"
-        >
-          {comments}
-        </Button>
-        
-        <Button
-          size="small"
-          startIcon={<VisibilityIcon />}
-          color="default"
-          sx={{ ml: 'auto' }}
-        >
-          {views}
-        </Button>
+          <ChatBubbleOutlineIcon fontSize="small" color="action" sx={{ mr: 1 }} />
+          <Typography variant="body2" color="text.secondary">
+            {comments > 0 ? `Bình luận (${comments})` : 'Bình luận'}
+          </Typography>
+        </Box>
       </CardActions>
     </StyledCard>
   );
