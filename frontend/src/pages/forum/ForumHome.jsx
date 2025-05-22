@@ -3,11 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Container, 
   Box, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  Button,
   Typography,
   Grid,
   Alert,
@@ -18,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import ForumHeader from '../../components/User/forum/ForumHeader';
 import ThreadList from '../../components/User/forum/ThreadList';
 import CreateThreadButton from '../../components/User/forum/CreateThreadButton';
+import CreateThread from '../../components/User/forum/CreateThread/';
 import { getForumThreads } from '../../redux/threadApi';
 
 const ForumHome = () => {
@@ -32,7 +28,13 @@ const ForumHome = () => {
     total: 0,
     limit: 10
   });
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  
+  // Snackbar state
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
 
   const navigate = useNavigate();
 
@@ -62,12 +64,12 @@ const ForumHome = () => {
           // Trường hợp response không có cấu trúc như mong đợi
           console.error("API response format unexpected:", response);
           setError("Định dạng dữ liệu không đúng");
-          setSnackbarOpen(true);
+          showSnackbar("Định dạng dữ liệu không đúng", "error");
         }
       } catch (err) {
         console.error("Error fetching threads:", err);
         setError(err.message || "Đã xảy ra lỗi khi tải dữ liệu");
-        setSnackbarOpen(true);
+        showSnackbar(err.message || "Đã xảy ra lỗi khi tải dữ liệu", "error");
       } finally {
         setLoading(false);
       }
@@ -75,6 +77,23 @@ const ForumHome = () => {
 
     fetchThreads();
   }, [pagination.page, pagination.limit]);
+
+  // Hiển thị snackbar
+  const showSnackbar = (message, severity = 'info') => {
+    setSnackbar({
+      open: true,
+      message,
+      severity
+    });
+  };
+  
+  // Đóng snackbar
+  const handleCloseSnackbar = () => {
+    setSnackbar({
+      ...snackbar,
+      open: false
+    });
+  };
 
   // Xử lý click vào thread để xem chi tiết
   const handleThreadClick = (threadId) => {
@@ -97,22 +116,29 @@ const ForumHome = () => {
     setCreateDialogOpen(true);
   };
   
-  // Đóng snackbar
-  const handleCloseSnackbar = () => {
-    setSnackbarOpen(false);
+  // Xử lý khi tạo thread thành công
+  const handleCreateSuccess = (newThread) => {
+    // Thêm thread mới vào đầu danh sách
+    setThreads([newThread, ...threads]);
+    showSnackbar("Bài viết đã được tạo thành công!", "success");
   };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Snackbar hiển thị lỗi nếu có */}
+      {/* Snackbar hiển thị thông báo */}
       <Snackbar
-        open={snackbarOpen}
+        open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity="error">
-          {error}
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
         </Alert>
       </Snackbar>
 
@@ -153,53 +179,13 @@ const ForumHome = () => {
         </Grid>
       </Grid>
       
-      {/* Dialog tạo thread mới */}
-      <Dialog 
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle sx={{ 
-          fontWeight: 'bold',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: '#C1E1C1',
-          color: '#2E7D32'
-        }}>
-          Tạo bài viết mới
-        </DialogTitle>
-        <DialogContent sx={{ p: 3, mt: 2 }}>
-          <Typography variant="body1" gutterBottom>
-            Tại đây sẽ là form tạo bài viết mới.
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Component này sẽ được xây dựng chi tiết trong giai đoạn tiếp theo.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button 
-            onClick={() => setCreateDialogOpen(false)}
-            variant="outlined"
-            sx={{ borderRadius: '20px' }}
-          >
-            Hủy
-          </Button>
-          <Button 
-            variant="contained" 
-            onClick={() => setCreateDialogOpen(false)}
-            sx={{ 
-              borderRadius: '20px',
-              bgcolor: '#2E7D32',
-              '&:hover': {
-                bgcolor: '#1B5E20',
-              }
-            }}
-          >
-            Đăng bài
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Component CreateThread */}
+      <CreateThread
+  open={createDialogOpen}
+  onClose={() => setCreateDialogOpen(false)}
+  onSuccess={handleCreateSuccess}
+  showSnackbar={showSnackbar}
+/>
     </Container>
   );
 };
