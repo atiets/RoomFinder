@@ -1,4 +1,5 @@
 import { Email } from "@mui/icons-material";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -6,12 +7,13 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import supportPic from "../../../assets/images/supportPic.png";
 import { searchAndCategorizePosts } from "../../../redux/postAPI";
+import SupportChatModal from "../Chatbot";
+import CompareArea from "../CompareArea/CompareArea";
 import ListPostHome from "../Post/ListPostHome";
 import "./Home.css";
 import Introduction from "./Introduction";
 import Introduction2 from "./Introduction2";
 import ListNewsHome from "./ListNewsHome";
-import CompareArea from "../CompareArea/CompareArea";
 
 const Home = () => {
   document.title = "Phòng trọ xinh";
@@ -25,6 +27,8 @@ const Home = () => {
   const [category1Posts, setTroPosts] = useState([]);
   const [category2Posts, setCanHoPosts] = useState([]);
   const [category3Posts, setVanPhongPosts] = useState([]);
+  const [openChat, setOpenChat] = useState(false);
+
   let axiosJWT = axios.create({
     baseURL: process.env.REACT_APP_BASE_URL_API,
   });
@@ -136,8 +140,8 @@ const Home = () => {
             favorite={favorites}
           />
           <div style={{ width: "100%", height: "auto" }}>
-  <CompareArea />
-</div>
+            <CompareArea />
+          </div>
           <div style={{ width: "100%", height: "auto" }}>
             <Introduction />
           </div>
@@ -187,6 +191,20 @@ const Home = () => {
             </>
           ) : null}
         </div>
+        <div
+          className="support-float"
+          onClick={() => setOpenChat(true)}
+        >
+          <ChatBubbleOutlineIcon className="support-float-icon" />
+          <span className="support-float-text">Nhấp vào đây để được hỗ trợ</span>
+        </div>
+
+        {/* Modal Chat */}
+        {openChat && (
+          <div className="support-modal-chat">
+            <SupportChatModal open={openChat} onClose={() => setOpenChat(false)} />
+          </div>
+        )}
       </div>
     </div>
   );

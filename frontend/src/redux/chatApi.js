@@ -99,3 +99,40 @@ export const fetchSuggestedQuestions = async (postContent, accessToken) => {
         return null;
     }
 };
+
+//fetch của admin
+export const getListConversation = async (adminId, token, unreadOnly, searchText) => {
+    try {
+        const response = await axios.get(`${BASE_URL}admin/listConversations/${adminId}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                params: {
+                    unreadOnly,
+                    search: searchText
+                }
+            }
+        );
+        return response;
+    } catch (error) {
+        console.error("Error fetching filtered conversations:", error);
+        throw error;
+    }
+};
+
+export const getMessagesWithBot = async (userID, token) => {
+    try {
+        const response = await axios.get(`${BASE_URL}user/messageswithBot/${userID}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                }
+            }
+        );
+        return response;
+    } catch (error) {
+        console.error("Error fetching messages with bot:", error);
+        throw error;
+    }
+};

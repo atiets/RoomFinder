@@ -1,11 +1,11 @@
 import "froala-editor/css/froala_editor.pkgd.min.css";
 import "froala-editor/css/froala_style.min.css";
-import React from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import "./App.css";
 import HomeAdmin from "./components/Admin/AdminDashboard/HomeAdmin";
 import ManagePostAdmin from "./components/Admin/AdminDashboard/ManagePostAdmin";
 import AdminHeader from "./components/Admin/AdminHeader/AdminHeader";
+import ManageSupport from "./components/Admin/ManageSupport";
 import ManageUsers from "./components/Admin/ManageUsers/ManageUsers";
 import UserPosts from "./components/Admin/ManageUsers/UserPosts";
 import EditNewsForm from "./components/Admin/News/EditNewsForm/EditNewsForm";
@@ -38,7 +38,6 @@ import PostDetail from "./components/User/Post/PostDetail";
 import PostsPage from "./components/User/Post/PostPage";
 import SearchPosts from "./components/User/Search/searchPosts";
 import SearchResultsPage from "./components/User/Search/searchResultPage";
-import ChatTest from "./components/User/Chatbot";
 import { ForumHome } from "./pages/forum";
 
 function App() {
@@ -159,8 +158,13 @@ function App() {
               }
             />
             <Route
-              path="/test"
-              element={ <ChatTest />}
+              path="/support"
+              element={
+                <>
+                  <AdminHeader />
+                  <ManageSupport />
+                </>
+              }
             />
             <Route
               path="/posts/:id"

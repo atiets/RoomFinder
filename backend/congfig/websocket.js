@@ -4,6 +4,7 @@ const Conversation = require("../models/Conversation");
 const mongoose = require("mongoose");
 const { markConversationAsRead } = require("../controllers/chatController");
 const { handleIncomingMessage } = require("../bot/queues/autoReply.worker");
+const { getOnlineAdmins } = require("../bot/filterOnlineAdmins");
 
 let onlineUsers = {};
 let io;
@@ -111,6 +112,114 @@ function initializeSocket(server) {
             await markConversationAsRead(conversationId, userId, socket);
         });
 
+        socket.on("claimConversation", async ({ conversationId, adminId }) => {
+            try {
+                if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+                    console.log("[claimConversation] conversationId không hợp lệ:", conversationId);
+                    return;
+                }
+
+                const conversation = await Conversation.findById(mongoose.Types.ObjectId(conversationId));
+                if (!conversation) {
+                    console.log("[claimConversation] Conversation with id=" + conversationId + " not found.");
+                    return;
+                }
+
+                if (conversation.claimedByAdmin) {
+                    socket.emit("claimFailed", { message: "Conversation đã được claim bởi admin khác." });
+                    return;
+                }
+
+                conversation.claimedByAdmin = adminId;
+                await conversation.save();
+
+                const claimedConversation = await Conversation.findById(conversationId)
+                    .populate({
+                        path: "participants",
+                        select: "_id username email profile.picture profile.isOnline",
+                        options: { strictPopulate: false }
+                    })
+                    .populate({
+                        path: "lastMessage",
+                        options: { strictPopulate: false }
+                    })
+                    .lean();
+
+                socket.emit("claimSuccess", claimedConversation);
+
+                const onlineUsers = getOnlineUsers();
+                for (const [otherAdminId, adminSocketId] of Object.entries(onlineUsers)) {
+                    if (otherAdminId !== adminId) {
+                        const isAdmin = await getOnlineAdmins(otherAdminId);
+                        if (isAdmin) {
+                            io.to(adminSocketId).emit("conversationClaimed", { conversationId });
+                        }
+                    }
+                }
+
+            } catch (error) {
+                console.error("Lỗi khi claim conversation:", error);
+            }
+        });
+
+        socket.on("adminSendMessage", async ({ conversationId, adminId, content, images }) => {
+            try {
+                const conversation = await Conversation.findById(conversationId);
+                if (!conversation) return;
+
+                // Kiểm tra quyền gửi: chỉ admin đã claim mới được gửi
+                if (conversation.claimedByAdmin?.toString() !== adminId) {
+                    socket.emit("sendMessageFailed", { message: "Bạn chưa claim conversation này." });
+                    return;
+                }
+
+                // Xác định user nhận tin
+                const receiverId = conversation.participants.find(
+                    id => id.toString() !== adminId
+                );
+
+                // Tạo message
+                const message = await Message.create({
+                    conversationId,
+                    sender: adminId,
+                    receiver: receiverId,
+                    content,
+                    images,
+                    timestamp: new Date(),
+                });
+
+                // Cập nhật conversation
+                conversation.lastMessage = message._id;
+                conversation.updatedAt = new Date();
+                conversation.readBy = [adminId];
+                await conversation.save();
+
+                // Gửi message đến user (nếu online)
+                const receiverSocketId = getSocketIdByUserId(receiverId);
+                if (receiverSocketId) {
+                    io.to(receiverSocketId).emit("receiveMessage", message);
+                }
+                const updatedConversation = await Conversation.findById(conversation._id)
+                    .populate({
+                        path: "participants",
+                        select: "username profile.picture profile.isOnline",
+                    })
+                    .populate({
+                        path: "lastMessage",
+                    });
+                io.emit("updateConversationsAdmin", {
+                    userIds: [adminId, receiverId],
+                    updatedConversation,
+                });
+                // Gửi lại cho admin để cập nhật UI
+                io.to(adminId).emit("receiveMessageAdmin", message);
+
+            } catch (err) {
+                console.error("Lỗi khi admin gửi message:", err);
+                socket.emit("sendMessageFailed", { message: "Có lỗi xảy ra khi gửi tin nhắn." });
+            }
+        });
+
         socket.on("disconnect", () => {
             for (let userId in onlineUsers) {
                 if (onlineUsers[userId] === socket.id) {
@@ -128,6 +237,10 @@ function getIO() {
         throw new Error("Socket.io not initialized!");
     }
     return io;
+}
+
+function getSocketIdByUserId(userId) {
+    return onlineUsers[userId];
 }
 
 function getOnlineUsers() {
