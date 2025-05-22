@@ -1,5 +1,9 @@
 const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
+const User = require("../models/User");
+const mongoose = require("mongoose");
+
+const botId = process.env.BOT_ID || "";
 
 // Lấy danh sách cuộc trò chuyện của một người dùng
 exports.getConversationsByUser = async (req, res) => {
@@ -225,5 +229,122 @@ exports.getFilteredConversations = async (req, res) => {
         res.status(200).json(formattedConversations);
     } catch (err) {
         res.status(500).json({ message: "Server error", error: err.message });
+    }
+};
+
+//Lấy danh sách cuộc hội thoại của admin
+exports.getConversationsByAdmin = async (req, res) => {
+    try {
+        const { id: userId } = req.user;
+        const { unreadOnly, search = "" } = req.query;
+
+        const isManager = userId === process.env.MANAGER_ID;
+
+        let conversations = [];
+
+        if (isManager) {
+            // 1. Lấy danh sách user có admin: true
+            const adminUsers = await User.find({ admin: true }, "_id");
+            const adminIds = adminUsers.map(user => user._id);
+
+            // 2. Lấy conversation có ít nhất 1 admin tham gia
+            conversations = await Conversation.find({
+                claimedByAdmin: { $in: adminIds }
+            })
+                .populate({
+                    path: "participants",
+                    select: "_id username email profile.picture profile.isOnline",
+                    options: { strictPopulate: false }
+                })
+                .populate({
+                    path: "lastMessage",
+                    options: { strictPopulate: false }
+                })
+                .sort({ updatedAt: -1 });
+
+        } else {
+            // Kiểm tra nếu là admin thì mới cho phép
+            const currentUser = await User.findById(userId);
+            if (!currentUser || !currentUser.admin) {
+                return res.status(403).json({ message: "Bạn không có quyền truy cập." });
+            }
+
+            // Lấy những conversation mà admin đó đã claim
+            conversations = await Conversation.find({
+                claimedByAdmin: userId
+            })
+                .populate({
+                    path: "participants",
+                    select: "_id username email profile.picture profile.isOnline",
+                    options: { strictPopulate: false }
+                })
+                .populate({
+                    path: "lastMessage",
+                    options: { strictPopulate: false }
+                })
+                .sort({ updatedAt: -1 });
+        }
+
+        // Lọc chưa đọc nếu có yêu cầu
+        if (unreadOnly === "true") {
+            conversations = conversations.filter(c => !c.readBy.includes(userId));
+        }
+
+        // Tìm kiếm theo tên người dùng
+        if (search) {
+            const searchLower = search.toLowerCase();
+            conversations = conversations.filter(c =>
+                c.participants.some(p =>
+                    p._id.toString() !== userId &&
+                    p.username.toLowerCase().includes(searchLower)
+                )
+            );
+        }
+
+        // Format dữ liệu
+        const formatted = conversations.map(c => ({
+            ...c._doc,
+            readBy: c.readBy,
+            visible: c.visible,
+            firstPostImage: c.postId?.images?.[0] || null
+        }));
+
+        return res.status(200).json(formatted);
+
+    } catch (err) {
+        console.error("Lỗi khi lấy danh sách conversation:", err);
+        res.status(500).json({ message: "Lỗi server" });
+    }
+};
+
+//Lấy tin nhắn support user 
+exports.getMessagesWithBot = async (req, res) => {
+    try {
+        console.log("Bot ID:", botId);
+        const { userId } = req.params;
+        const userObjectId = mongoose.Types.ObjectId(userId);
+        const botObjectId = mongoose.Types.ObjectId(botId);
+        
+        console.log("Bot id object:", botObjectId);
+        const conversation = await Conversation.findOne({
+            participants: {
+                $all: [userObjectId, botObjectId],
+                $size: 2
+            }
+        });
+
+        if (!conversation) {
+            return res.status(404).json({ message: "Không tìm thấy cuộc trò chuyện với bot." });
+        }
+
+        const messages = await Message.find({ conversationId: conversation._id })
+            .sort({ timestamp: 1 })
+            .populate("sender", "username email profile.picture")
+            .populate("receiver", "username email profile.picture");
+
+        res.status(200).json({ conversationId: conversation._id, messages });
+    } catch (error) {
+        console.error("Lỗi khi lấy tin nhắn với bot:", error);
+        res.status(500).json({ message: "Lỗi máy chủ." });
     }
 };

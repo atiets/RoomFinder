@@ -1,7 +1,7 @@
 const { autoReplyQueue } = require('./bullmq');
 const rules = require('../rules');
 const { getReplyFromAI } = require('../aiProxy');
-const {getRandomOnlineAdmin} = require("../randomAdmin");
+const { getOnlineAdmins } = require("../filterOnlineAdmins");
 const mongoose = require('mongoose');
 const Conversation = require('../../models/Conversation');
 const Message = require('../../models/Message');
@@ -52,30 +52,40 @@ async function handleIncomingMessage(io, socketId, { sender, content }, onlineUs
 
         // 6. Nếu cần admin xử lý (AI không trả lời được)
         if (needsAdmin) {
-            // Nếu conversation chưa có admin claim
             if (!conversation.claimedByAdmin) {
-                const adminId = await getRandomOnlineAdmin(onlineUsers); // lấy admin có thể claim
-                if (adminId) {
-                    conversation.claimedByAdmin = adminId;
-                    await conversation.save();
+                const onlineAdminIds = getOnlineAdmins(onlineUsers);
+                // Cập nhật tin nhắn cuối cùng
+                conversation.lastMessage = userMessage;
 
-                    // Cập nhật message receiver là admin được claim
-                    userMessage.receiver = adminId;
-                    await userMessage.save();
+                // Dùng `populate` để lấy đầy đủ thông tin như mẫu mong muốn
+                const populatedConversation = await Conversation.findById(conversation._id)
+                    .populate({
+                        path: "participants",
+                        select: "_id username email profile.picture profile.isOnline",
+                        options: { strictPopulate: false }
+                    })
+                    .populate({
+                        path: "lastMessage",
+                        options: { strictPopulate: false }
+                    });
+                for (const adminId of onlineAdminIds) {
+                    const adminSocketId = onlineUsers[adminId];
+                    if (adminSocketId) {
+                        console.log(`🔔 send data khi gửi tin nhắn ${populatedConversation}`);
+                        io.to(adminSocketId).emit("adminNotifyMessage", populatedConversation);
+                    } else {
+                        console.log(`❌ No socket found for admin ${adminId}`);
+                    }
+                }
+
+            } else {
+                const adminId = conversation.claimedByAdmin.toString();
+                const adminSocketId = onlineUsers[adminId];
+                if (adminSocketId) {
+                    io.to(adminSocketId).emit("receiveMessage", userMessage);
                 }
             }
-
-            // Gửi notification, message cho admin được claim nếu có
-            if (conversation.claimedByAdmin) {
-                io.to(conversation.claimedByAdmin.toString()).emit("receiveMessage", userMessage);
-            }
-
-            // Gửi lại tin user cho user
-            io.to(socketId).emit("receiveMessage", userMessage);
-
-            // Bạn có thể gửi thêm thông báo "admin sẽ trả lời bạn sớm" cho user ở đây nếu muốn
         }
-
         // 7. Nếu AI trả lời được, lưu tin trả lời vào DB
         const replySenderId = botId || null; // bot gửi, hoặc null admin ảo
         const replyMessage = await Message.create({
@@ -100,7 +110,6 @@ async function handleIncomingMessage(io, socketId, { sender, content }, onlineUs
         );
 
         // 10. Gửi realtime cho user
-        io.to(socketId).emit("receiveMessage", userMessage);
         io.to(socketId).emit("receiveMessage", replyMessage);
 
     } catch (error) {

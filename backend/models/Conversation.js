@@ -4,6 +4,11 @@ const ConversationSchema = new mongoose.Schema({
     participants: [
         { type: mongoose.Schema.Types.ObjectId, ref: "User" }
     ],
+    claimedByAdmin: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
     postId: { type: mongoose.Schema.Types.ObjectId, ref: "Post" },
     lastMessage: {
         type: mongoose.Schema.Types.ObjectId,

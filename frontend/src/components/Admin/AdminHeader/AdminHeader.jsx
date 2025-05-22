@@ -1,6 +1,6 @@
+import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
 import axios from "axios";
-import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import iconChangePass from "../../../assets/images/iconChangePass.png";
@@ -37,6 +37,10 @@ const AdminHeader = () => {
           Phòng Trọ Xinh
         </Typography>
         <Box className="admin-header-buttons">
+          <Button onClick={() => navigate("/support")} className="support-button">
+            <SupportAgentIcon sx={{ marginRight: "8px" }} />
+            Hỗ trợ
+          </Button>
           <Button
             onClick={() => navigate("/chang-pass")}
             className="change-pass-button"
