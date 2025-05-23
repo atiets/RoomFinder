@@ -16,6 +16,11 @@ const ConversationSchema = new mongoose.Schema({
     },
     readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     visible: { type: Boolean, default: true },
+    adminStatus: {
+        type: String,
+        enum: ["pending", "processing", "done", null],
+        default: "pending",
+    },
     updatedAt: { type: Date, default: Date.now }
 });
 

@@ -136,3 +136,20 @@ export const getMessagesWithBot = async (userID, token) => {
         throw error;
     }
 };
+
+//Get danh sách các cuộc hội thoại chưa được admin nhận
+export const getUnclaimedConversations = async (token) => {
+    try {
+        const response = await axios.get(`${BASE_URL}unclaimed`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                }
+            }
+        );
+        return response;
+    } catch (error) {
+        console.error("Error fetching unclaimed conversations:", error);
+        throw error;
+    }
+};

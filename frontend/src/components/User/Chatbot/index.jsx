@@ -1,6 +1,6 @@
 import CloseIcon from "@mui/icons-material/Close";
 import { Box, Button, IconButton, TextField, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import useSocket from "../../../hooks/useSocket";
 import { getMessagesWithBot } from "../../../redux/chatApi";
@@ -13,15 +13,31 @@ const SupportChatModal = ({ open, onClose }) => {
 
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
+    const [selectedImage, setSelectedImage] = useState(null);
 
-    const botID = process.env.BOT_ID;
+
+    const botID = process.env.REACT_APP_BOT_ID;
+    const bottomRef = useRef(null);
+
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
 
     useEffect(() => {
         if (!socket) return;
 
-        const onReceive = (msg) => setMessages((prev) => [...prev, msg]);
+        const onReceive = (msg) => {
+            console.log("📩 Message received from socket:", msg); // ✅ Log message
+            setMessages((prev) => [...prev, msg]);
+        };
+
         socket.on("receiveMessage", onReceive);
-        return () => socket.off("receiveMessage", onReceive);
+        console.log("✅ Listening for 'receiveMessage' events...");
+
+        return () => {
+            socket.off("receiveMessage", onReceive);
+            console.log("🛑 Stopped listening to 'receiveMessage'");
+        };
     }, [socket]);
 
     const handleSend = () => {
@@ -31,6 +47,14 @@ const SupportChatModal = ({ open, onClose }) => {
         socket.emit("clientMessage", myMsg);
         setMessages((prev) => [...prev, myMsg]);
         setInput("");
+    };
+
+    const handleImageClick = (imgUrl) => {
+        setSelectedImage(imgUrl);
+    };
+
+    const closeModal = () => {
+        setSelectedImage(null);
     };
 
     useEffect(() => {
@@ -97,8 +121,8 @@ const SupportChatModal = ({ open, onClose }) => {
                     <Box
                         key={idx}
                         sx={{
-                            alignSelf: m.sender?._id === userId ? "flex-end" : "flex-start",
-                            bgcolor: m.sender?._id === userId ? "#e0f4d7" : "#ececec",
+                            alignSelf: (m.sender?._id === userId || m.sender === userId) ? "flex-end" : "flex-start",
+                            bgcolor: (m.sender?._id === userId || m.sender === userId) ? "#e0f4d7" : "#ececec",
                             color: "#333",
                             px: 1.2,
                             py: 0.8,
@@ -108,9 +132,28 @@ const SupportChatModal = ({ open, onClose }) => {
                             boxShadow: 1,
                         }}
                     >
-                        {m.sender?._id !== userId && m.isBot ? `[Assistant] ${m.content}` : m.content}
+                        {m.sender?._id?.trim() === botID?.trim() ? `[Assistant] ${m.content}` : m.content}
+                        {m.images && m.images.length > 0 && (
+                            <div className="message-images">
+                                {m.images.map((imgUrl, index) => (
+                                    <img
+                                        key={index}
+                                        src={imgUrl}
+                                        alt={`Ảnh ${index + 1}`}
+                                        className="message-image"
+                                        onClick={() => handleImageClick(imgUrl)} // Mở ảnh lớn khi click
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </Box>
                 ))}
+                <div ref={bottomRef} />
+                {selectedImage && (
+                    <div className="modal open" onClick={closeModal}>
+                        <img src={selectedImage} alt="Ảnh lớn" />
+                    </div>
+                )}
             </Box>
 
             {/* Input */}
