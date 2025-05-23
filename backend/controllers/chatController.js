@@ -94,7 +94,6 @@ exports.markConversationAsRead = async (conversationId, userId, socket) => {
     }
 };
 
-
 //Đêm số hội thoại chưa đọc
 const countUnreadConversations = async (userId) => {
     const count = await Conversation.countDocuments({
@@ -346,5 +345,20 @@ exports.getMessagesWithBot = async (req, res) => {
     } catch (error) {
         console.error("Lỗi khi lấy tin nhắn với bot:", error);
         res.status(500).json({ message: "Lỗi máy chủ." });
+    }
+};
+
+//Lấy conversation chưa được claim
+exports.getUnclaimedConversations = async (req, res) => {
+    try {
+        const unclaimed = await Conversation.find({
+            claimedByAdmin: { $exists: false }, // hoặc: claimedByAdmin: null
+            type: "support" // tùy vào hệ thống bạn có type hay không
+        }).populate("participants lastMessage");
+
+        res.json(unclaimed);
+    } catch (err) {
+        console.error("Error fetching unclaimed conversations:", err);
+        res.status(500).json({ error: "Server error" });
     }
 };

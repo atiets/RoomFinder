@@ -158,7 +158,6 @@ const Chat = () => {
         });
     };
 
-
     useEffect(() => {
         handleFilterConversations(typeConversation);
         if (socket) {
@@ -305,8 +304,6 @@ const Chat = () => {
             console.error("Lỗi khi lọc cuộc trò chuyện:", error);
         }
     };
-
-    console.log("conversation", conversation);
 
     return (
         <div className="chat-container">

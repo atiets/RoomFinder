@@ -29,12 +29,18 @@ async function handleIncomingMessage(io, socketId, { sender, content }, onlineUs
             conversation = await Conversation.create({ participants: participantIds });
         }
 
-        // 2. Thử trả lời theo rule
-        let reply = matchRule(content);
+        if (conversation.adminStatus === "done") {
+            conversation.adminStatus = "pending";
+        }
 
-        // 3. Nếu không có rule, gọi AI trả lời
-        if (!reply) {
-            reply = await getReplyFromAI(content);
+        // 2. Thử trả lời theo rule
+        let reply = null;
+        let canBotReply = conversation.adminStatus === "pending" || conversation.adminStatus === "done";
+        if (canBotReply) {
+            reply = matchRule(content);
+            if (!reply) {
+                reply = await getReplyFromAI(content);
+            }
         }
 
         // 4. Kiểm tra xem AI có trả lời được không
@@ -54,38 +60,52 @@ async function handleIncomingMessage(io, socketId, { sender, content }, onlineUs
         if (needsAdmin) {
             if (!conversation.claimedByAdmin) {
                 const onlineAdminIds = getOnlineAdmins(onlineUsers);
-                // Cập nhật tin nhắn cuối cùng
-                conversation.lastMessage = userMessage;
+                conversation.lastMessage = userMessage._id;
+                conversation.updatedAt = new Date();
+                if (conversation.adminStatus === "pending" || conversation.adminStatus === "done") {
+                    conversation.adminStatus = "processing";
+                }
+                await conversation.save();
 
-                // Dùng `populate` để lấy đầy đủ thông tin như mẫu mong muốn
                 const populatedConversation = await Conversation.findById(conversation._id)
-                    .populate({
-                        path: "participants",
-                        select: "_id username email profile.picture profile.isOnline",
-                        options: { strictPopulate: false }
-                    })
-                    .populate({
-                        path: "lastMessage",
-                        options: { strictPopulate: false }
-                    });
+                    .populate("participants", "_id username email profile.picture profile.isOnline")
+                    .populate("lastMessage");
+
                 for (const adminId of onlineAdminIds) {
                     const adminSocketId = onlineUsers[adminId];
                     if (adminSocketId) {
-                        console.log(`🔔 send data khi gửi tin nhắn ${populatedConversation}`);
+                        console.log(`🔔 Notify admin ${adminId}`, populatedConversation);
                         io.to(adminSocketId).emit("adminNotifyMessage", populatedConversation);
                     } else {
-                        console.log(`❌ No socket found for admin ${adminId}`);
+                        console.log(`❌ No socket for admin ${adminId}`);
                     }
                 }
-
             } else {
                 const adminId = conversation.claimedByAdmin.toString();
                 const adminSocketId = onlineUsers[adminId];
                 if (adminSocketId) {
-                    io.to(adminSocketId).emit("receiveMessage", userMessage);
+                    conversation.lastMessage = userMessage._id;
+                    conversation.updatedAt = new Date();
+                    conversation.readBy = [sender];
+                    await conversation.save();
+
+                    const populatedConversation = await Conversation.findById(conversation._id)
+                        .populate("participants", "_id username email profile.picture profile.isOnline")
+                        .populate("lastMessage");
+
+                    console.log(`📥 Send receiveMessage to admin ${adminId}`, populatedConversation);
+                    io.to(adminSocketId).emit("receiveMessage", {
+                        message: userMessage,
+                        userIds: populatedConversation.participants.map(p => p._id.toString()),
+                        updatedConversation: populatedConversation
+                    });
+                } else {
+                    console.log(`❌ No socket found for admin ${adminId}`);
                 }
             }
+            return;
         }
+
         // 7. Nếu AI trả lời được, lưu tin trả lời vào DB
         const replySenderId = botId || null; // bot gửi, hoặc null admin ảo
         const replyMessage = await Message.create({
@@ -117,6 +137,43 @@ async function handleIncomingMessage(io, socketId, { sender, content }, onlineUs
     }
 }
 
+const resolveConversation = async (io, conversationId, adminSocket) => {
+    try {
+        // Cập nhật trạng thái adminStatus thành 'done'
+        await Conversation.findByIdAndUpdate(conversationId, {
+            adminStatus: "done",
+        });
+
+        // Truy vấn lại conversation đã được cập nhật và populate dữ liệu
+        const updatedConversation = await Conversation.findById(conversationId)
+            .populate({
+                path: "participants",
+                select: "username profile.picture profile.isOnline",
+            })
+            .populate({
+                path: "lastMessage",
+            });
+
+        if (!updatedConversation) {
+            return adminSocket.emit("error", {
+                message: "Không tìm thấy cuộc trò chuyện.",
+            });
+        }
+
+        // Emit đến tất cả các socket đang theo dõi cuộc trò chuyện này
+        io.emit("conversationResolved", {
+            conversation: updatedConversation,
+            message: "Cuộc hội thoại đã được đánh dấu là hoàn tất.",
+        });
+
+    } catch (error) {
+        console.error("❌ Lỗi khi xử lý conversationResolved:", error);
+        adminSocket.emit("error", {
+            message: "Đã xảy ra lỗi khi cập nhật cuộc trò chuyện.",
+        });
+    }
+};
+
 /* ----------------- Helpers ----------------- */
 function matchRule(message) {
     for (const rule of rules) {
@@ -125,4 +182,4 @@ function matchRule(message) {
     return null;
 }
 
-module.exports = { handleIncomingMessage };
+module.exports = { handleIncomingMessage, resolveConversation };

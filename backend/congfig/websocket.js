@@ -3,12 +3,14 @@ const Message = require("../models/Message");
 const Conversation = require("../models/Conversation");
 const mongoose = require("mongoose");
 const { markConversationAsRead } = require("../controllers/chatController");
-const { handleIncomingMessage } = require("../bot/queues/autoReply.worker");
+const { handleIncomingMessage, resolveConversation } = require("../bot/queues/autoReply.worker");
 const { getOnlineAdmins } = require("../bot/filterOnlineAdmins");
+require("dotenv").config();
 
 let onlineUsers = {};
 let io;
 
+const botId = process.env.BOT_ID || null;
 function initializeSocket(server) {
     io = new Server(server, {
         cors: {
@@ -131,6 +133,7 @@ function initializeSocket(server) {
                 }
 
                 conversation.claimedByAdmin = adminId;
+                conversation.adminStatus = "processing";
                 await conversation.save();
 
                 const claimedConversation = await Conversation.findById(conversationId)
@@ -175,9 +178,10 @@ function initializeSocket(server) {
 
                 // Xác định user nhận tin
                 const receiverId = conversation.participants.find(
-                    id => id.toString() !== adminId
+                    id => id.toString() !== botId
                 );
 
+                console.log("Rêciver ID:", receiverId);
                 // Tạo message
                 const message = await Message.create({
                     conversationId,
@@ -218,6 +222,10 @@ function initializeSocket(server) {
                 console.error("Lỗi khi admin gửi message:", err);
                 socket.emit("sendMessageFailed", { message: "Có lỗi xảy ra khi gửi tin nhắn." });
             }
+        });
+
+        socket.on("resolveConversation", async ({ conversationId }) => {
+            await resolveConversation(io, conversationId, socket);
         });
 
         socket.on("disconnect", () => {

@@ -1,13 +1,14 @@
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SendIcon from '@mui/icons-material/Send';
-import { Avatar, FormControl, Input, InputLabel, MenuItem, Select } from '@mui/material';
+import { Avatar, Button, FormControl, Input, InputLabel, MenuItem, Select } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import useSocket from '../../../hooks/useSocket';
-import { getListConversation, getMessagesByConversation } from '../../../redux/chatApi';
+import { getListConversation, getMessagesByConversation, getUnclaimedConversations } from '../../../redux/chatApi';
 import { uploadImages } from '../../../redux/uploadApi';
 import './index.css';
 
@@ -16,9 +17,6 @@ const ManageSupport = () => {
     const chatRef = useRef(null);
     const inputRef = useRef(null);
     const fileInputRef = useRef(null);
-
-    const postID = location.state?.postId || null;
-    const contactInfo = location.state?.contactInfo || null;
 
     const currentUser = useSelector((state) => state.auth.login.currentUser);
     const id = currentUser?._id;
@@ -95,17 +93,32 @@ const ManageSupport = () => {
 
     useEffect(() => {
         if (!socket) return;
-        const handleReceiveMessage = (newMessage) => {
-            setMessagesChat((prev) => [...prev, newMessage]);
+
+        const onReceive = (data) => {
+            const { message, updatedConversation, userIds } = data;
+
+            console.log("Received message:", message);
+            console.log("Conversation mở hiện tại:", selectedChat?._id);
+            console.log("Conversation của message:", updatedConversation._id);
+
+            if (selectedChat?._id === updatedConversation._id) {
+                console.log("✅ Appending message to UI:", message);
+                setMessagesChat((prev) => [...prev, message]);
+            }
+
+            handleUpdateConversation({ updatedConversation, userIds });
         };
-        socket.on("receiveMessage", handleReceiveMessage);
+
+        socket.on("receiveMessage", onReceive);
+
         return () => {
-            socket.off("receiveMessage", handleReceiveMessage);
+            socket.off("receiveMessage", onReceive);
         };
-    }, [socket]);
+    }, [socket, selectedChat?.userId]);
 
     const getOtherParticipants = (conversations) => {
-        const botId = process.env.BOT_ID;
+        const botId = process.env.REACT_APP_BOT_ID;
+        console.log("Bot ID:", botId);
         return (conversations || []).map(chat => {
             const participants = Array.isArray(chat.participants) ? chat.participants : [];
             const otherParticipant = participants.find(p => p._id?.toString() !== botId);
@@ -119,7 +132,6 @@ const ManageSupport = () => {
             };
         });
     };
-
 
     const fetchMessages = async () => {
         try {
@@ -202,6 +214,7 @@ const ManageSupport = () => {
                 userId: id,
             });
         }
+        console.log("read conversation:", msg);
         setSelectedChat(msg);
         setNewMessage("");
     };
@@ -218,11 +231,32 @@ const ManageSupport = () => {
 
     const fetchConversations = async () => {
         try {
-            const response = await getListConversation(id, token, unreadOnly, debouncedText);
-            const formatted = getOtherParticipants(response.data || [], id);
-            setConversation(formatted);
-        } catch (error) {
-            console.error("Lỗi khi lọc cuộc trò chuyện:", error);
+            const res1 = await getListConversation(id, token, unreadOnly, debouncedText);
+            const res2 = await getUnclaimedConversations(token);
+
+            const formatted1 = getOtherParticipants(res1.data || [], id);
+            const formatted2 = getOtherParticipants(res2.data || [], id);
+
+            const merged = [...formatted1];
+
+            formatted2.forEach((conv) => {
+                if (!merged.some((c) => c._id === conv._id)) {
+                    merged.push(conv);
+                }
+            });
+
+            // 👉 Sort: Unclaimed lên đầu
+            const sorted = merged.sort((a, b) => {
+                const aClaimed = !!a.claimedByAdmin;
+                const bClaimed = !!b.claimedByAdmin;
+
+                if (aClaimed === bClaimed) return 0;
+                return aClaimed ? 1 : -1; // Unclaimed first
+            });
+
+            setConversation(sorted);
+        } catch (err) {
+            console.error("Lỗi khi lấy toàn bộ cuộc trò chuyện:", err);
         }
     };
 
@@ -231,6 +265,57 @@ const ManageSupport = () => {
             conversationId,
             adminId: id,
         });
+    };
+
+    const handleUpdateConversation = (payload = {}) => {
+        const { userIds = [], updatedConversation = {} } = payload;
+
+        console.log("🔧 [handleUpdateConversation]");
+        console.log("➡️ Current user ID:", id);
+        console.log("➡️ Payload userIds:", userIds);
+        console.log("➡️ Payload updatedConversation:", updatedConversation);
+
+        setConversation(prev => {
+            // Sửa tìm conversation theo đúng _id của updatedConversation
+            const exists = prev.find(conv => conv._id === updatedConversation._id);
+            let newList;
+
+            if (exists) {
+                console.log("🔁 Updating existing conversation in list");
+                newList = prev.map(conv =>
+                    conv._id === updatedConversation._id
+                        ? { ...conv, ...updatedConversation }
+                        : conv
+                );
+            } else {
+                console.log("➕ Adding new conversation to list");
+                // Giữ nguyên logic lấy participant format
+                const newFormatted = getOtherParticipants([updatedConversation], id);
+                newList = [...newFormatted, ...prev];
+            }
+
+            // Sắp xếp conversation mới nhất lên đầu
+            return [...newList].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        });
+    };
+
+    const handleUpdate = (data) => {
+        const { conversation, message } = data;
+        const formatted = getOtherParticipants([conversation])[0];
+        if (
+            selectedChat &&
+            selectedChat._id?.toString() === formatted._id?.toString()
+        ) {
+            setSelectedChat(formatted);
+        } else {
+            console.log("ℹ️ selectedChat is different, skipping selectedChat update");
+        }
+
+        setConversation((prevConversations) =>
+            prevConversations.map((conv) =>
+                conv._id === formatted._id ? formatted : conv
+            )
+        );
     };
 
     useEffect(() => {
@@ -259,39 +344,10 @@ const ManageSupport = () => {
             const processed = getOtherParticipants([data])[0];
 
             setConversation((prev) => {
-                if (prev.some(conv => conv._id === processed._id)) return prev;
+                if (prev.some((conv) => conv._id === processed._id)) return prev;
                 return [processed, ...prev];
             });
-        };
-
-        const handleUpdateConversation = ({ userIds, updatedConversation }) => {
-            console.log("🟡 [updateConversationsAdmin] Event received:", {
-                currentAdminId: id,
-                userIds,
-                updatedConversation,
-            });
-
-            if (!userIds.includes(id)) {
-                console.warn("⚠️ updateConversationsAdmin: ID không khớp, bỏ qua.");
-                return;
-            }
-            if (!userIds.includes(id)) return;
-            setConversation(prev => {
-                const exists = prev.find(conv => conv._id === updatedConversation._id);
-                let newList;
-                if (exists) {
-                    newList = prev.map(conv =>
-                        conv._id === updatedConversation._id
-                            ? { ...conv, ...updatedConversation }
-                            : conv
-                    );
-                } else {
-                    const newFormatted = getOtherParticipants([updatedConversation], id);
-                    newList = [...newFormatted, ...prev];
-                }
-
-                return [...newList].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-            });
+            fetchConversations();
         };
 
         const handleReceiveMessage = (newMessage) => {
@@ -312,177 +368,241 @@ const ManageSupport = () => {
         };
     }, [socket, id]);
 
+    useEffect(() => {
+        if (!socket) return;
+        socket.on("conversationResolved", handleUpdate);
+        return () => {
+            socket.off("conversationResolved", handleUpdate);
+        };
+    }, [socket, selectedChat?._id]);
+
+
+    const handleResolveConversation = () => {
+        socket.emit("resolveConversation", {
+            conversationId: selectedChat?._id,
+            adminId: id
+        });
+    };
+
+    useEffect(() => {
+        const fetchUnclaimedConversations = async () => {
+            try {
+                const res = await getUnclaimedConversations(token);
+                const processed = res.data.map((item) => getOtherParticipants([item])[0]);
+                setConversation((prev) => {
+                    const newList = [...prev];
+
+                    processed.forEach((conv) => {
+                        if (!newList.some((c) => c._id === conv._id)) {
+                            newList.push(conv);
+                        }
+                    });
+
+                    return newList;
+                });
+            } catch (err) {
+                console.error("Failed to fetch unclaimed conversations", err);
+            }
+        };
+
+        fetchUnclaimedConversations();
+    }, [token]);
+
+
     return (
         <div className="admin-chat-container">
             <ToastContainer position="admin-top-right" autoClose={5000} />
-                <div className='admin-chat-box-right'>
-                    <div className='admin-chat-box-right-header'>
-                        <Input
-                            placeholder='Search for friends'
-                            value={searchText}
-                            onChange={(e) => setSearchText(e.target.value)}
-                        />
-                    </div>
-                    <div className='admin-chat-box-right-settings'>
-                        <div className='admin-chat-box-right-settings-select'>
-                            <FormControl sx={{ minWidth: 200 }} size="small">
-                                <InputLabel id="label-select-filter">Bộ lọc</InputLabel>
-                                <Select
-                                    labelId="label-select-filter"
-                                    id="label-select-filter"
-                                    label="Bộ lọc"
-                                    value={typeConversation}
-                                    onChange={handleSelectChange}
-                                    size="small"
-                                    MenuProps={{
-                                        PaperProps: {
-                                            sx: {
-                                                padding: 0,
-                                            },
+            <div className='admin-chat-box-right'>
+                <div className='admin-chat-box-right-header'>
+                    <Input
+                        placeholder='Search for friends'
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                    />
+                </div>
+                <div className='admin-chat-box-right-settings'>
+                    <div className='admin-chat-box-right-settings-select'>
+                        <FormControl sx={{ minWidth: 200 }} size="small">
+                            <InputLabel id="label-select-filter">Bộ lọc</InputLabel>
+                            <Select
+                                labelId="label-select-filter"
+                                id="label-select-filter"
+                                label="Bộ lọc"
+                                value={typeConversation}
+                                onChange={handleSelectChange}
+                                size="small"
+                                MenuProps={{
+                                    PaperProps: {
+                                        sx: {
+                                            padding: 0,
                                         },
-                                    }}
+                                    },
+                                }}
+                            >
+                                <MenuItem value="all">Tất cả</MenuItem>
+                                <MenuItem value="unread">Chưa đọc</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </div>
+                </div>
+                <div className='admin-chat-box-right-body' style={{ overflowY: 'auto', maxHeight: '400px' }}>
+                    {Array.isArray(conversation) &&
+                        conversation.map((msg) => {
+                            const isUnread = Array.isArray(msg?.readBy) ? !msg?.readBy.includes(id) : true;
+                            const isClaimed = !!msg?.claimedByAdmin;
+
+                            return (
+                                <div
+                                    key={msg._id}
+                                    className={`chat-card ${isUnread ? "unread" : ""}`}
+                                    onClick={() => handleCardClick(msg)}
                                 >
-                                    <MenuItem value="all">Tất cả</MenuItem>
-                                    <MenuItem value="unread">Chưa đọc</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </div>
-                    </div>
-                    <div className='admin-chat-box-right-body' style={{ overflowY: 'auto', maxHeight: '400px' }}>
-                        {Array.isArray(conversation) &&
-                            conversation.map((msg) => {
-                                const isUnread = Array.isArray(msg?.readBy) ? !msg?.readBy.includes(id) : true;
-                                const isClaimed = !!msg?.claimedByAdmin;
-
-                                return (
-                                    <div
-                                        key={msg._id}
-                                        className={`chat-card ${isUnread ? "unread" : ""}`}
-                                        onClick={() => handleCardClick(msg)}
-                                    >
-                                        <Avatar
-                                            src={msg?.profilePic}
-                                            alt={msg?.username}
-                                            className="admin-chat-card-avatar"
-                                        />
-                                        <div className="admin-chat-card-content">
-                                            <div className={`admin-chat-card-name ${isUnread ? "unread-text" : ""}`}>
-                                                {truncateMessage(msg?.username, 30)}
-                                            </div>
-                                            <div className={`admin-chat-card-message ${isUnread ? "unread-text" : ""}`}>
-                                                {truncateMessage(msg.lastMessage?.content || "", 50)}
-                                            </div>
+                                    <Avatar
+                                        src={msg?.profilePic}
+                                        alt={msg?.username}
+                                        className="admin-chat-card-avatar"
+                                    />
+                                    <div className="admin-chat-card-content">
+                                        <div className={`admin-chat-card-name ${isUnread ? "unread-text" : ""}`}>
+                                            {truncateMessage(msg?.username, 30)}
                                         </div>
-                                        {!isClaimed && (
-                                            <button
-                                                className="claim-button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleClaimConversation(msg._id);
-                                                }}
-                                            >
-                                                Claim
-                                            </button>
-                                        )}
+                                        <div className={`admin-chat-card-message ${isUnread ? "unread-text" : ""}`}>
+                                            {truncateMessage(msg.lastMessage?.content || "", 50)}
+                                        </div>
                                     </div>
-                                );
-                            })}
-                    </div>
-            </div>
-                <div className='admin-chat-box-left'>
-                    <div className='admin-chat-box-left-header'>
-                        {selectedChat ? (
-                            <>
-                                <Avatar src={selectedChat.profilePic} alt={selectedChat.username} className='admin-chat-card-avatar-left' />
-                                <div className='admin-chat-card-content-left'>
-                                    <div className='admin-chat-card-name-left'>{truncateMessage(selectedChat.username, 30)}</div>
-                                    <div className='admin-chat-card-online'>
-                                        <span
-                                            style={{
-                                                display: 'inline-block',
-                                                width: '8px',
-                                                height: '8px',
-                                                borderRadius: '50%',
-                                                backgroundColor: onlineUsers.includes(selectedChat.userId) ? 'green' : 'gray',
-                                                marginRight: '5px',
+                                    {!isClaimed && (
+                                        <button
+                                            className="claim-button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleClaimConversation(msg._id);
                                             }}
-                                        ></span>
-                                        {onlineUsers.includes(selectedChat.userId) ? 'Online' : 'Offline'}
-                                    </div>
-                                </div>
-                                <MoreVertIcon style={{ marginLeft: 'auto', alignContent: 'center' }} />
-                            </>
-                        ) : (
-                            <div className='admin-chat-card-content'>
-                                <div className='admin-chat-card-name'>Chọn một cuộc trò chuyện</div>
-                            </div>
-                        )}
-                    </div>
-                    <div className='admin-chat-box-left-content' ref={chatRef}>
-                        {messagesChat
-                            .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-                            .map((msg) => (
-                                <div key={msg.id} className={`admin-message ${msg.sender === id ? "sent" : "received"}`}>
-                                    {msg.content && <p>{msg.content}</p>}
-                                    {msg.images && msg.images.length > 0 && (
-                                        <div className="admin-message-images">
-                                            {msg.images.map((imgUrl, index) => (
-                                                <img
-                                                    key={index}
-                                                    src={imgUrl}
-                                                    alt={`Ảnh ${index + 1}`}
-                                                    className="admin-message-image"
-                                                    onClick={() => handleImageClick(imgUrl)} // Mở ảnh lớn khi click
-                                                />
-                                            ))}
-                                        </div>
+                                        >
+                                            Claim
+                                        </button>
                                     )}
-                                    {/* Thời gian */}
-                                    <span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
                                 </div>
-                            ))}
-
-                        {/* Modal hiển thị ảnh lớn */}
-                        {selectedImage && (
-                            <div className="admin-modal open" onClick={closeModal}>
-                                <img src={selectedImage} alt="Ảnh lớn" />
+                            );
+                        })}
+                </div>
+            </div>
+            <div className='admin-chat-box-left'>
+                <div className='admin-chat-box-left-header'>
+                    {selectedChat ? (
+                        <>
+                            <Avatar src={selectedChat.profilePic} alt={selectedChat.username} className='admin-chat-card-avatar-left' />
+                            <div className='admin-chat-card-content-left'>
+                                <div className='admin-chat-card-name-left'>{truncateMessage(selectedChat.username, 30)}</div>
+                                <div className='admin-chat-card-online'>
+                                    <span
+                                        style={{
+                                            display: 'inline-block',
+                                            width: '8px',
+                                            height: '8px',
+                                            borderRadius: '50%',
+                                            backgroundColor: onlineUsers.includes(selectedChat.userId) ? 'green' : 'gray',
+                                            marginRight: '5px',
+                                        }}
+                                    ></span>
+                                    {onlineUsers.includes(selectedChat.userId) ? 'Online' : 'Offline'}
+                                </div>
                             </div>
-                        )}
+                            <MoreVertIcon style={{ marginLeft: 'auto', alignContent: 'center' }} />
+                        </>
+                    ) : (
+                        <div className='admin-chat-card-content'>
+                            <div className='admin-chat-card-name'>Chọn một cuộc trò chuyện</div>
+                        </div>
+                    )}
+                </div>
+                {selectedChat?.adminStatus === "processing" && (
+                    <div className='admin-chat-box-left-content-header'>
+                        <Button
+                            variant="contained"
+                            color="warning" // màu cam mặc định trong MUI
+                            startIcon={<CheckCircleIcon />}
+                            sx={{
+                                borderRadius: '20px',
+                                textTransform: 'none',
+                                fontWeight: 'bold',
+                                px: 2,
+                                py: 1,
+                                boxShadow: 2,
+                                '&:hover': {
+                                    backgroundColor: '#e65100', // cam đậm khi hover
+                                }
+                            }}
+                            onClick={() => handleResolveConversation()}
+                        >
+                            Resolve Conversation
+                        </Button>
                     </div>
-                    <div className="admin-image-preview-container">
-                        {selectedImages.map((image, index) => (
-                            <div key={index} className="admin-image-preview">
-                                <img src={image} alt={`admin-preview-${index}`} />
-                                <button onClick={() => handleRemoveImage(index)}>X</button>
+                )}
+                <div className='admin-chat-box-left-content' ref={chatRef}>
+                    {messagesChat
+                        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+                        .map((msg) => (
+                            <div key={msg.id} className={`admin-message ${msg.sender === id ? "sent" : "received"}`}>
+                                {msg.content && <p>{msg.content}</p>}
+                                {msg.images && msg.images.length > 0 && (
+                                    <div className="admin-message-images">
+                                        {msg.images.map((imgUrl, index) => (
+                                            <img
+                                                key={index}
+                                                src={imgUrl}
+                                                alt={`Ảnh ${index + 1}`}
+                                                className="admin-message-image"
+                                                onClick={() => handleImageClick(imgUrl)} // Mở ảnh lớn khi click
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                                {/* Thời gian */}
+                                <span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
                             </div>
                         ))}
-                    </div>
-                    <div className='admin-chat-box-left-footer'>
-                        <div className="admin-chat-box-left-footer">
-                            <div className={`admin-chat-box-left-footer-media ${showIcons ? 'visible' : 'hidden'}`}>
-                                <InsertPhotoIcon sx={{ color: '#63ab45' }} onClick={handleImageIconClick} />
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    ref={fileInputRef}
-                                    onChange={handleImageChange}
-                                />
-                            </div>
+
+                    {/* Modal hiển thị ảnh lớn */}
+                    {selectedImage && (
+                        <div className="admin-modal open" onClick={closeModal}>
+                            <img src={selectedImage} alt="Ảnh lớn" />
                         </div>
-                        <div className='admin-chat-box-left-input-container' style={{ flex: showIcons ? 8 : 10 }}>
+                    )}
+                </div>
+                <div className="admin-image-preview-container">
+                    {selectedImages.map((image, index) => (
+                        <div key={index} className="admin-image-preview">
+                            <img src={image} alt={`admin-preview-${index}`} />
+                            <button onClick={() => handleRemoveImage(index)}>X</button>
+                        </div>
+                    ))}
+                </div>
+                <div className='admin-chat-box-left-footer'>
+                    <div className="admin-chat-box-left-footer">
+                        <div className={`admin-chat-box-left-footer-media ${showIcons ? 'visible' : 'hidden'}`}>
+                            <InsertPhotoIcon sx={{ color: '#63ab45' }} onClick={handleImageIconClick} />
                             <input
-                                ref={inputRef}
-                                type="text"
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                                placeholder="Nhập tin nhắn..."
-                                className='admin-chat-box-left-input'
-                                onKeyPress={handleKeyPress}
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                ref={fileInputRef}
+                                onChange={handleImageChange}
                             />
-                            <SendIcon onClick={sendMessage} sx={{ color: '#63ab45' }} />
                         </div>
                     </div>
+                    <div className='admin-chat-box-left-input-container' style={{ flex: showIcons ? 8 : 10 }}>
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Nhập tin nhắn..."
+                            className='admin-chat-box-left-input'
+                            onKeyPress={handleKeyPress}
+                        />
+                        <SendIcon onClick={sendMessage} sx={{ color: '#63ab45' }} />
+                    </div>
+                </div>
             </div>
         </div>
     );
