@@ -191,13 +191,15 @@ const Home = () => {
             </>
           ) : null}
         </div>
-        <div
-          className="support-float"
-          onClick={() => setOpenChat(true)}
-        >
-          <ChatBubbleOutlineIcon className="support-float-icon" />
-          <span className="support-float-text">Nhấp vào đây để được hỗ trợ</span>
-        </div>
+        {!currentUser?.admin && (
+          <div
+            className="support-float"
+            onClick={() => setOpenChat(true)}
+          >
+            <ChatBubbleOutlineIcon className="support-float-icon" />
+            <span className="support-float-text">Nhấp vào đây để được hỗ trợ</span>
+          </div>
+        )}
 
         {/* Modal Chat */}
         {openChat && (
