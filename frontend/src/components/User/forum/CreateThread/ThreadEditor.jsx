@@ -1,4 +1,5 @@
 // src/components/User/forum/CreateThread/ThreadEditor.jsx
+//new
 import React, { useRef, useEffect } from 'react';
 import { 
   Box, 
@@ -9,7 +10,7 @@ import {
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
-const ThreadEditor = ({ setContent, setQuillInstance, error }) => {
+const ThreadEditor = ({ setContent, setQuillInstance, error, disabled = false }) => {
   const quillRef = useRef(null);
   const quillInstanceRef = useRef(null);
   
@@ -18,8 +19,9 @@ const ThreadEditor = ({ setContent, setQuillInstance, error }) => {
       quillInstanceRef.current = new Quill(quillRef.current, {
         theme: 'snow',
         placeholder: 'Vui lòng ghi nội dung bài viết (bắt buộc)',
+        readOnly: disabled, // Set readonly based on disabled prop
         modules: {
-          toolbar: [
+          toolbar: disabled ? false : [ // Disable toolbar if disabled
             ['bold', 'italic', 'underline'],
             ['link'],
             ['clean'],
@@ -38,11 +40,12 @@ const ThreadEditor = ({ setContent, setQuillInstance, error }) => {
       });
     }
     
-    // Cleanup function
-    return () => {
-      // Không cần cleanup Quill instance vì nó sẽ bị hủy khi component unmount
-    };
-  }, [setContent, setQuillInstance]);
+    // Update readonly state when disabled changes
+    if (quillInstanceRef.current) {
+      quillInstanceRef.current.enable(!disabled);
+    }
+    
+  }, [setContent, setQuillInstance, disabled]);
 
   return (
     <FormControl fullWidth sx={{ mb: 3 }}>
@@ -58,6 +61,7 @@ const ThreadEditor = ({ setContent, setQuillInstance, error }) => {
           borderColor: 'divider',
           borderRadius: 1,
           mb: 1,
+          opacity: disabled ? 0.6 : 1,
           '.ql-toolbar': {
             borderTop: 'none',
             borderLeft: 'none',

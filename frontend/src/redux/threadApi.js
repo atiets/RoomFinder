@@ -1,4 +1,5 @@
-// src/api/threadApi.js
+// src/redux/threadApi.js
+//new
 import axios from 'axios';
 
 const API_URL = `${process.env.REACT_APP_BASE_URL_API}/v1/forum`;
@@ -35,28 +36,72 @@ export const getThreadById = async (threadId) => {
 /**
  * Tạo thread mới
  * @param {Object} threadData - Dữ liệu thread mới
+ * @param {string} token - JWT token để authentication
  * @returns {Promise} - Trả về thông tin thread đã được tạo
  */
-export const createThread = async (threadData) => {
+export const createThread = async (threadData, token) => {
   try {
-    const response = await axios.post(`${API_URL}/threads`, threadData);
-    return response.data;
+    const response = await axios.post(`${API_URL}/threads`, threadData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    
+    if (response.status === 201 || response.status === 200) {
+      return response.data;
+    } else {
+      throw new Error("Unexpected response status: " + response.status);
+    }
   } catch (error) {
-    throw new Error("Không thể tạo bài viết: " + error.message);
+    // Xử lý các loại lỗi khác nhau
+    if (error.response) {
+      // Server trả về response với status code lỗi
+      const { status, data } = error.response;
+      
+      if (status === 401) {
+        throw new Error("Bạn cần đăng nhập để tạo bài viết");
+      } else if (status === 403) {
+        throw new Error("Token không hợp lệ hoặc đã hết hạn");
+      } else if (status === 400) {
+        // Lỗi validation
+        if (data.errors && Array.isArray(data.errors)) {
+          const errorMessages = data.errors.map(err => err.msg).join(', ');
+          throw new Error(errorMessages);
+        } else {
+          throw new Error(data.message || "Dữ liệu không hợp lệ");
+        }
+      } else if (status === 500) {
+        throw new Error("Lỗi server, vui lòng thử lại sau");
+      } else {
+        throw new Error(data.message || "Đã xảy ra lỗi không xác định");
+      }
+    } else if (error.request) {
+      // Request được gửi nhưng không nhận được response
+      throw new Error("Không thể kết nối đến server");
+    } else {
+      // Lỗi khác
+      throw new Error("Không thể tạo bài viết: " + error.message);
+    }
   }
 };
 
 /**
  * Like một thread
  * @param {string} threadId - ID của thread
+ * @param {string} token - JWT token để authentication
  * @returns {Promise} - Trả về thông tin cập nhật về likes
  */
-export const likeThread = async (threadId) => {
+export const likeThread = async (threadId, token) => {
   try {
-    const response = await axios.put(`${API_URL}/threads/${threadId}/like`);
+    const response = await axios.put(`${API_URL}/threads/${threadId}/like`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error("Không thể thích bài viết: " + error.message);
   }
 };
-
