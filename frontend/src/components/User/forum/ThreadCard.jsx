@@ -36,7 +36,28 @@ const ThreadCard = ({ thread, onClick }) => {
   const pastelGreen = '#C1E1C1';
   const pastelOrange = '#FFD8B1';
   
-  // Tính thời gian tương đối (ví dụ: "2 giờ trước")
+  // Hàm để chuyển đổi HTML content thành plain text với formatting
+  const formatContent = (htmlContent) => {
+    if (!htmlContent) return '';
+    
+    // Strip HTML tags và format lại
+    return htmlContent
+      .replace(/<\/p><p>/g, '\n\n')  // Thay </p><p> thành 2 xuống dòng
+      .replace(/<p>/g, '')           // Xóa <p> đầu
+      .replace(/<\/p>/g, '')         // Xóa </p> cuối
+      .replace(/<br\s*\/?>/gi, '\n') // Thay <br> thành xuống dòng
+      .replace(/<strong>(.*?)<\/strong>/g, '$1') // Xóa strong tags nhưng giữ nội dung
+      .replace(/<em>(.*?)<\/em>/g, '$1')         // Xóa em tags nhưng giữ nội dung
+      .replace(/<u>(.*?)<\/u>/g, '$1')           // Xóa u tags nhưng giữ nội dung
+      .replace(/<[^>]*>/g, '')       // Xóa tất cả HTML tags còn lại
+      .replace(/&nbsp;/g, ' ')       // Thay &nbsp; thành space
+      .replace(/&amp;/g, '&')        // Thay &amp; thành &
+      .replace(/&lt;/g, '<')         // Thay &lt; thành <
+      .replace(/&gt;/g, '>')         // Thay &gt; thành >
+      .trim();                       // Xóa space thừa đầu cuối
+  };
+  
+  // Tính thời gian tương đối
   const getRelativeTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -100,13 +121,21 @@ const ThreadCard = ({ thread, onClick }) => {
           </Typography>
         )}
         
-        {/* Nội dung văn bản */}
+        {/* Nội dung văn bản - Đã được format */}
         <Typography 
           variant="body1" 
           color="text.primary"
-          sx={{ mb: image ? 2 : 0 }}
+          sx={{ 
+            mb: image ? 2 : 0,
+            whiteSpace: 'pre-line', // Giữ nguyên line breaks
+            display: '-webkit-box',
+            WebkitLineClamp: 4, // Giới hạn hiển thị 4 dòng
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}
         >
-          {content}
+          {formatContent(content)}
         </Typography>
         
         {/* Hình ảnh nếu có */}
