@@ -1,15 +1,17 @@
 // src/components/User/forum/ThreadCard.jsx
-//new
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Card, CardHeader, CardContent, CardActions, 
   Avatar, Typography, Box, IconButton, CardMedia,
-  Divider
+  Divider, Button, Collapse
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(3),
@@ -21,72 +23,119 @@ const StyledCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-const ThreadCard = ({ thread, onClick }) => {
+// src/components/User/forum/ThreadCard.jsx
+const ThreadCard = ({ thread, onCommentClick }) => {
   const { 
     title, 
     content, 
-    author, 
+    username, // Thay đổi từ author thành username
+    avatar,   // Thêm avatar từ thread
+    created_at,
     createdAt, 
     tags = [], 
-    likes = 0, 
+    likes = [], 
     comments = 0, 
-    image = null, 
+    image = null,
+    viewCount = 0
   } = thread;
+
+  // State để quản lý việc mở rộng nội dung
+  const [expanded, setExpanded] = useState(false);
 
   // Màu pastel theo yêu cầu
   const pastelGreen = '#C1E1C1';
   const pastelOrange = '#FFD8B1';
   
-  // Hàm để chuyển đổi HTML content thành plain text với formatting
-  const formatContent = (htmlContent) => {
-    if (!htmlContent) return '';
-    
-    // Strip HTML tags và format lại
-    return htmlContent
-      .replace(/<\/p><p>/g, '\n\n')  // Thay </p><p> thành 2 xuống dòng
-      .replace(/<p>/g, '')           // Xóa <p> đầu
-      .replace(/<\/p>/g, '')         // Xóa </p> cuối
-      .replace(/<br\s*\/?>/gi, '\n') // Thay <br> thành xuống dòng
-      .replace(/<strong>(.*?)<\/strong>/g, '$1') // Xóa strong tags nhưng giữ nội dung
-      .replace(/<em>(.*?)<\/em>/g, '$1')         // Xóa em tags nhưng giữ nội dung
-      .replace(/<u>(.*?)<\/u>/g, '$1')           // Xóa u tags nhưng giữ nội dung
-      .replace(/<[^>]*>/g, '')       // Xóa tất cả HTML tags còn lại
-      .replace(/&nbsp;/g, ' ')       // Thay &nbsp; thành space
-      .replace(/&amp;/g, '&')        // Thay &amp; thành &
-      .replace(/&lt;/g, '<')         // Thay &lt; thành <
-      .replace(/&gt;/g, '>')         // Thay &gt; thành >
-      .trim();                       // Xóa space thừa đầu cuối
+  // Hàm để lấy display name
+  const getDisplayName = () => {
+    return username || 'Người dùng ẩn danh';
   };
+
+  // Hàm để lấy avatar letter
+  const getAvatarLetter = () => {
+    const displayName = getDisplayName();
+    return displayName.charAt(0).toUpperCase();
+  };
+
+  // Check if user is anonymous
+  const isAnonymous = !username || username === 'anonymous_user';
   
   // Tính thời gian tương đối
   const getRelativeTime = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-    
-    if (diffInSeconds < 60) return `${diffInSeconds} giây trước`;
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
-    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
-    if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)} tháng trước`;
-    return `${Math.floor(diffInSeconds / 31536000)} năm trước`;
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now - date) / 1000);
+      
+      if (diffInSeconds < 60) return `${diffInSeconds} giây trước`;
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+      if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+      if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)} tháng trước`;
+      return `${Math.floor(diffInSeconds / 31536000)} năm trước`;
+    } catch (error) {
+      return 'Vừa xong';
+    }
   };
+
+  // Rest of component functions...
+  const formatContent = (htmlContent) => {
+    if (!htmlContent) return '';
+    
+    return htmlContent
+      .replace(/<\/p><p>/g, '\n\n')
+      .replace(/<p>/g, '')
+      .replace(/<\/p>/g, '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<strong>(.*?)<\/strong>/g, '$1')
+      .replace(/<em>(.*?)<\/em>/g, '$1')
+      .replace(/<u>(.*?)<\/u>/g, '$1')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim();
+  };
+
+  const formattedContent = formatContent(content);
+  const contentLines = formattedContent.split('\n').length;
+  const contentLength = formattedContent.length;
+  const shouldShowReadMore = contentLines > 4 || contentLength > 300;
+
+  const truncatedContent = shouldShowReadMore && !expanded
+    ? formattedContent.split('\n').slice(0, 3).join('\n') + 
+      (formattedContent.length > 200 ? '...' : '')
+    : formattedContent;
+
+  const handleExpandClick = () => {
+    setExpanded(!expanded);
+  };
+
+  const handleCommentClick = () => {
+    if (onCommentClick) {
+      onCommentClick(thread.id || thread._id);
+    }
+  };
+
+  const likesCount = Array.isArray(likes) ? likes.length : 0;
   
   return (
     <StyledCard>
-      {/* Header với avatar, tên tác giả, thời gian và menu */}
+      {/* Header với avatar, username, thời gian và menu */}
       <CardHeader
         avatar={
           <Avatar 
-            alt={author?.name || 'User'} 
-            src={author?.avatar || ''}
+            alt={getDisplayName()} 
+            src={avatar || ''} // Sử dụng avatar trực tiếp từ thread
             sx={{ 
               width: 38, 
               height: 38,
-              bgcolor: pastelGreen 
+              bgcolor: isAnonymous ? '#e0e0e0' : pastelGreen,
+              color: isAnonymous ? '#757575' : 'inherit'
             }}
           >
-            {author?.name ? author.name.charAt(0).toUpperCase() : 'U'}
+            {getAvatarLetter()}
           </Avatar>
         }
         action={
@@ -96,19 +145,19 @@ const ThreadCard = ({ thread, onClick }) => {
         }
         title={
           <Typography variant="subtitle2" fontWeight="500">
-            {author?.name || 'Người dùng'}
+            {getDisplayName()}
           </Typography>
         }
         subheader={
           <Typography variant="body2" color="text.secondary" fontSize="12px">
-            {createdAt ? getRelativeTime(createdAt) : 'Vừa xong'}
+            {getRelativeTime(created_at || createdAt)}
           </Typography>
         }
         sx={{ pb: 1 }}
       />
       
-      {/* Nội dung bài viết */}
-      <CardContent sx={{ pt: 0, pb: 1.5 }} onClick={onClick}>
+      {/* Nội dung bài viết - giữ nguyên */}
+      <CardContent sx={{ pt: 0, pb: 1.5 }}>
         {/* Tiêu đề bài viết */}
         {title && (
           <Typography 
@@ -122,37 +171,59 @@ const ThreadCard = ({ thread, onClick }) => {
           </Typography>
         )}
         
-        {/* Nội dung văn bản - Đã được format */}
+        {/* Nội dung văn bản */}
         <Typography 
           variant="body1" 
           color="text.primary"
           sx={{ 
-            mb: image ? 2 : 0,
-            whiteSpace: 'pre-line', // Giữ nguyên line breaks
-            display: '-webkit-box',
-            WebkitLineClamp: 4, // Giới hạn hiển thị 4 dòng
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            mb: 1,
+            whiteSpace: 'pre-line'
           }}
         >
-          {formatContent(content)}
+          {truncatedContent}
         </Typography>
-        
-        {/* Hình ảnh nếu có */}
-        {image && (
-          <CardMedia
-            component="img"
-            image={image}
-            alt={title || "Thread image"}
-            sx={{ 
-              mt: 2, 
-              borderRadius: '4px',
-              maxHeight: '400px',
-              objectFit: 'contain'
+
+        {/* Nút xem thêm/thu gọn */}
+        {shouldShowReadMore && (
+          <Button
+            onClick={handleExpandClick}
+            size="small"
+            sx={{
+              p: 0,
+              minWidth: 'auto',
+              color: '#2E7D32',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: 'transparent',
+                textDecoration: 'underline'
+              }
             }}
-          />
+            endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          >
+            {expanded ? 'Thu gọn' : 'Xem thêm'}
+          </Button>
         )}
+
+        {/* Collapse content */}
+        <Collapse in={expanded} timeout="auto" unmountOnExit>
+          <Box sx={{ mt: 1 }}>
+            {image && (
+              <CardMedia
+                component="img"
+                image={image}
+                alt={title || "Thread image"}
+                sx={{ 
+                  mt: 2, 
+                  borderRadius: '4px',
+                  maxHeight: '400px',
+                  objectFit: 'contain'
+                }}
+              />
+            )}
+          </Box>
+        </Collapse>
         
         {/* Tags */}
         {tags && tags.length > 0 && (
@@ -184,47 +255,82 @@ const ThreadCard = ({ thread, onClick }) => {
           px: 2, 
           py: 1,
           display: 'flex',
-          justifyContent: 'space-around',
+          justifyContent: 'space-between',
         }}
       >
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            justifyContent: 'center',
-            flex: 1,
-            cursor: 'pointer',
-            py: 0.5,
-            borderRadius: 1,
-            '&:hover': {
-              bgcolor: 'rgba(0, 0, 0, 0.04)',
-            }
-          }}
-        >
-          <ThumbUpOutlinedIcon fontSize="small" color="action" sx={{ mr: 1 }} />
-          <Typography variant="body2" color="text.secondary">
-            {likes > 0 ? `Thích (${likes})` : 'Thích'}
-          </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {/* Nút thích */}
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              cursor: 'pointer',
+              py: 0.5,
+              px: 1,
+              borderRadius: 1,
+              transition: 'background-color 0.2s',
+              '&:hover': {
+                bgcolor: 'rgba(46, 125, 50, 0.08)',
+              }
+            }}
+          >
+            <ThumbUpOutlinedIcon 
+              fontSize="small" 
+              sx={{ 
+                mr: 0.5,
+                color: 'action.active',
+                '&:hover': {
+                  color: '#2E7D32'
+                }
+              }} 
+            />
+            <Typography variant="body2" color="text.secondary">
+              {likesCount > 0 ? likesCount : 'Thích'}
+            </Typography>
+          </Box>
+          
+          {/* Nút bình luận */}
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              cursor: 'pointer',
+              py: 0.5,
+              px: 1,
+              borderRadius: 1,
+              transition: 'background-color 0.2s',
+              '&:hover': {
+                bgcolor: 'rgba(46, 125, 50, 0.08)',
+              }
+            }}
+            onClick={handleCommentClick}
+          >
+            <ChatBubbleOutlineIcon 
+              fontSize="small" 
+              sx={{ 
+                mr: 0.5,
+                color: 'action.active',
+                '&:hover': {
+                  color: '#2E7D32'
+                }
+              }} 
+            />
+            <Typography variant="body2" color="text.secondary">
+              {comments > 0 ? `${comments} bình luận` : 'Bình luận'}
+            </Typography>
+          </Box>
         </Box>
         
+        {/* Số lượt xem */}
         <Box 
           sx={{ 
             display: 'flex', 
             alignItems: 'center',
-            justifyContent: 'center',
-            flex: 1,
-            cursor: 'pointer',
-            py: 0.5,
-            borderRadius: 1,
-            '&:hover': {
-              bgcolor: 'rgba(0, 0, 0, 0.04)',
-            }
           }}
-          onClick={onClick}
         >
-          <ChatBubbleOutlineIcon fontSize="small" color="action" sx={{ mr: 1 }} />
+          <VisibilityIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
           <Typography variant="body2" color="text.secondary">
-            {comments > 0 ? `Bình luận (${comments})` : 'Bình luận'}
+            {viewCount > 0 ? `${viewCount} lượt xem` : '0 lượt xem'}
           </Typography>
         </Box>
       </CardActions>

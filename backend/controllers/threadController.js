@@ -1,12 +1,12 @@
 // controllers/threadController.js
 const Thread = require('../models/Thread');
 const Comment = require('../models/Comment');
-const User = require('../models/User'); // Giả sử bạn đã có model User
+const User = require('../models/User'); 
 const { validationResult } = require('express-validator');
 
 /**
  * Tạo thread mới
- * @route POST /api/forum/threads
+ * @route POST /v1/forum/threads
  * @access Private
  */
 exports.createThread = async (req, res) => {
@@ -19,44 +19,80 @@ exports.createThread = async (req, res) => {
 
     const { title, content, tags } = req.body;
     
-    // Tạo thread mới
+    // Kiểm tra thông tin user
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Thông tin người dùng không hợp lệ'
+      });
+    }
+    
+    // Kiểm tra username
+    if (!req.user.username) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username không tồn tại. Vui lòng cập nhật thông tin tài khoản.'
+      });
+    }
+    
+    // Tạo thread mới với username và avatar
     const newThread = new Thread({
       title,
       content,
       tags: tags || [],
       author: req.user.id,
+      username: req.user.username, // Lưu trực tiếp username
+      avatar: req.user.profile?.picture || null, // Lưu trực tiếp avatar URL
       status: 'pending' // Hoặc 'approved' nếu không cần duyệt
     });
     
     const savedThread = await newThread.save();
     
-    // Populate author để trả về thông tin người tạo
-    const populatedThread = await Thread.findById(savedThread._id)
-      .populate('author', 'name avatar');
-    
+    // Trả về thread đã được lưu
     res.status(201).json({
       success: true,
-      data: populatedThread
+      message: 'Tạo bài viết thành công! Đang chờ phê duyệt.',
+      data: {
+        id: savedThread._id,
+        title: savedThread.title,
+        content: savedThread.content,
+        username: savedThread.username,
+        avatar: savedThread.avatar,
+        tags: savedThread.tags,
+        status: savedThread.status,
+        created_at: savedThread.created_at
+      }
     });
   } catch (err) {
     console.error('Create thread error:', err.message);
+    
+    // Handle các lỗi cụ thể
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Dữ liệu không hợp lệ',
+        errors
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Lỗi server'
+      message: 'Lỗi server khi tạo bài viết'
     });
   }
 };
 
 /**
  * Lấy tất cả threads với lọc và phân trang
- * @route GET /api/forum/threads
+ * @route GET /v1/forum/threads
  * @access Public
  */
 
 
 /**
  * Lấy tất cả threads với phân trang
- * @route GET /api/forum/threads
+ * @route GET /v1/forum/threads
  * @access Public
  */
 exports.getAllThreads = async (req, res) => {
@@ -118,73 +154,6 @@ exports.getAllThreads = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi lấy danh sách threads'
-    });
-  }
-};
-
-/**
- * Lấy chi tiết một thread
- * @route GET /api/forum/threads/:id
- * @access Public
- */
-exports.getThreadById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    // Tìm thread theo ID
-    const thread = await Thread.findById(id)
-      .populate('author', 'name avatar')
-      .lean();
-    
-    // Nếu không tìm thấy thread
-    if (!thread) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy thread'
-      });
-    }
-    
-    // Kiểm tra nếu thread chưa được duyệt và người dùng không phải author hoặc admin
-    if (thread.status !== 'approved') {
-      // Lấy user từ request (nếu đã đăng nhập)
-      const userId = req.user ? req.user.id : null;
-      const isAdmin = req.user ? req.user.role === 'admin' : false;
-      
-      if (!userId || (thread.author._id.toString() !== userId && !isAdmin)) {
-        return res.status(403).json({
-          success: false,
-          message: 'Bạn không có quyền xem thread này'
-        });
-      }
-    }
-    
-    // Tăng số lượt xem
-    await Thread.findByIdAndUpdate(id, { $inc: { viewCount: 1 } });
-    thread.viewCount += 1;
-    
-    // Đếm số lượng comment
-    const commentCount = await Comment.countDocuments({ thread: thread._id });
-    thread.commentCount = commentCount;
-    
-    // Trả về thread
-    res.json({
-      success: true,
-      data: thread
-    });
-  } catch (err) {
-    console.error('Get thread error:', err);
-    
-    // Xử lý lỗi định dạng ID không hợp lệ
-    if (err.kind === 'ObjectId') {
-      return res.status(400).json({
-        success: false,
-        message: 'ID thread không hợp lệ'
-      });
-    }
-    
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi lấy chi tiết thread'
     });
   }
 };

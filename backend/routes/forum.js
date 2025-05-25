@@ -12,8 +12,5 @@ router.post('/threads', middlewareControllers.verifyToken, validateThread, threa
 // Route lấy danh sách threads
 router.get('/threads', threadController.getAllThreads);
 
-// Route lấy chi tiết thread - Public với xử lý quyền xem
-router.get('/threads/:id', threadController.getThreadById);
-
 // Export router
 module.exports = router;
