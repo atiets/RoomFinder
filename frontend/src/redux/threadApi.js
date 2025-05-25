@@ -1,5 +1,3 @@
-// src/redux/threadApi.js
-//new
 import axios from 'axios';
 
 const API_URL = `${process.env.REACT_APP_BASE_URL_API}/v1/forum`;
@@ -13,9 +11,29 @@ const API_URL = `${process.env.REACT_APP_BASE_URL_API}/v1/forum`;
 export const getForumThreads = async (page = 1, limit = 10) => {
   try {
     const response = await axios.get(`${API_URL}/threads?page=${page}&limit=${limit}`);
-    return response.data;
+    
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      throw new Error("Unexpected response status: " + response.status);
+    }
   } catch (error) {
-    throw new Error("Không thể lấy danh sách bài viết: " + error.message);
+    // Xử lý các loại lỗi khác nhau
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      if (status === 404) {
+        throw new Error("API endpoint không tồn tại");
+      } else if (status === 500) {
+        throw new Error("Lỗi server, vui lòng thử lại sau");
+      } else {
+        throw new Error(data.message || "Đã xảy ra lỗi không xác định");
+      }
+    } else if (error.request) {
+      throw new Error("Không thể kết nối đến server");
+    } else {
+      throw new Error("Không thể lấy danh sách bài viết: " + error.message);
+    }
   }
 };
 

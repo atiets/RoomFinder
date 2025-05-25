@@ -1,7 +1,6 @@
 // src/components/User/forum/CreateThread/CreateThreadDialog.jsx
-//new
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux'; // Để lấy token từ Redux state
+import { useSelector } from 'react-redux';
 import {
   Dialog,
   DialogTitle,
@@ -16,6 +15,8 @@ import {
   Button
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import { createThread } from '../../../../redux/threadApi';
 
 // Import các component con
@@ -33,8 +34,10 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
   const [error, setError] = useState(null);
   const [quillInstance, setQuillInstance] = useState(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [countdown, setCountdown] = useState(0);
   
-  // Lấy token từ Redux state (điều chỉnh path theo cấu trúc state của bạn)
+  // Lấy token từ Redux state
   const currentUser = useSelector((state) => state.auth?.login?.currentUser);
   const accessToken = currentUser?.accessToken;
   
@@ -45,6 +48,36 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
     }
   }, [open]);
 
+  // Countdown effect
+  useEffect(() => {
+    let timer;
+    if (showSuccessMessage && countdown > 0) {
+      timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+    } else if (showSuccessMessage && countdown === 0) {
+      // Auto close when countdown reaches 0
+      handleSuccessClose();
+    }
+    
+    return () => clearTimeout(timer);
+  }, [showSuccessMessage, countdown]);
+
+  // Validation để kiểm tra thông tin user
+  const validateUserInfo = () => {
+    if (!currentUser) {
+      setError('Thông tin người dùng không hợp lệ');
+      return false;
+    }
+    
+    if (!currentUser.username) {
+      setError('Username không tồn tại. Vui lòng cập nhật thông tin tài khoản.');
+      return false;
+    }
+    
+    return true;
+  };
+
   // Reset form và các state
   const resetForm = () => {
     setTitle('');
@@ -54,11 +87,20 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
     setIsSubmitting(false);
     setError(null);
     setIsCaptchaVerified(false);
+    setShowSuccessMessage(false);
+    setCountdown(0);
     
     // Reset Quill content
     if (quillInstance) {
       quillInstance.setText('');
     }
+  };
+
+  // Handle success close
+  const handleSuccessClose = () => {
+    onSuccess && onSuccess();
+    resetForm();
+    onClose();
   };
 
   // Xử lý gửi form
@@ -70,6 +112,12 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
       return;
     }
 
+    // Validate thông tin user
+    if (!validateUserInfo()) {
+      showSnackbar && showSnackbar('Thông tin người dùng không đầy đủ', 'error');
+      return;
+    }
+
     // Kiểm tra nội dung (bắt buộc)
     if (!content.trim() || content === '<p><br></p>') {
       setError('Vui lòng nhập nội dung bài viết');
@@ -77,34 +125,38 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
       return;
     }
 
-    // Bỏ qua việc kiểm tra captcha trong demo
-    // if (!isCaptchaVerified) {
-    //   setError('Vui lòng xác nhận captcha');
-    //   showSnackbar && showSnackbar('Vui lòng xác nhận captcha', 'error');
-    //   return;
-    // }
-
     try {
       setIsSubmitting(true);
       setError(null);
 
       // Chuẩn bị dữ liệu gửi lên server
       const threadData = {
-        title: title.trim() || '', // Title có thể rỗng
+        title: title.trim() || '',
         content: content.trim(),
-        tags: [] // Có thể thêm logic xử lý tags sau
+        tags: []
       };
+
+      // Debug log để kiểm tra thông tin user
+      console.log('Sending thread data:', {
+        ...threadData,
+        userInfo: {
+          username: currentUser.username,
+          avatar: currentUser.profile?.picture || null,
+          id: currentUser.id
+        }
+      });
 
       // Gọi API để tạo thread
       const response = await createThread(threadData, accessToken);
       
       // Kiểm tra response
       if (response.success) {
-        // Đóng dialog và thông báo thành công
-        onSuccess && onSuccess(response.data);
-        showSnackbar && showSnackbar('Bài viết đã được tạo thành công!', 'success');
-        resetForm();
-        onClose();
+        // Hiển thị message thành công trong dialog với countdown 8 giây
+        setShowSuccessMessage(true);
+        setCountdown(8); // 8 giây countdown
+        
+        console.log('Thread created successfully:', response.data);
+        
       } else {
         throw new Error(response.message || 'Tạo bài viết thất bại');
       }
@@ -117,28 +169,179 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
     }
   };
 
+   // Hiển thị thông tin debug user (chỉ trong development)
+  const renderUserDebugInfo = () => {
+    if (!currentUser || process.env.NODE_ENV !== 'development') return null;
+    
+    return (
+      <Box sx={{ 
+        mb: 2, 
+        p: 2, 
+        bgcolor: '#f0f8ff', 
+        borderRadius: 1,
+        border: '1px solid #e3f2fd'
+      }}>
+        <Typography variant="caption" sx={{ 
+          display: 'block',
+          color: '#1976d2',
+          fontWeight: 500,
+          mb: 1
+        }}>
+          🔧 Debug Info (Development):
+        </Typography>
+        <Box sx={{ fontSize: '0.75rem', color: '#555' }}>
+          <Typography variant="caption" display="block">
+            <strong>Username:</strong> {currentUser.username || '❌ Không có'}
+          </Typography>
+          <Typography variant="caption" display="block">
+            <strong>Avatar:</strong> {currentUser.profile?.picture ? '✅ Có' : '❌ Không có'}
+          </Typography>
+          <Typography variant="caption" display="block">
+            <strong>User ID:</strong> {currentUser.id || '❌ Không có'}
+          </Typography>
+          <Typography variant="caption" display="block">
+            <strong>Email:</strong> {currentUser.email || '❌ Không có'}
+          </Typography>
+        </Box>
+      </Box>
+    );
+  };
+
+  // Component hiển thị thông báo thành công với countdown
+  const SuccessMessage = () => (
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      py: 4,
+      textAlign: 'center'
+    }}>
+      <CheckCircleIcon 
+        sx={{ 
+          fontSize: 80, 
+          color: '#4caf50', 
+          mb: 2,
+          animation: 'bounce 0.6s ease-in-out'
+        }} 
+      />
+      <Typography variant="h5" gutterBottom sx={{ color: '#2e7d32', fontWeight: 700 }}>
+        🎉 Bài viết đã được gửi thành công!
+      </Typography>
+      
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        mt: 2, 
+        mb: 3,
+        p: 2,
+        bgcolor: '#fff3e0',
+        borderRadius: 2,
+        border: '1px solid #ffcc02'
+      }}>
+        <HourglassEmptyIcon sx={{ fontSize: 24, color: '#ff9800', mr: 1 }} />
+        <Typography variant="h6" sx={{ color: '#e65100', fontWeight: 600 }}>
+          Đang chờ được duyệt
+        </Typography>
+      </Box>
+      
+      <Typography variant="body1" color="text.primary" sx={{ 
+        maxWidth: 450, 
+        mb: 3,
+        lineHeight: 1.6,
+        fontSize: '1.1rem'
+      }}>
+        Bài viết của bạn sẽ xuất hiện trong diễn đàn sau khi được quản trị viên phê duyệt. 
+        <br />
+        <strong>Thời gian duyệt thường từ 15-30 phút.</strong>
+      </Typography>
+
+      {/* Countdown và buttons */}
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 2
+      }}>
+        {countdown > 0 && (
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            p: 1.5,
+            bgcolor: '#e3f2fd',
+            borderRadius: 2,
+            border: '1px solid #2196f3'
+          }}>
+            <CircularProgress 
+              size={20} 
+              sx={{ color: '#2196f3', mr: 1 }} 
+            />
+            <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 500 }}>
+              Tự động đóng sau {countdown} giây
+            </Typography>
+          </Box>
+        )}
+        
+        <Button
+          variant="contained"
+          onClick={handleSuccessClose}
+          sx={{
+            borderRadius: '25px',
+            px: 4,
+            py: 1.5,
+            bgcolor: '#2E7D32',
+            fontSize: '1rem',
+            fontWeight: 600,
+            '&:hover': {
+              bgcolor: '#1B5E20',
+            }
+          }}
+        >
+          Đóng và quay về diễn đàn
+        </Button>
+      </Box>
+    </Box>
+  );
+
+  // Kiểm tra xem có thể submit không
+  const canSubmit = () => {
+    return (
+      accessToken && 
+      !isSubmitting && 
+      content.trim() && 
+      content !== '<p><br></p>' &&
+      validateUserInfo()
+    );
+  };
+
   return (
     <Dialog
       open={open}
-      onClose={!isSubmitting ? onClose : undefined}
+      onClose={(!isSubmitting && !showSuccessMessage) ? onClose : undefined}
       maxWidth="md"
       fullWidth
       aria-labelledby="create-thread-dialog"
+      PaperProps={{
+        sx: {
+          borderRadius: '16px',
+          overflow: 'hidden'
+        }
+      }}
     >
       <DialogTitle
         sx={{
           fontWeight: 'bold',
           borderBottom: '1px solid',
           borderColor: 'divider',
-          bgcolor: '#C1E1C1',
+          bgcolor: showSuccessMessage ? '#e8f5e8' : '#C1E1C1',
           color: '#2E7D32',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          py: 2
         }}
       >
-        Tạo bài viết
-        {!isSubmitting && (
+        {showSuccessMessage ? '✅ Thành công!' : '📝 Tạo bài viết mới'}
+        {(!isSubmitting && !showSuccessMessage) && (
           <IconButton 
             edge="end" 
             color="inherit" 
@@ -152,105 +355,146 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
       
       <Divider />
       
-      <DialogContent sx={{ p: 3 }}>
-        {/* Hiển thị thông báo lỗi nếu có */}
-        {error && (
-          <Box sx={{ mb: 2, p: 2, bgcolor: '#ffebee', borderRadius: 1 }}>
-            <Typography color="error" variant="body2">
-              {error}
-            </Typography>
-          </Box>
-        )}
+      <DialogContent sx={{ p: showSuccessMessage ? 2 : 3 }}>
+        {showSuccessMessage ? (
+          <SuccessMessage />
+        ) : (
+          <>
+          {/* Debug info - chỉ hiển thị trong development */}
+            {renderUserDebugInfo()}
+            {/* Hiển thị thông báo lỗi nếu có */}
+            {error && (
+              <Box sx={{ 
+                mb: 2, 
+                p: 2, 
+                bgcolor: '#ffebee', 
+                borderRadius: 1,
+                border: '1px solid #ffcdd2'
+              }}>
+                <Typography color="error" variant="body2" sx={{ fontWeight: 500 }}>
+                  ⚠️ {error}
+                </Typography>
+              </Box>
+            )}
 
-        {/* Hiển thị thông báo cần đăng nhập nếu chưa có token */}
-        {!accessToken && (
-          <Box sx={{ mb: 2, p: 2, bgcolor: '#fff3e0', borderRadius: 1 }}>
-            <Typography color="warning.main" variant="body2">
-              Bạn cần đăng nhập để tạo bài viết mới.
-            </Typography>
-          </Box>
-        )}
+            {/* Hiển thị thông báo cần đăng nhập nếu chưa có token */}
+            {!accessToken && (
+              <Box sx={{ 
+                mb: 2, 
+                p: 2, 
+                bgcolor: '#fff3e0', 
+                borderRadius: 1,
+                border: '1px solid #ffcc02'
+              }}>
+                <Typography color="warning.main" variant="body2" sx={{ fontWeight: 500 }}>
+                  🔐 Bạn cần đăng nhập để tạo bài viết mới.
+                </Typography>
+              </Box>
+            )}
 
-        <Box sx={{ mb: 3 }}>
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <FormLabel 
-              htmlFor="thread-title" 
-              sx={{ mb: 1, fontWeight: 500 }}
-            >
-              Tiêu đề (không bắt buộc)
-            </FormLabel>
-            <input
-              type="text"
-              placeholder="Tiêu đề bài viết"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              disabled={!accessToken || isSubmitting}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '4px',
-                border: '1px solid #ccc',
-                fontSize: '16px',
-                marginBottom: '10px',
-                opacity: (!accessToken || isSubmitting) ? 0.6 : 1
-              }}
+            {/* Hiển thị warning nếu thiếu username */}
+            {accessToken && currentUser && !currentUser.username && (
+              <Box sx={{ 
+                mb: 2, 
+                p: 2, 
+                bgcolor: '#fff3e0', 
+                borderRadius: 1,
+                border: '1px solid #ffcc02'
+              }}>
+                <Typography color="warning.main" variant="body2" sx={{ fontWeight: 500 }}>
+                  👤 Username không tồn tại. Vui lòng cập nhật thông tin tài khoản trước khi tạo bài viết.
+                </Typography>
+              </Box>
+            )}
+
+            <Box sx={{ mb: 3 }}>
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <FormLabel 
+                  htmlFor="thread-title" 
+                  sx={{ mb: 1, fontWeight: 500 }}
+                >
+                  Tiêu đề (không bắt buộc)
+                </FormLabel>
+                <input
+                  id="thread-title"
+                  type="text"
+                  placeholder="Tiêu đề bài viết"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  disabled={!accessToken || isSubmitting || !validateUserInfo()}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #ccc',
+                    fontSize: '16px',
+                    marginBottom: '10px',
+                    opacity: (!accessToken || isSubmitting || !validateUserInfo()) ? 0.6 : 1,
+                    transition: 'all 0.2s ease',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </FormControl>
+
+              {/* Thread Editor Component */}
+              <ThreadEditor 
+                setContent={setContent}
+                setQuillInstance={setQuillInstance}
+                error={error}
+                disabled={!accessToken || isSubmitting || !validateUserInfo()}
+              />
+              
+              {/* Image Uploader Component - Tạm thời disable */}
+              <ImageUploader
+                imagePreview={imagePreview}
+                setImagePreview={setImagePreview}
+                setImage={setImage}
+                showSnackbar={showSnackbar}
+                disabled={true}
+              />
+            </Box>
+            
+            {/* Thread Captcha Component */}
+            <ThreadCaptcha 
+              isCaptchaVerified={isCaptchaVerified}
+              setIsCaptchaVerified={setIsCaptchaVerified}
+              showSnackbar={showSnackbar}
+              disabled={!accessToken || isSubmitting || !validateUserInfo()}
             />
-          </FormControl>
-
-          {/* Thread Editor Component */}
-          <ThreadEditor 
-            setContent={setContent}
-            setQuillInstance={setQuillInstance}
-            error={error}
-            disabled={!accessToken || isSubmitting}
-          />
-          
-          {/* Image Uploader Component - Tạm thời disable */}
-          <ImageUploader
-            imagePreview={imagePreview}
-            setImagePreview={setImagePreview}
-            setImage={setImage}
-            showSnackbar={showSnackbar}
-            disabled={true} // Disable upload ảnh như yêu cầu
-          />
-        </Box>
-        
-        {/* Thread Captcha Component */}
-        <ThreadCaptcha 
-          isCaptchaVerified={isCaptchaVerified}
-          setIsCaptchaVerified={setIsCaptchaVerified}
-          showSnackbar={showSnackbar}
-          disabled={!accessToken || isSubmitting}
-        />
-        
-        <Button
-          variant="contained"
-          color="primary"
-          fullWidth
-          disabled={!accessToken || isSubmitting || !content.trim()}
-          onClick={handleSubmit}
-          sx={{ 
-            mt: 2,
-            borderRadius: '20px',
-            bgcolor: '#2E7D32',
-            '&:hover': {
-              bgcolor: '#1B5E20',
-            },
-            '&:disabled': {
-              bgcolor: '#cccccc',
-              color: '#666666'
-            }
-          }}
-        >
-          {isSubmitting ? (
-            <>
-              <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
-              Đang tạo bài viết...
-            </>
-          ) : (
-            'Tạo bài viết mới'
-          )}
-        </Button>
+            
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              disabled={!canSubmit()}
+              onClick={handleSubmit}
+              sx={{ 
+                mt: 2,
+                borderRadius: '20px',
+                bgcolor: '#2E7D32',
+                py: 1.5,
+                fontSize: '1rem',
+                fontWeight: 600,
+                '&:hover': {
+                  bgcolor: '#1B5E20',
+                },
+                '&:disabled': {
+                  bgcolor: '#cccccc',
+                  color: '#666666'
+                }
+              }}
+            >
+              {isSubmitting ? (
+                <>
+                  <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                  Đang gửi bài viết...
+                </>
+              ) : (
+                'Gửi bài viết'
+              )}
+            </Button>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -18,6 +18,17 @@ const ThreadSchema = new mongoose.Schema({
     ref: 'User', 
     required: true 
   },
+  // Thêm các trường mới để lưu trực tiếp thông tin hiển thị
+  username: {
+    type: String,
+    required: [true, 'Username là bắt buộc'],
+    trim: true
+  },
+  avatar: {
+    type: String,
+    trim: true,
+    default: null
+  },
   tags: [{ 
     type: String,
     trim: true 
@@ -53,5 +64,10 @@ const ThreadSchema = new mongoose.Schema({
     updatedAt: 'updated_at' 
   }
 });
+
+// Index để tối ưu tìm kiếm
+ThreadSchema.index({ status: 1, created_at: -1 });
+ThreadSchema.index({ author: 1 });
+ThreadSchema.index({ username: 1 });
 
 module.exports = mongoose.model('Thread', ThreadSchema);
