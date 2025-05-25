@@ -6,7 +6,7 @@ const { protect, optionalAuth } = require('../middleware/auth');
 const { validateThread } = require('../middleware/threadValidation');
 const middlewareControllers = require("../controllers/middlewareControllers");
 
-// Tạo thread mới - cần đăng nhập và validate dữ liệu
+// Tạo thread mới
 router.post('/threads', middlewareControllers.verifyToken, validateThread, threadController.createThread);
 
 // Route lấy danh sách threads

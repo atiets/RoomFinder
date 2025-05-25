@@ -1,4 +1,5 @@
 // src/components/User/forum/CreateThread/CreateThreadDialog.jsx
+//new
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux'; // Để lấy token từ Redux state
 import {
