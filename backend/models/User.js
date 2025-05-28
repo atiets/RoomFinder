@@ -53,6 +53,12 @@ const userSchema = new mongoose.Schema({
       ref: 'Post',
     }
   ],
+    viewed: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Post',
+    }
+  ],
   suspiciousActivityCount: [
     {
       loginCount: {

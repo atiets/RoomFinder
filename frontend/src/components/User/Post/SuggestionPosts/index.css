@@ -1,0 +1,78 @@
+.post-detail-container-suggettion-posts {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    overflow-x: auto;
+    gap: 16px;
+    padding: 0 48px 0 0;
+    /* chừa khoảng bên phải cho nút mũi tên */
+    scroll-behavior: smooth;
+}
+
+/* Danh sách các post */
+.suggested-posts-list {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+.suggested-posts-list>* {
+    flex: 0 0 calc(20% - 12.8px);
+    /* 5 post mỗi hàng */
+    min-width: 200px;
+    box-sizing: border-box;
+}
+
+/* Nút chuyển trang */
+.next-page-button {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    cursor: pointer;
+    z-index: 2;
+    padding: 8px;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Pagination nếu cần hiển thị dưới */
+.suggestion-posts-pagination {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.next-page-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .suggested-posts-list>* {
+        flex: 0 0 calc(33.333% - 10.6px);
+        /* 3 post */
+    }
+}
+
+@media (max-width: 768px) {
+    .suggested-posts-list>* {
+        flex: 0 0 calc(50% - 8px);
+        /* 2 post */
+    }
+}
+
+@media (max-width: 480px) {
+    .suggested-posts-list>* {
+        flex: 0 0 100%;
+        /* 1 post */
+    }
+}

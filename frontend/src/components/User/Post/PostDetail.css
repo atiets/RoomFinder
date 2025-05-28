@@ -76,6 +76,7 @@
   border-radius: 20px;
   pointer-events: none;
 }
+
 .container-cost .post-title {
   flex: 6;
   margin: 0;
@@ -167,18 +168,20 @@
   margin-top: 0.5rem;
   text-transform: none !important;
   animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
   }
 
-  @keyframes pulse {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.1);
-    }
-    100% {
-      transform: scale(1);
-    }
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 .post-detail-container-comment {
@@ -195,8 +198,10 @@
 }
 
 .spinner {
-  border: 5px solid #f3f3f3; /* Màu nền của spinner */
-  border-top: 5px solid #1cb533; /* Màu của vòng tròn */
+  border: 5px solid #f3f3f3;
+  /* Màu nền của spinner */
+  border-top: 5px solid #1cb533;
+  /* Màu của vòng tròn */
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -207,6 +212,7 @@
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -236,7 +242,7 @@
 }
 
 .favorite-count {
-  font-size: 16px !important; 
+  font-size: 16px !important;
   font-weight: normal;
   color: rgb(142, 142, 142);
 }
@@ -247,4 +253,14 @@
 
 .room-post-button {
   pointer-events: auto !important;
+}
+
+.suggestion-posts-wrapper {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+  box-sizing: border-box;
+  background-color: #f9f9f9;
+  border-radius: 8px;
 }

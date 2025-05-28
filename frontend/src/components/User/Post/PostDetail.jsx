@@ -36,13 +36,14 @@ import Swal from "sweetalert2";
 import { getPostDetail, useFavoriteToggle } from "../../../redux/postAPI";
 import AdminHeader from "../../Admin/AdminHeader/AdminHeader";
 import Header from "../Header/Header";
+import PostMap from "../MapIntegration/PostMap";
 import AddReviewForm from "../Review/ReviewForm/ReviewForm";
 import ReviewsList from "../Review/ReviewList/ReviewsList";
 import ModalAppointment from "./ModalAppointment";
 import ComplaintModal from "./ModalComplaint";
 import "./PostDetail.css";
 import ShareMenu from "./ShareMenu";
-import PostMap from "../MapIntegration/PostMap";
+import SuggestionPosts from "./SuggestionPosts";
 
 const PostDetail = ({ onToggleFavorite }) => {
   const navigate = useNavigate();
@@ -52,12 +53,11 @@ const PostDetail = ({ onToggleFavorite }) => {
   const { id } = useParams();
   const [post, setPost] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [reviewContent, setReviewContent] = useState("");
-  const [rating, setRating] = useState(0);
   const [favorites, setFavorites] = useState([]);
   const user = useSelector((state) => state.auth.login.currentUser);
+  const accessToken = user?.accessToken;
   const { toggleFavorite } = useFavoriteToggle(user);
-  const { reviews, loading, error } = useSelector((state) => state.reviews);
+  const { reviews } = useSelector((state) => state.reviews);
   const [favoriteCount, setFavoriteCount] = useState(0);
   const [showFullPhone, setShowFullPhone] = useState(false);
   const [showModalAppointment, setShowModalAppointment] = useState(false);
@@ -104,7 +104,7 @@ const PostDetail = ({ onToggleFavorite }) => {
             } catch (err) {
               console.log("Lỗi cập nhật lượt xem", err);
             }
-          }, 5000);
+          });//Xóa time out 
 
           return () => clearTimeout(timer);
         }
@@ -329,6 +329,13 @@ const PostDetail = ({ onToggleFavorite }) => {
           />
         </div>
       </Box>
+      <div className="suggestion-posts-wrapper">
+        <SuggestionPosts
+          postId={id}
+          token={accessToken}
+          onTitleClick={(id) => navigate(`/posts/${id}`)}
+        />
+      </div>
       <div className="post-detail-container-comment">
         <AddReviewForm />
         <ReviewsList postId={id} />
