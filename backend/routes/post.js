@@ -83,4 +83,6 @@ router.post('/moderate-test', async (req, res) => {
         res.status(500).json({ error: 'Lỗi máy chủ' });
     }
 });
+
+router.get('/suggestions/:postId', middlewareControllers.verifyToken, postController.getSuggestedPosts);
 module.exports = router;

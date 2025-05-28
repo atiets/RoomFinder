@@ -469,4 +469,22 @@ export const useFavoriteToggle = (user) => {
   return { favorites, toggleFavorite };
 };
 
+export async function fetchSuggestedPosts(postId, token, page) {
+  try {
+    const response = await fetch(`${API_URL}suggestions/${postId}?page=${page}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Lỗi khi lấy dữ liệu');
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Lỗi gọi API:", error);
+    return null;
+  }
+}
+
 

@@ -433,13 +433,13 @@ const processDistrictData = async () => {
           const combinedCurrentAvg =
             combinedData.currentMonth.count > 0
               ? combinedData.currentMonth.total /
-                combinedData.currentMonth.count
+              combinedData.currentMonth.count
               : 0;
 
           const combinedPrevAvg =
             combinedData.previousMonth.count > 0
               ? combinedData.previousMonth.total /
-                combinedData.previousMonth.count
+              combinedData.previousMonth.count
               : 0;
 
           let combinedPriceFluctuation = 0;
@@ -452,13 +452,13 @@ const processDistrictData = async () => {
           // Chỉ thêm vào kết quả nếu có dữ liệu
           if (combinedCurrentAvg > 0 || combinedData.currentMonth.count > 0) {
             result[province][district].byCategoryAndTransaction[cat][trans] =
-              {
-                commonPrice: parseFloat(combinedCurrentAvg.toFixed(2)),
-                priceFluctuation: parseFloat(
-                  combinedPriceFluctuation.toFixed(2)
-                ),
-                count: combinedData.currentMonth.count,
-              };
+            {
+              commonPrice: parseFloat(combinedCurrentAvg.toFixed(2)),
+              priceFluctuation: parseFloat(
+                combinedPriceFluctuation.toFixed(2)
+              ),
+              count: combinedData.currentMonth.count,
+            };
           }
         }
 
@@ -495,8 +495,8 @@ exports.getCompareChartData = async (req, res) => {
 
     // Kiểm tra các tham số bắt buộc
     if (!province || !district || !category || !transactionType) {
-      return res.status(400).json({ 
-        message: "Vui lòng cung cấp đầy đủ thông tin tỉnh, quận, loại BĐS và loại giao dịch" 
+      return res.status(400).json({
+        message: "Vui lòng cung cấp đầy đủ thông tin tỉnh, quận, loại BĐS và loại giao dịch"
       });
     }
 
@@ -516,7 +516,7 @@ exports.getCompareChartData = async (req, res) => {
       }
       const startDate = new Date(year, month, 1);
       const endDate = new Date(year, month + 1, 0);
-      
+
       last12Months.push({
         month: month + 1,
         year,
@@ -531,7 +531,7 @@ exports.getCompareChartData = async (req, res) => {
         }
       });
     }
-    
+
     // Lấy tất cả bài đăng trong 12 tháng qua theo điều kiện lọc
     const startDate = new Date(last12Months[11].startDate);
     const posts = await Post.find({
@@ -562,13 +562,13 @@ exports.getCompareChartData = async (req, res) => {
     posts.forEach(post => {
       const pricePerSqm = post.price / post.area;
       const postDate = new Date(post.createdAt);
-      
+
       // Cập nhật thống kê tổng quan
       totalPosts++;
       totalPricePerSqm += pricePerSqm;
       minPrice = Math.min(minPrice, pricePerSqm);
       maxPrice = Math.max(maxPrice, pricePerSqm);
-      
+
       // Cập nhật dữ liệu theo phường/xã
       const ward = post.address.ward;
       if (!wardData[ward]) {
@@ -583,7 +583,7 @@ exports.getCompareChartData = async (req, res) => {
       wardData[ward].totalPrice += pricePerSqm;
       wardData[ward].minPrice = Math.min(wardData[ward].minPrice, pricePerSqm);
       wardData[ward].maxPrice = Math.max(wardData[ward].maxPrice, pricePerSqm);
-      
+
       // Cập nhật dữ liệu theo tháng
       for (const monthData of last12Months) {
         if (postDate >= monthData.startDate && postDate <= monthData.endDate) {
@@ -598,10 +598,10 @@ exports.getCompareChartData = async (req, res) => {
 
     // Tính giá trung bình và định dạng dữ liệu theo tháng
     const timelineData = last12Months.map(monthData => {
-      const avgPrice = monthData.data.count > 0 
-        ? monthData.data.totalPrice / monthData.data.count 
+      const avgPrice = monthData.data.count > 0
+        ? monthData.data.totalPrice / monthData.data.count
         : null;
-      
+
       return {
         label: monthData.label,
         avgPrice: avgPrice ? parseFloat(avgPrice.toFixed(2)) : null,
@@ -627,13 +627,13 @@ exports.getCompareChartData = async (req, res) => {
     // Gọi hàm processDistrictData thay vì getDistrictCoordinatesByCity
     const districtData = await processDistrictData();
     const neighboringDistricts = {};
-    
+
     if (districtData[province]) {
       for (const [neighborDistrict, data] of Object.entries(districtData[province])) {
-        if (neighborDistrict !== district && data.byCategoryAndTransaction && 
-            data.byCategoryAndTransaction[category] && 
-            data.byCategoryAndTransaction[category][transactionType]) {
-          
+        if (neighborDistrict !== district && data.byCategoryAndTransaction &&
+          data.byCategoryAndTransaction[category] &&
+          data.byCategoryAndTransaction[category][transactionType]) {
+
           neighboringDistricts[neighborDistrict] = {
             commonPrice: data.byCategoryAndTransaction[category][transactionType].commonPrice,
             priceFluctuation: data.byCategoryAndTransaction[category][transactionType].priceFluctuation,
@@ -664,8 +664,8 @@ exports.getCompareChartData = async (req, res) => {
     // Tính toán giá trung bình và xu hướng
     const avgPrice = totalPosts > 0 ? parseFloat((totalPricePerSqm / totalPosts).toFixed(2)) : 0;
     const currentPriceData = districtData[province]?.[district]?.byCategoryAndTransaction?.[category]?.[transactionType];
-    const trend = currentPriceData?.priceFluctuation > 0 ? "up" : 
-                 currentPriceData?.priceFluctuation < 0 ? "down" : "stable";
+    const trend = currentPriceData?.priceFluctuation > 0 ? "up" :
+      currentPriceData?.priceFluctuation < 0 ? "down" : "stable";
 
     // Cấu trúc dữ liệu trả về
     const result = {
@@ -915,39 +915,39 @@ exports.searchPosts = async (req, res) => {
         filtersExpr.push(
           numericMinPrice !== null
             ? {
-                $gte: [
-                  {
-                    $toDouble: {
-                      $replaceAll: {
-                        input: {
-                          $arrayElemAt: [{ $split: ["$rentalPrice", " "] }, 0],
-                        },
-                        find: ",",
-                        replacement: ".",
+              $gte: [
+                {
+                  $toDouble: {
+                    $replaceAll: {
+                      input: {
+                        $arrayElemAt: [{ $split: ["$rentalPrice", " "] }, 0],
                       },
+                      find: ",",
+                      replacement: ".",
                     },
                   },
-                  numericMinPrice,
-                ],
-              }
+                },
+                numericMinPrice,
+              ],
+            }
             : null,
           numericMaxPrice !== null
             ? {
-                $lte: [
-                  {
-                    $toDouble: {
-                      $replaceAll: {
-                        input: {
-                          $arrayElemAt: [{ $split: ["$rentalPrice", " "] }, 0],
-                        },
-                        find: ",",
-                        replacement: ".",
+              $lte: [
+                {
+                  $toDouble: {
+                    $replaceAll: {
+                      input: {
+                        $arrayElemAt: [{ $split: ["$rentalPrice", " "] }, 0],
                       },
+                      find: ",",
+                      replacement: ".",
                     },
                   },
-                  numericMaxPrice,
-                ],
-              }
+                },
+                numericMaxPrice,
+              ],
+            }
             : null
         );
       }
@@ -962,39 +962,39 @@ exports.searchPosts = async (req, res) => {
         filtersExpr.push(
           numericMinArea !== null
             ? {
-                $gte: [
-                  {
-                    $toDouble: {
-                      $replaceAll: {
-                        input: {
-                          $arrayElemAt: [{ $split: ["$area", " "] }, 0],
-                        },
-                        find: ",",
-                        replacement: ".",
+              $gte: [
+                {
+                  $toDouble: {
+                    $replaceAll: {
+                      input: {
+                        $arrayElemAt: [{ $split: ["$area", " "] }, 0],
                       },
+                      find: ",",
+                      replacement: ".",
                     },
                   },
-                  numericMinArea,
-                ],
-              }
+                },
+                numericMinArea,
+              ],
+            }
             : null,
           numericMaxArea !== null
             ? {
-                $lte: [
-                  {
-                    $toDouble: {
-                      $replaceAll: {
-                        input: {
-                          $arrayElemAt: [{ $split: ["$area", " "] }, 0],
-                        },
-                        find: ",",
-                        replacement: ".",
+              $lte: [
+                {
+                  $toDouble: {
+                    $replaceAll: {
+                      input: {
+                        $arrayElemAt: [{ $split: ["$area", " "] }, 0],
                       },
+                      find: ",",
+                      replacement: ".",
                     },
                   },
-                  numericMaxArea,
-                ],
-              }
+                },
+                numericMaxArea,
+              ],
+            }
             : null
         );
       }
@@ -1392,8 +1392,8 @@ exports.updateDefaultDaysToShow = async (req, res) => {
 
       const newExpiryDate = new Date(
         now.getTime() +
-          newDaysRemaining * (1000 * 60 * 60 * 24) +
-          newHoursRemaining * (1000 * 60 * 60)
+        newDaysRemaining * (1000 * 60 * 60 * 24) +
+        newHoursRemaining * (1000 * 60 * 60)
       );
 
       return {
@@ -1426,5 +1426,88 @@ exports.updateDefaultDaysToShow = async (req, res) => {
   } catch (error) {
     console.error("Error updating posts:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Hàm tính điểm tương đồng giữa 2 bài đăng
+function calculateSimilarityScore(postA, postB) {
+  let score = 0;
+
+  if (postA.category === postB.category) score += 3;
+  if (postA.transactionType === postB.transactionType) score += 2;
+  if (postA.address.district === postB.address.district) score += 3;
+
+  const wordsA = (postA.title + " " + postA.content).toLowerCase().split(/\s+/);
+  const wordsB = (postB.title + " " + postB.content).toLowerCase().split(/\s+/);
+  const commonWords = wordsA.filter(word => wordsB.includes(word));
+  const uniqueCommon = [...new Set(commonWords)];
+  score += Math.min(uniqueCommon.length, 5);
+
+  if (postA.features && postB.features) {
+    const commonFeatures = postA.features.filter(f => postB.features.includes(f));
+    score += commonFeatures.length;
+  }
+
+  return score;
+}
+
+exports.getSuggestedPosts = async (req, res) => {
+  const { postId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = 5;
+
+  try {
+    const currentPost = await Post.findById(postId);
+    if (!currentPost) {
+      return res.status(404).json({ message: "Không tìm thấy bài đăng." });
+    }
+
+    // Lấy 15 bài trước
+    const previousPosts = await Post.find({
+      _id: { $lt: new mongoose.Types.ObjectId(postId) },
+      status: "approved",
+      visibility: "visible",
+    })
+      .sort({ _id: -1 })
+      .limit(15);
+
+    // Lấy 15 bài sau
+    const nextPosts = await Post.find({
+      _id: { $gt: new mongoose.Types.ObjectId(postId) },
+      status: "approved",
+      visibility: "visible",
+    })
+      .sort({ _id: 1 })
+      .limit(15);
+
+    const nearbyPosts = [...previousPosts.reverse(), ...nextPosts];
+
+    // Tính điểm tương đồng
+    const scoredPosts = nearbyPosts.map(post => ({
+      post,
+      score: calculateSimilarityScore(currentPost, post),
+    }));
+
+    // Sắp xếp giảm dần theo điểm
+    const sortedPosts = scoredPosts.sort((a, b) => b.score - a.score);
+
+    // Tổng số trang
+    const totalItems = sortedPosts.length;
+    const totalPages = Math.ceil(totalItems / limit);
+
+    // Lấy 5 bài tương ứng trang
+    const paginatedPosts = sortedPosts
+      .slice((page - 1) * limit, page * limit)
+      .map(item => item.post);
+
+    res.status(200).json({
+      currentPage: page,
+      totalPages,
+      totalItems,
+      posts: paginatedPosts,
+    });
+  } catch (err) {
+    console.error("Lỗi gợi ý bài đăng:", err);
+    res.status(500).json({ message: "Đã xảy ra lỗi khi truy xuất bài đăng gợi ý." });
   }
 };
