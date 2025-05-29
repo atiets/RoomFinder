@@ -6,8 +6,8 @@
     overflow-x: auto;
     gap: 16px;
     padding: 0 48px 0 0;
-    /* chừa khoảng bên phải cho nút mũi tên */
     scroll-behavior: smooth;
+    overflow: hidden;
 }
 
 /* Danh sách các post */
@@ -21,12 +21,10 @@
 
 .suggested-posts-list>* {
     flex: 0 0 calc(20% - 12.8px);
-    /* 5 post mỗi hàng */
     min-width: 200px;
     box-sizing: border-box;
 }
 
-/* Nút chuyển trang */
 .next-page-button {
     position: absolute;
     right: 0;
@@ -41,7 +39,6 @@
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Pagination nếu cần hiển thị dưới */
 .suggestion-posts-pagination {
     width: 100%;
     display: flex;
@@ -55,7 +52,6 @@
     pointer-events: none;
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
     .suggested-posts-list>* {
         flex: 0 0 calc(33.333% - 10.6px);

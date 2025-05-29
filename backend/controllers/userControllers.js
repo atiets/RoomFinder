@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Post = require("../models/Post")
 const nodemailer = require('nodemailer');
 // const sendEmail = require('../services/emailService');
 
@@ -107,7 +108,7 @@ const userController = {
     try {
       const user = await User.findById(userId);
       if (!user || user.profile.isBlocked) return;
-  
+
       // Nếu chưa có mảng suspiciousActivityCount, khởi tạo mặc định
       if (!user.suspiciousActivityCount || user.suspiciousActivityCount.length === 0) {
         user.suspiciousActivityCount = [{
@@ -115,30 +116,30 @@ const userController = {
           reviewCount: 0
         }];
       }
-  
+
       const suspiciousData = user.suspiciousActivityCount[0];
-  
+
       // Tăng đúng loại count dựa vào reason
       if (reason === "Cố gắng đăng nhập nhiều lần") {
         suspiciousData.loginCount += 1;
-  
+
         // Kiểm tra nếu login quá 5 lần thì khóa
         if (suspiciousData.loginCount >= 5) {
           user.profile.isBlocked = true;
         }
-  
+
       } else if (reason === "Spam review") {
         suspiciousData.reviewCount += 1;
-  
+
         if (suspiciousData.reviewCount >= 2) {
           user.profile.isBlocked = true;
         }
       }
-  
+
       // Nếu bị khóa thì gửi email
       if (user.profile.isBlocked) {
         const subject = "Tài khoản của bạn đã bị khóa";
-  
+
         const html = `
           <p>Chào bạn,</p>
           <p>Tài khoản của bạn đã bị <strong>tự động khóa</strong> do phát hiện hoạt động đáng ngờ: ${reason}.</p>   
@@ -151,7 +152,7 @@ const userController = {
           <img src="https://i.pinimg.com/736x/51/46/0c/51460cf91031e29fe2950c7464b28c62.jpg" alt="Account Blocked" width="600" />
           <p>Trân trọng, <br> Đội ngũ hỗ trợ của Phòng trọ xinh</p>
         `;
-  
+
         const transporter = nodemailer.createTransport({
           service: "Gmail",
           auth: {
@@ -159,14 +160,14 @@ const userController = {
             pass: process.env.EMAIL_PASS,
           },
         });
-  
+
         const mailOptions = {
           from: `"Phòng trọ xinh" <${process.env.EMAIL_USER}>`,
           to: user.email,
           subject,
           html,
         };
-  
+
         transporter.sendMail(mailOptions, (error, info) => {
           if (error) {
             console.error("Gửi email thất bại:", error);
@@ -175,15 +176,15 @@ const userController = {
           }
         });
       }
-  
+
       await user.save();
-  
+
     } catch (error) {
       console.error("Lỗi trong detectSuspiciousActivity:", error);
       throw error;
     }
   },
-  
+
 
   updateUserProfile: async (req, res) => {
     try {
@@ -282,6 +283,59 @@ const userController = {
       res.status(500).json({ message: 'Internal Server Error' });
     }
   },
+
+  viewPost: async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const postId = req.params.postId;
+
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+      const user = await User.findById(userId);
+      const post = await Post.findById(postId);
+
+      if (!user || !post) {
+        return res.status(404).json({ message: 'User hoặc Post không tồn tại' });
+      }
+      const hasViewed = user.viewed.some(
+        (viewedPostId) => viewedPostId.toString() === postId
+      );
+
+      if (!hasViewed) {
+        user.viewed.push(postId);
+        post.views += 1;
+
+        await user.save();
+        await post.save();
+      }
+
+      return res.status(200).json({
+        message: 'Cập nhật lượt xem thành công',
+        views: post.views,
+      });
+    } catch (error) {
+      console.error('Lỗi cập nhật lượt xem:', error);
+      return res.status(500).json({ message: 'Lỗi server' });
+    }
+  },
+
+  getViewedPosts: async (req, res) => {
+    try {
+      const userId = req.params.userId;
+
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const user = await User.findById(userId).populate('viewed');
+
+      if (!user) return res.status(404).json({ message: 'User không tồn tại' });
+
+      return res.status(200).json({
+        viewedPosts: user.viewed,
+      });
+    } catch (error) {
+      console.error('Lỗi lấy danh sách bài đăng đã xem:', error);
+      return res.status(500).json({ message: 'Lỗi server' });
+    }
+  }
 }
 
 module.exports = userController;

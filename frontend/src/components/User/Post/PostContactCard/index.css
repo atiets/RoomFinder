@@ -1,0 +1,80 @@
+.container-right {
+    max-width: 320px;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    padding: 0;
+    margin: 0;
+}
+.sticky-card-container {
+    position: sticky;
+    top: 80px;
+    z-index: 2;
+}
+
+.card-info {
+    background: linear-gradient(135deg, #a3d9a5 0%, #6bbf59 100%);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    color: #1a3e1a;
+    margin: 0;
+}
+
+.container-contactinfo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.room-post-avatar {
+    background-color: #4a7c24;
+    font-weight: 700;
+    font-size: 26px;
+    text-transform: uppercase;
+    width: 56px !important;
+    height: 56px !important;
+    color: #f4fff0;
+}
+
+/* .room-post-username {
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: #2e5d2e;
+}
+
+.room-post-button {
+    background-color: #78b159;
+    border: 2px solid #4a7c24;
+    color: #f4fff0;
+    font-weight: 600;
+    font-size: 1rem;
+    text-transform: none;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    transition: background-color 0.25s ease, border-color 0.25s ease;
+} */
+
+.room-post-button:hover {
+    background-color: #4a7c24;
+    border-color: #3b6a1c;
+    color: #d7f0c1;
+}
+
+.room-post-button .MuiButton-startIcon,
+.room-post-button .MuiButton-endIcon {
+    color: #c1e1a6;
+    margin-right: 10px;
+}
+
+.visibility-icon-button {
+    color: #c1e1a6 !important;
+}
+
+.MuiDivider-root {
+    border-color: rgba(42, 87, 27, 0.4);
+    margin-top: 10px;
+    margin-bottom: 10px;
+}

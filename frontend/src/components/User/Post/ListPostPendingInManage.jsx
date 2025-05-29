@@ -1,7 +1,8 @@
 import { Pagination, Typography } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { viewPost } from "../../../redux/chatApi";
 import {
   deletePost,
   getUserPostsByStateAndVisibility,
@@ -15,13 +16,20 @@ const ListPost = ({ statusPending, statusUpdate, visibility, token }) => {
   const postsPerPage = 5;
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const currentUser = useSelector((state) => state.auth.login.currentUser);
+  const userId = currentUser?._id;
 
-  const handleTitleClick = (id) => {
-    console.log("Navigating to post with ID:", id);
-    if (id) {
-      navigate(`/posts/${id}`);
-    } else {
+const handleTitleClick = async (id) => {
+    if (!id) {
       console.error("ID bài đăng không hợp lệ");
+      return;
+    }
+    try {
+      await viewPost(id, userId, token);
+      navigate(`/posts/${id}`);
+    } catch (error) {
+      console.error("Lỗi khi gọi API xem bài đăng:", error);
+      navigate(`/posts/${id}`);
     }
   };
 

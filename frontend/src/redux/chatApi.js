@@ -1,6 +1,8 @@
 import axios from "axios";
 
 const BASE_URL = `${process.env.REACT_APP_BASE_URL_API}/v1/conversations/`;
+const BASE_URL_USER = `${process.env.REACT_APP_BASE_URL_API}/v1/user/`;
+
 
 export const getConversationsByUser = async (userId, token) => {
     try {
@@ -150,6 +152,41 @@ export const getUnclaimedConversations = async (token) => {
         return response;
     } catch (error) {
         console.error("Error fetching unclaimed conversations:", error);
+        throw error;
+    }
+};
+
+export const viewPost = async (postId, userId, token) => {
+    try {
+        const response = await axios.post(
+            `${BASE_URL_USER}view-posts/${postId}/${userId}`,
+            {},
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+        return response;
+    } catch (error) {
+        console.error("Error viewing post:", error);
+        throw error;
+    }
+};
+
+export const getViewedPosts = async (userId, token) => {
+    try {
+        const response = await axios.get(
+            `${BASE_URL_USER}get-viewed-posts/${userId}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+        return response;
+    } catch (error) {
+        console.error("Error fetching viewed posts:", error);
         throw error;
     }
 };

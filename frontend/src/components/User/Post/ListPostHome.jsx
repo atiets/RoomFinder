@@ -7,6 +7,7 @@ import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
 import Swal from "sweetalert2";
 import arrowsIcon from "../../../assets/images/arrowIcon.png";
+import { viewPost } from "../../../redux/chatApi";
 import { useFavoriteToggle } from "../../../redux/postAPI";
 import "./ListPostHome.css";
 import RoomPost from "./RoomPost";
@@ -17,6 +18,8 @@ const ListPostHome = ({ post = [], title, favorite }) => {
   const [change, setChange] = React.useState(false);
   const user = useSelector((state) => state.auth.login.currentUser);
   const { toggleFavorite } = useFavoriteToggle(user);
+  const userId = user?._id;
+  const token = user?.accessToken;
   let axiosJWT = axios.create({
     baseURL: process.env.REACT_APP_BASE_URL_API,
   });
@@ -42,12 +45,17 @@ const ListPostHome = ({ post = [], title, favorite }) => {
     }
   }, [user]);
 
-  const handleTitleClick = (id) => {
-    console.log("Navigating to post with ID:", id);
-    if (id) {
-      navigate(`/posts/${id}`);
-    } else {
+  const handleTitleClick = async (id) => {
+    if (!id) {
       console.error("ID bài đăng không hợp lệ");
+      return;
+    }
+    try {
+      await viewPost(id, userId, token);
+      navigate(`/posts/${id}`);
+    } catch (error) {
+      console.error("Lỗi khi gọi API xem bài đăng:", error);
+      navigate(`/posts/${id}`);
     }
   };
 
@@ -63,7 +71,7 @@ const ListPostHome = ({ post = [], title, favorite }) => {
       }).then((result) => {
         console.log("Swal result:", result);
         if (result.isConfirmed) {
-          Swal.close(); 
+          Swal.close();
           console.log("Chuyển hướng đến trang đăng nhập");
           navigate("/login");
         } else if (result.dismiss === Swal.DismissReason.cancel) {
