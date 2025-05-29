@@ -23,4 +23,9 @@ router.get("/notifications", middlewareControllers.verifyToken, userController.g
 //đánh dấu thông báo là đã đọc
 router.put('/notifications/:notificationId', middlewareControllers.verifyToken, userController.markNotificationAsRead);
 
+//xem bài post
+router.post('/view-posts/:postId/:userId', middlewareControllers.verifyToken, userController.viewPost);
+
+router.get('/get-viewed-posts/:userId/', middlewareControllers.verifyToken, userController.getViewedPosts);
+
 module.exports = router;

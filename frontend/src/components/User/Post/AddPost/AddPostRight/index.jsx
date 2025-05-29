@@ -1,6 +1,6 @@
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Button, IconButton, InputAdornment, TextField } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import AddressModal from '../../../ModalAddress';
 import ValidatedTextField from '../../ValidatedTextField';
 import HouseFeatureSelector from '../HouseFeatureSelector';

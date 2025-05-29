@@ -25,7 +25,7 @@ const ShareMenu = ({ url, title }) => {
     return (
         <div className="share-container">
             <Button onClick={handleClick}>
-                <ShareIcon />
+                <ShareIcon style={{ color: "#000" }} />
             </Button>
 
             <Popover

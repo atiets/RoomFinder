@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
+import { viewPost } from "../../../redux/chatApi";
 import { getUserPostsByUserId } from "../../../redux/postAPI";
 import RoomPostUser from "./RoomPostUser";
 
@@ -12,8 +13,18 @@ const UserPosts = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
 
-  const handleTitleClick = (id) => {
-    navigate(`/posts/${id}`);
+  const handleTitleClick = async (id) => {
+    if (!id) {
+      console.error("ID bài đăng không hợp lệ");
+      return;
+    }
+    try {
+      await viewPost(id, userId, token);
+      navigate(`/posts/${id}`);
+    } catch (error) {
+      console.error("Lỗi khi gọi API xem bài đăng:", error);
+      navigate(`/posts/${id}`);
+    }
   };
 
   useEffect(() => {
