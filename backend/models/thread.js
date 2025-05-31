@@ -18,7 +18,6 @@ const ThreadSchema = new mongoose.Schema({
     ref: 'User', 
     required: true 
   },
-  // Thêm các trường mới để lưu trực tiếp thông tin hiển thị
   username: {
     type: String,
     required: [true, 'Username là bắt buộc'],

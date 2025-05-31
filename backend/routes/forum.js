@@ -12,5 +12,14 @@ router.post('/threads', middlewareControllers.verifyToken, validateThread, threa
 // Route lấy danh sách threads
 router.get('/threads', threadController.getAllThreads);
 
+// Like thread
+router.post('/threads/:id/like', middlewareControllers.verifyToken, threadController.likeThread);
+
+// Dislike thread
+router.post('/threads/:id/dislike', middlewareControllers.verifyToken, threadController.dislikeThread);
+
+// Lấy trạng thái like/dislike của user
+router.get('/threads/:id/like-status', middlewareControllers.verifyToken, threadController.getThreadLikeStatus);
+
 // Export router
 module.exports = router;

@@ -1,17 +1,23 @@
 // src/components/User/forum/ThreadCard.jsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Card, CardHeader, CardContent, CardActions, 
   Avatar, Typography, Box, IconButton, CardMedia,
-  Divider, Button, Collapse
+  Divider, Button, Collapse, CircularProgress
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
+import ThumbDownOutlinedIcon from '@mui/icons-material/ThumbDownOutlined';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import Swal from 'sweetalert2';
+import { useThreadLike } from '../../../hooks/useThreadLike';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(3),
@@ -23,17 +29,19 @@ const StyledCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-// src/components/User/forum/ThreadCard.jsx
 const ThreadCard = ({ thread, onCommentClick }) => {
+  const navigate = useNavigate();
+  
   const { 
     title, 
     content, 
-    username, // Thay đổi từ author thành username
-    avatar,   // Thêm avatar từ thread
+    username,
+    avatar,
     created_at,
     createdAt, 
     tags = [], 
-    likes = [], 
+    likesCount: initialLikesCount = 0,
+    dislikesCount: initialDislikesCount = 0,
     comments = 0, 
     image = null,
     viewCount = 0
@@ -42,25 +50,36 @@ const ThreadCard = ({ thread, onCommentClick }) => {
   // State để quản lý việc mở rộng nội dung
   const [expanded, setExpanded] = useState(false);
 
+  // Hook để quản lý like/dislike
+  const {
+    liked,
+    disliked,
+    likesCount,
+    dislikesCount,
+    loading,
+    error,
+    handleLike,
+    handleDislike,
+    clearError,
+    isLoggedIn
+  } = useThreadLike(thread.id || thread._id, initialLikesCount, initialDislikesCount);
+
   // Màu pastel theo yêu cầu
   const pastelGreen = '#C1E1C1';
   const pastelOrange = '#FFD8B1';
   
-  // Hàm để lấy display name
+  // Existing utility functions...
   const getDisplayName = () => {
     return username || 'Người dùng ẩn danh';
   };
 
-  // Hàm để lấy avatar letter
   const getAvatarLetter = () => {
     const displayName = getDisplayName();
     return displayName.charAt(0).toUpperCase();
   };
 
-  // Check if user is anonymous
   const isAnonymous = !username || username === 'anonymous_user';
   
-  // Tính thời gian tương đối
   const getRelativeTime = (dateString) => {
     try {
       const date = new Date(dateString);
@@ -78,7 +97,6 @@ const ThreadCard = ({ thread, onCommentClick }) => {
     }
   };
 
-  // Rest of component functions...
   const formatContent = (htmlContent) => {
     if (!htmlContent) return '';
     
@@ -108,6 +126,7 @@ const ThreadCard = ({ thread, onCommentClick }) => {
       (formattedContent.length > 200 ? '...' : '')
     : formattedContent;
 
+  // Event handlers
   const handleExpandClick = () => {
     setExpanded(!expanded);
   };
@@ -118,7 +137,77 @@ const ThreadCard = ({ thread, onCommentClick }) => {
     }
   };
 
-  const likesCount = Array.isArray(likes) ? likes.length : 0;
+  // Show login alert với SweetAlert2
+  const showLoginAlert = (action) => {
+    Swal.fire({
+      title: "Chưa đăng nhập",
+      text: `Vui lòng đăng nhập để ${action} bài viết.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Đăng nhập",
+      cancelButtonText: "Hủy",
+      customClass: {
+        popup: 'custom-swal-popup',
+        title: 'custom-swal-title',
+        content: 'custom-swal-content',
+        confirmButton: 'custom-swal-confirm',
+        cancelButton: 'custom-swal-cancel',
+        icon: 'custom-swal-icon'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        navigate("/login");
+      }
+    });
+  };
+
+  // Like button handler với SweetAlert2
+  const onLikeClick = async () => {
+    if (!isLoggedIn) {
+      showLoginAlert('thích');
+      return;
+    }
+    
+    await handleLike();
+    
+    if (error) {
+      Swal.fire({
+        title: "Lỗi",
+        text: error,
+        icon: "error",
+        confirmButtonText: "Đóng",
+        customClass: {
+          popup: 'custom-swal-popup',
+          confirmButton: 'custom-swal-confirm'
+        }
+      });
+      clearError();
+    }
+  };
+
+  // Dislike button handler với SweetAlert2
+  const onDislikeClick = async () => {
+    if (!isLoggedIn) {
+      showLoginAlert('không thích');
+      return;
+    }
+    
+    await handleDislike();
+    
+    if (error) {
+      Swal.fire({
+        title: "Lỗi",
+        text: error,
+        icon: "error",
+        confirmButtonText: "Đóng",
+        customClass: {
+          popup: 'custom-swal-popup',
+          confirmButton: 'custom-swal-confirm'
+        }
+      });
+      clearError();
+    }
+  };
   
   return (
     <StyledCard>
@@ -127,7 +216,7 @@ const ThreadCard = ({ thread, onCommentClick }) => {
         avatar={
           <Avatar 
             alt={getDisplayName()} 
-            src={avatar || ''} // Sử dụng avatar trực tiếp từ thread
+            src={avatar || ''}
             sx={{ 
               width: 38, 
               height: 38,
@@ -156,7 +245,7 @@ const ThreadCard = ({ thread, onCommentClick }) => {
         sx={{ pb: 1 }}
       />
       
-      {/* Nội dung bài viết - giữ nguyên */}
+      {/* Nội dung bài viết */}
       <CardContent sx={{ pt: 0, pb: 1.5 }}>
         {/* Tiêu đề bài viết */}
         {title && (
@@ -248,7 +337,7 @@ const ThreadCard = ({ thread, onCommentClick }) => {
         )}
       </CardContent>
       
-      {/* Phần tương tác */}
+      {/* Phần tương tác với Like/Dislike */}
       <Divider />
       <CardActions 
         sx={{ 
@@ -258,39 +347,104 @@ const ThreadCard = ({ thread, onCommentClick }) => {
           justifyContent: 'space-between',
         }}
       >
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          {/* Nút thích */}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {/* Nút Like */}
           <Box 
+            onClick={onLikeClick}
             sx={{ 
               display: 'flex', 
               alignItems: 'center',
-              cursor: 'pointer',
+              cursor: loading ? 'default' : 'pointer',
               py: 0.5,
               px: 1,
               borderRadius: 1,
-              transition: 'background-color 0.2s',
-              '&:hover': {
-                bgcolor: 'rgba(46, 125, 50, 0.08)',
+              transition: 'all 0.2s',
+              bgcolor: liked ? 'rgba(46, 125, 50, 0.1)' : 'transparent',
+              '&:hover': loading ? {} : {
+                bgcolor: liked ? 'rgba(46, 125, 50, 0.15)' : 'rgba(46, 125, 50, 0.08)',
               }
             }}
           >
-            <ThumbUpOutlinedIcon 
-              fontSize="small" 
-              sx={{ 
-                mr: 0.5,
-                color: 'action.active',
-                '&:hover': {
+            {loading ? (
+              <CircularProgress size={16} sx={{ mr: 0.5 }} />
+            ) : liked ? (
+              <ThumbUpIcon 
+                fontSize="small" 
+                sx={{ 
+                  mr: 0.5,
                   color: '#2E7D32'
-                }
-              }} 
-            />
-            <Typography variant="body2" color="text.secondary">
+                }} 
+              />
+            ) : (
+              <ThumbUpOutlinedIcon 
+                fontSize="small" 
+                sx={{ 
+                  mr: 0.5,
+                  color: 'action.active',
+                  '&:hover': {
+                    color: '#2E7D32'
+                  }
+                }} 
+              />
+            )}
+            <Typography 
+              variant="body2" 
+              color={liked ? '#2E7D32' : 'text.secondary'}
+              sx={{ fontWeight: liked ? 600 : 400 }}
+            >
               {likesCount > 0 ? likesCount : 'Thích'}
+            </Typography>
+          </Box>
+
+          {/* Nút Dislike */}
+          <Box 
+            onClick={onDislikeClick}
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              cursor: loading ? 'default' : 'pointer',
+              py: 0.5,
+              px: 1,
+              borderRadius: 1,
+              transition: 'all 0.2s',
+              bgcolor: disliked ? 'rgba(211, 47, 47, 0.1)' : 'transparent',
+              '&:hover': loading ? {} : {
+                bgcolor: disliked ? 'rgba(211, 47, 47, 0.15)' : 'rgba(211, 47, 47, 0.08)',
+              }
+            }}
+          >
+            {disliked ? (
+              <ThumbDownIcon 
+                fontSize="small" 
+                sx={{ 
+                  mr: 0.5,
+                  color: '#d32f2f'
+                }} 
+              />
+            ) : (
+              <ThumbDownOutlinedIcon 
+                fontSize="small" 
+                sx={{ 
+                  mr: 0.5,
+                  color: 'action.active',
+                  '&:hover': {
+                    color: '#d32f2f'
+                  }
+                }} 
+              />
+            )}
+            <Typography 
+              variant="body2" 
+              color={disliked ? '#d32f2f' : 'text.secondary'}
+              sx={{ fontWeight: disliked ? 600 : 400 }}
+            >
+              {dislikesCount > 0 ? dislikesCount : ''}
             </Typography>
           </Box>
           
           {/* Nút bình luận */}
           <Box 
+            onClick={handleCommentClick}
             sx={{ 
               display: 'flex', 
               alignItems: 'center',
@@ -303,7 +457,6 @@ const ThreadCard = ({ thread, onCommentClick }) => {
                 bgcolor: 'rgba(46, 125, 50, 0.08)',
               }
             }}
-            onClick={handleCommentClick}
           >
             <ChatBubbleOutlineIcon 
               fontSize="small" 
@@ -322,7 +475,7 @@ const ThreadCard = ({ thread, onCommentClick }) => {
         </Box>
         
         {/* Số lượt xem */}
-        <Box 
+        {/* <Box 
           sx={{ 
             display: 'flex', 
             alignItems: 'center',
@@ -332,7 +485,7 @@ const ThreadCard = ({ thread, onCommentClick }) => {
           <Typography variant="body2" color="text.secondary">
             {viewCount > 0 ? `${viewCount} lượt xem` : '0 lượt xem'}
           </Typography>
-        </Box>
+        </Box> */}
       </CardActions>
     </StyledCard>
   );
