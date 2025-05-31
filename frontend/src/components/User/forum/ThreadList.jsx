@@ -100,13 +100,16 @@ const ThreadList = ({ threads, loading, onThreadClick, page, totalPages, onPageC
           // Map dữ liệu từ API response sang format mà ThreadCard expect
           const mappedThread = {
             id: thread._id,
+            _id: thread._id, // Keep both for compatibility
             title: thread.title || '',
             content: thread.content || '',
             username: thread.username || 'Unknown User', 
             avatar: thread.avatar || null, 
             created_at: thread.created_at || thread.createdAt || new Date().toISOString(),
             tags: thread.tags || [],
-            likes: thread.likes || [],
+            // Sử dụng data từ backend đã format với like/dislike counts
+            likesCount: thread.likesCount || 0,
+            dislikesCount: thread.dislikesCount || 0,
             comments: thread.commentCount || 0,
             image: thread.image || null,
             viewCount: thread.viewCount || 0
@@ -116,7 +119,7 @@ const ThreadList = ({ threads, loading, onThreadClick, page, totalPages, onPageC
             <ThreadCard 
               key={thread._id} 
               thread={mappedThread} 
-              onCommentClick={handleCommentClick} // Chỉ khi click comment mới chuyển trang
+              onCommentClick={handleCommentClick}
             />
           );
         })}

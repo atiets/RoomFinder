@@ -104,6 +104,26 @@ export const createThread = async (threadData, token) => {
   }
 };
 
+// /**
+//  * Like một thread
+//  * @param {string} threadId - ID của thread
+//  * @param {string} token - JWT token để authentication
+//  * @returns {Promise} - Trả về thông tin cập nhật về likes
+//  */
+// export const likeThread = async (threadId, token) => {
+//   try {
+//     const response = await axios.put(`${API_URL}/threads/${threadId}/like`, {}, {
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//         "Content-Type": "application/json",
+//       },
+//     });
+//     return response.data;
+//   } catch (error) {
+//     throw new Error("Không thể thích bài viết: " + error.message);
+//   }
+// };
+
 /**
  * Like một thread
  * @param {string} threadId - ID của thread
@@ -112,7 +132,7 @@ export const createThread = async (threadData, token) => {
  */
 export const likeThread = async (threadId, token) => {
   try {
-    const response = await axios.put(`${API_URL}/threads/${threadId}/like`, {}, {
+    const response = await axios.post(`${API_URL}/threads/${threadId}/like`, {}, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -120,6 +140,83 @@ export const likeThread = async (threadId, token) => {
     });
     return response.data;
   } catch (error) {
-    throw new Error("Không thể thích bài viết: " + error.message);
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      if (status === 401) {
+        throw new Error("Bạn cần đăng nhập để thích bài viết");
+      } else if (status === 403) {
+        throw new Error("Token không hợp lệ");
+      } else if (status === 404) {
+        throw new Error("Không tìm thấy bài viết");
+      } else {
+        throw new Error(data.message || "Không thể thích bài viết");
+      }
+    }
+    throw new Error("Không thể kết nối đến server");
+  }
+};
+
+/**
+ * Dislike một thread
+ * @param {string} threadId - ID của thread
+ * @param {string} token - JWT token để authentication
+ * @returns {Promise} - Trả về thông tin cập nhật về dislikes
+ */
+export const dislikeThread = async (threadId, token) => {
+  try {
+    const response = await axios.post(`${API_URL}/threads/${threadId}/dislike`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      if (status === 401) {
+        throw new Error("Bạn cần đăng nhập để không thích bài viết");
+      } else if (status === 403) {
+        throw new Error("Token không hợp lệ");
+      } else if (status === 404) {
+        throw new Error("Không tìm thấy bài viết");
+      } else {
+        throw new Error(data.message || "Không thể không thích bài viết");
+      }
+    }
+    throw new Error("Không thể kết nối đến server");
+  }
+};
+
+/**
+ * Lấy trạng thái like/dislike của user cho thread
+ * @param {string} threadId - ID của thread
+ * @param {string} token - JWT token để authentication
+ * @returns {Promise} - Trả về trạng thái like/dislike
+ */
+export const getThreadLikeStatus = async (threadId, token) => {
+  try {
+    const response = await axios.get(`${API_URL}/threads/${threadId}/like-status`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response?.status === 401) {
+      // User not logged in - return default status
+      return {
+        success: true,
+        data: {
+          liked: false,
+          disliked: false,
+          likesCount: 0,
+          dislikesCount: 0
+        }
+      };
+    }
+    throw new Error("Không thể lấy trạng thái like");
   }
 };
