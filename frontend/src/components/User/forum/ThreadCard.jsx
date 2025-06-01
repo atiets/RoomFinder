@@ -18,6 +18,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import Swal from 'sweetalert2';
 import { useThreadLike } from '../../../hooks/useThreadLike';
+import CommentModal from './CommentThread/CommentModal';
+import './CommentThread/comment-system.css';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(3),
@@ -27,6 +29,22 @@ const StyledCard = styled(Card)(({ theme }) => ({
   '&:hover': {
     boxShadow: '0px 3px 8px rgba(0, 0, 0, 0.12)',
   },
+}));
+
+const ActionButton = styled(Box)(({ theme, active, color = '#2E7D32' }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  cursor: 'pointer',
+  padding: '6px 12px',
+  borderRadius: '16px',
+  transition: 'all 0.2s ease-in-out',
+  backgroundColor: active ? `${color}15` : 'transparent',
+  border: `1px solid ${active ? color : 'transparent'}`,
+  '&:hover': {
+    backgroundColor: active ? `${color}20` : `${color}08`,
+    transform: 'translateY(-1px)',
+    boxShadow: `0 2px 8px ${color}20`
+  }
 }));
 
 const ThreadCard = ({ thread, onCommentClick }) => {
@@ -47,8 +65,10 @@ const ThreadCard = ({ thread, onCommentClick }) => {
     viewCount = 0
   } = thread;
 
-  // State để quản lý việc mở rộng nội dung
+  // States
   const [expanded, setExpanded] = useState(false);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [currentCommentCount, setCurrentCommentCount] = useState(comments);
 
   // Hook để quản lý like/dislike
   const {
@@ -68,7 +88,7 @@ const ThreadCard = ({ thread, onCommentClick }) => {
   const pastelGreen = '#C1E1C1';
   const pastelOrange = '#FFD8B1';
   
-  // Existing utility functions...
+  // Utility functions
   const getDisplayName = () => {
     return username || 'Người dùng ẩn danh';
   };
@@ -132,9 +152,16 @@ const ThreadCard = ({ thread, onCommentClick }) => {
   };
 
   const handleCommentClick = () => {
-    if (onCommentClick) {
-      onCommentClick(thread.id || thread._id);
-    }
+    setCommentModalOpen(true);
+  };
+
+  const handleCommentModalClose = () => {
+    setCommentModalOpen(false);
+  };
+
+  // Handle new comment added (callback from modal)
+  const handleCommentAdded = () => {
+    setCurrentCommentCount(prev => prev + 1);
   };
 
   // Show login alert với SweetAlert2
@@ -210,284 +237,286 @@ const ThreadCard = ({ thread, onCommentClick }) => {
   };
   
   return (
-    <StyledCard>
-      {/* Header với avatar, username, thời gian và menu */}
-      <CardHeader
-        avatar={
-          <Avatar 
-            alt={getDisplayName()} 
-            src={avatar || ''}
-            sx={{ 
-              width: 38, 
-              height: 38,
-              bgcolor: isAnonymous ? '#e0e0e0' : pastelGreen,
-              color: isAnonymous ? '#757575' : 'inherit'
-            }}
-          >
-            {getAvatarLetter()}
-          </Avatar>
-        }
-        action={
-          <IconButton aria-label="settings">
-            <MoreVertIcon />
-          </IconButton>
-        }
-        title={
-          <Typography variant="subtitle2" fontWeight="500">
-            {getDisplayName()}
-          </Typography>
-        }
-        subheader={
-          <Typography variant="body2" color="text.secondary" fontSize="12px">
-            {getRelativeTime(created_at || createdAt)}
-          </Typography>
-        }
-        sx={{ pb: 1 }}
-      />
-      
-      {/* Nội dung bài viết */}
-      <CardContent sx={{ pt: 0, pb: 1.5 }}>
-        {/* Tiêu đề bài viết */}
-        {title && (
-          <Typography 
-            variant="h6" 
-            component="h2" 
-            fontWeight="bold" 
-            color="text.primary"
-            sx={{ mb: 1 }}
-          >
-            {title}
-          </Typography>
-        )}
-        
-        {/* Nội dung văn bản */}
-        <Typography 
-          variant="body1" 
-          color="text.primary"
-          sx={{ 
-            mb: 1,
-            whiteSpace: 'pre-line'
-          }}
-        >
-          {truncatedContent}
-        </Typography>
-
-        {/* Nút xem thêm/thu gọn */}
-        {shouldShowReadMore && (
-          <Button
-            onClick={handleExpandClick}
-            size="small"
-            sx={{
-              p: 0,
-              minWidth: 'auto',
-              color: '#2E7D32',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              textTransform: 'none',
-              '&:hover': {
-                backgroundColor: 'transparent',
-                textDecoration: 'underline'
-              }
-            }}
-            endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          >
-            {expanded ? 'Thu gọn' : 'Xem thêm'}
-          </Button>
-        )}
-
-        {/* Collapse content */}
-        <Collapse in={expanded} timeout="auto" unmountOnExit>
-          <Box sx={{ mt: 1 }}>
-            {image && (
-              <CardMedia
-                component="img"
-                image={image}
-                alt={title || "Thread image"}
-                sx={{ 
-                  mt: 2, 
-                  borderRadius: '4px',
-                  maxHeight: '400px',
-                  objectFit: 'contain'
-                }}
-              />
-            )}
-          </Box>
-        </Collapse>
-        
-        {/* Tags */}
-        {tags && tags.length > 0 && (
-          <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {tags.map((tag, index) => (
-              <Box 
-                key={index}
-                sx={{
-                  backgroundColor: index % 2 === 0 ? pastelGreen : pastelOrange,
-                  color: '#333',
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: '16px',
-                  fontSize: '0.75rem',
-                  fontWeight: 500,
-                }}
-              >
-                {tag}
-              </Box>
-            ))}
-          </Box>
-        )}
-      </CardContent>
-      
-      {/* Phần tương tác với Like/Dislike */}
-      <Divider />
-      <CardActions 
-        sx={{ 
-          px: 2, 
-          py: 1,
-          display: 'flex',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          {/* Nút Like */}
-          <Box 
-            onClick={onLikeClick}
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              cursor: loading ? 'default' : 'pointer',
-              py: 0.5,
-              px: 1,
-              borderRadius: 1,
-              transition: 'all 0.2s',
-              bgcolor: liked ? 'rgba(46, 125, 50, 0.1)' : 'transparent',
-              '&:hover': loading ? {} : {
-                bgcolor: liked ? 'rgba(46, 125, 50, 0.15)' : 'rgba(46, 125, 50, 0.08)',
-              }
-            }}
-          >
-            {loading ? (
-              <CircularProgress size={16} sx={{ mr: 0.5 }} />
-            ) : liked ? (
-              <ThumbUpIcon 
-                fontSize="small" 
-                sx={{ 
-                  mr: 0.5,
-                  color: '#2E7D32'
-                }} 
-              />
-            ) : (
-              <ThumbUpOutlinedIcon 
-                fontSize="small" 
-                sx={{ 
-                  mr: 0.5,
-                  color: 'action.active',
-                  '&:hover': {
-                    color: '#2E7D32'
-                  }
-                }} 
-              />
-            )}
-            <Typography 
-              variant="body2" 
-              color={liked ? '#2E7D32' : 'text.secondary'}
-              sx={{ fontWeight: liked ? 600 : 400 }}
-            >
-              {likesCount > 0 ? likesCount : 'Thích'}
-            </Typography>
-          </Box>
-
-          {/* Nút Dislike */}
-          <Box 
-            onClick={onDislikeClick}
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              cursor: loading ? 'default' : 'pointer',
-              py: 0.5,
-              px: 1,
-              borderRadius: 1,
-              transition: 'all 0.2s',
-              bgcolor: disliked ? 'rgba(211, 47, 47, 0.1)' : 'transparent',
-              '&:hover': loading ? {} : {
-                bgcolor: disliked ? 'rgba(211, 47, 47, 0.15)' : 'rgba(211, 47, 47, 0.08)',
-              }
-            }}
-          >
-            {disliked ? (
-              <ThumbDownIcon 
-                fontSize="small" 
-                sx={{ 
-                  mr: 0.5,
-                  color: '#d32f2f'
-                }} 
-              />
-            ) : (
-              <ThumbDownOutlinedIcon 
-                fontSize="small" 
-                sx={{ 
-                  mr: 0.5,
-                  color: 'action.active',
-                  '&:hover': {
-                    color: '#d32f2f'
-                  }
-                }} 
-              />
-            )}
-            <Typography 
-              variant="body2" 
-              color={disliked ? '#d32f2f' : 'text.secondary'}
-              sx={{ fontWeight: disliked ? 600 : 400 }}
-            >
-              {dislikesCount > 0 ? dislikesCount : ''}
-            </Typography>
-          </Box>
-          
-          {/* Nút bình luận */}
-          <Box 
-            onClick={handleCommentClick}
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              cursor: 'pointer',
-              py: 0.5,
-              px: 1,
-              borderRadius: 1,
-              transition: 'background-color 0.2s',
-              '&:hover': {
-                bgcolor: 'rgba(46, 125, 50, 0.08)',
-              }
-            }}
-          >
-            <ChatBubbleOutlineIcon 
-              fontSize="small" 
+    <>
+      <StyledCard>
+        {/* Header với avatar, username, thời gian và menu */}
+        <CardHeader
+          avatar={
+            <Avatar 
+              alt={getDisplayName()} 
+              src={avatar || ''}
               sx={{ 
-                mr: 0.5,
-                color: 'action.active',
+                width: 40, 
+                height: 40,
+                bgcolor: isAnonymous ? '#e0e0e0' : pastelGreen,
+                color: isAnonymous ? '#757575' : 'inherit',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}
+            >
+              {getAvatarLetter()}
+            </Avatar>
+          }
+          action={
+            <IconButton 
+              aria-label="settings"
+              sx={{
+                '&:hover': {
+                  backgroundColor: 'rgba(46, 125, 50, 0.08)',
+                  transform: 'rotate(90deg)'
+                },
+                transition: 'all 0.2s ease-in-out'
+              }}
+            >
+              <MoreVertIcon />
+            </IconButton>
+          }
+          title={
+            <Typography variant="subtitle1" fontWeight="600" color="text.primary">
+              {getDisplayName()}
+            </Typography>
+          }
+          subheader={
+            <Typography variant="body2" color="text.secondary" fontSize="13px">
+              {getRelativeTime(created_at || createdAt)}
+            </Typography>
+          }
+          sx={{ pb: 1 }}
+        />
+        
+        {/* Nội dung bài viết */}
+        <CardContent sx={{ pt: 0, pb: 1.5 }}>
+          {/* Tiêu đề bài viết */}
+          {title && (
+            <Typography 
+              variant="h6" 
+              component="h2" 
+              fontWeight="bold" 
+              color="text.primary"
+              sx={{ 
+                mb: 1.5,
+                lineHeight: 1.3,
+                cursor: 'pointer',
                 '&:hover': {
                   color: '#2E7D32'
-                }
-              }} 
-            />
-            <Typography variant="body2" color="text.secondary">
-              {comments > 0 ? `${comments} bình luận` : 'Bình luận'}
+                },
+                transition: 'color 0.2s ease'
+              }}
+              onClick={() => console.log('Navigate to thread detail')}
+            >
+              {title}
             </Typography>
-          </Box>
-        </Box>
+          )}
+          
+          {/* Nội dung văn bản */}
+          <Typography 
+            variant="body1" 
+            color="text.primary"
+            sx={{ 
+              mb: 1.5,
+              whiteSpace: 'pre-line',
+              lineHeight: 1.6
+            }}
+          >
+            {truncatedContent}
+          </Typography>
+
+          {/* Nút xem thêm/thu gọn */}
+          {shouldShowReadMore && (
+            <Button
+              onClick={handleExpandClick}
+              size="small"
+              sx={{
+                p: 0,
+                minWidth: 'auto',
+                color: '#2E7D32',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  textDecoration: 'underline',
+                  transform: 'translateX(4px)'
+                },
+                transition: 'all 0.2s ease'
+              }}
+              endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            >
+              {expanded ? 'Thu gọn' : 'Xem thêm'}
+            </Button>
+          )}
+
+          {/* Collapse content */}
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            <Box sx={{ mt: 1.5 }}>
+              {image && (
+                <CardMedia
+                  component="img"
+                  image={image}
+                  alt={title || "Thread image"}
+                  sx={{ 
+                    mt: 2, 
+                    borderRadius: '8px',
+                    maxHeight: '400px',
+                    objectFit: 'contain',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  }}
+                />
+              )}
+            </Box>
+          </Collapse>
+          
+          {/* Tags */}
+          {tags && tags.length > 0 && (
+            <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {tags.map((tag, index) => (
+                <Box 
+                  key={index}
+                  sx={{
+                    backgroundColor: index % 2 === 0 ? pastelGreen : pastelOrange,
+                    color: '#333',
+                    px: 2,
+                    py: 0.5,
+                    borderRadius: '20px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                    }
+                  }}
+                >
+                  #{tag}
+                </Box>
+              ))}
+            </Box>
+          )}
+        </CardContent>
         
-        {/* Số lượt xem */}
-        {/* <Box 
+        {/* Phần tương tác với Like/Dislike/Comment */}
+        <Divider />
+        <CardActions 
           sx={{ 
-            display: 'flex', 
-            alignItems: 'center',
+            px: 2, 
+            py: 1.5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            backgroundColor: '#fafafa'
           }}
         >
-          <VisibilityIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
-          <Typography variant="body2" color="text.secondary">
-            {viewCount > 0 ? `${viewCount} lượt xem` : '0 lượt xem'}
-          </Typography>
-        </Box> */}
-      </CardActions>
-    </StyledCard>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {/* Like Button */}
+            <ActionButton
+              active={liked}
+              color="#2E7D32"
+              onClick={onLikeClick}
+            >
+              {loading ? (
+                <CircularProgress size={18} sx={{ mr: 0.5 }} />
+              ) : liked ? (
+                <ThumbUpIcon 
+                  sx={{ 
+                    fontSize: 18,
+                    mr: 0.5,
+                    color: '#2E7D32'
+                  }} 
+                />
+              ) : (
+                <ThumbUpOutlinedIcon 
+                  sx={{ 
+                    fontSize: 18,
+                    mr: 0.5,
+                    color: 'text.secondary'
+                  }} 
+                />
+              )}
+              <Typography 
+                variant="body2" 
+                color={liked ? '#2E7D32' : 'text.secondary'}
+                sx={{ fontWeight: liked ? 700 : 500 }}
+              >
+                {likesCount > 0 ? likesCount : 'Thích'}
+              </Typography>
+            </ActionButton>
+
+            {/* Dislike Button */}
+            <ActionButton
+              active={disliked}
+              color="#d32f2f"
+              onClick={onDislikeClick}
+            >
+              {disliked ? (
+                <ThumbDownIcon 
+                  sx={{ 
+                    fontSize: 18,
+                    mr: 0.5,
+                    color: '#d32f2f'
+                  }} 
+                />
+              ) : (
+                <ThumbDownOutlinedIcon 
+                  sx={{ 
+                    fontSize: 18,
+                    mr: 0.5,
+                    color: 'text.secondary'
+                  }} 
+                />
+              )}
+              {dislikesCount > 0 && (
+                <Typography 
+                  variant="body2" 
+                  color={disliked ? '#d32f2f' : 'text.secondary'}
+                  sx={{ fontWeight: disliked ? 700 : 500 }}
+                >
+                  {dislikesCount}
+                </Typography>
+              )}
+            </ActionButton>
+            
+            {/* Comment Button */}
+            <ActionButton
+              active={false}
+              color="#1976d2"
+              onClick={handleCommentClick}
+            >
+              <ChatBubbleOutlineIcon 
+                sx={{ 
+                  fontSize: 18,
+                  mr: 0.5,
+                  color: 'text.secondary'
+                }} 
+              />
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                {currentCommentCount > 0 ? `${currentCommentCount} bình luận` : 'Bình luận'}
+              </Typography>
+            </ActionButton>
+          </Box>
+          
+          {/* View Count */}
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              color: 'text.secondary'
+            }}
+          >
+            <VisibilityIcon sx={{ fontSize: 16, mr: 0.5 }} />
+            <Typography variant="body2" fontSize="12px">
+              {viewCount > 0 ? `${viewCount} lượt xem` : '0 lượt xem'}
+            </Typography>
+          </Box>
+        </CardActions>
+      </StyledCard>
+
+      {/* Comment Modal */}
+      <CommentModal
+        open={commentModalOpen}
+        onClose={handleCommentModalClose}
+        thread={thread}
+        onCommentAdded={handleCommentAdded}
+      />
+    </>
   );
 };
 

@@ -1,25 +1,70 @@
 // routes/forumRoutes.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const threadController = require('../controllers/threadController');
-const { protect, optionalAuth } = require('../middleware/auth');
-const { validateThread } = require('../middleware/threadValidation');
+const threadController = require("../controllers/threadController");
+const commentController = require("../controllers/commentController");
+const { protect, optionalAuth } = require("../middleware/auth");
+const {
+  validateThread,
+  validateComment,
+} = require("../middleware/threadValidation");
 const middlewareControllers = require("../controllers/middlewareControllers");
 
 // Tạo thread mới
-router.post('/threads', middlewareControllers.verifyToken, validateThread, threadController.createThread);
+router.post(
+  "/threads",
+  middlewareControllers.verifyToken,
+  validateThread,
+  threadController.createThread
+);
 
 // Route lấy danh sách threads
-router.get('/threads', threadController.getAllThreads);
+router.get("/threads", threadController.getAllThreads);
 
 // Like thread
-router.post('/threads/:id/like', middlewareControllers.verifyToken, threadController.likeThread);
+router.post(
+  "/threads/:id/like",
+  middlewareControllers.verifyToken,
+  threadController.likeThread
+);
 
 // Dislike thread
-router.post('/threads/:id/dislike', middlewareControllers.verifyToken, threadController.dislikeThread);
+router.post(
+  "/threads/:id/dislike",
+  middlewareControllers.verifyToken,
+  threadController.dislikeThread
+);
 
 // Lấy trạng thái like/dislike của user
-router.get('/threads/:id/like-status', middlewareControllers.verifyToken, threadController.getThreadLikeStatus);
+router.get(
+  "/threads/:id/like-status",
+  middlewareControllers.verifyToken,
+  threadController.getThreadLikeStatus
+);
+
+router.post(
+  "/threads/:threadId/comments",
+  middlewareControllers.verifyToken,
+  validateComment,
+  commentController.createComment
+);
+
+// Lấy comments của thread
+router.get("/threads/:threadId/comments", commentController.getThreadComments);
+
+// Like comment
+router.post(
+  "/comments/:commentId/like",
+  middlewareControllers.verifyToken,
+  commentController.likeComment
+);
+
+// Xóa comment
+router.delete(
+  "/comments/:commentId",
+  middlewareControllers.verifyToken,
+  commentController.deleteComment
+);
 
 // Export router
 module.exports = router;

@@ -25,9 +25,7 @@ const middlewareControllers = {
                     }
                 }
 
-                try {
-                    console.log("🔓 JWT decoded:", decoded);
-                    
+                try {                    
                     const user = await User.findById(decoded.id)
                         .select('username email profile admin name'); 
                     
