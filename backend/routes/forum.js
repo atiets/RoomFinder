@@ -21,6 +21,24 @@ router.post(
 // Route lấy danh sách threads
 router.get("/threads", threadController.getAllThreads);
 
+// Lấy thread theo ID
+router.get("/threads/:id", threadController.getThreadById);
+
+// Cập nhật thread
+router.put(
+  "/threads/:id",
+  middlewareControllers.verifyToken,
+  validateThread,
+  threadController.updateThread
+);
+
+// Xóa thread
+router.delete(
+  "/threads/:id",
+  middlewareControllers.verifyToken,
+  threadController.deleteThread
+);
+
 // Like thread
 router.post(
   "/threads/:id/like",

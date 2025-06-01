@@ -4,7 +4,18 @@ import { Box, Typography, Pagination, Skeleton, Button } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ThreadCard from './ThreadCard';
 
-const ThreadList = ({ threads, loading, onThreadClick, page, totalPages, onPageChange }) => {
+const ThreadList = ({ 
+  threads, 
+  setThreads, // Direct state setter
+  loading, 
+  onThreadClick, 
+  page, 
+  totalPages, 
+  onPageChange,
+  onThreadUpdated, // Callback from parent
+  onThreadDeleted, // Callback from parent
+  onThreadAdded    // Callback from parent (future use)
+}) => {
   // Skeleton để hiển thị khi đang loading
   const ThreadSkeleton = () => (
     <Box sx={{ mb: 2 }}>
@@ -41,7 +52,43 @@ const ThreadList = ({ threads, loading, onThreadClick, page, totalPages, onPageC
   
   // Handle comment click - chuyển đến detail thread
   const handleCommentClick = (threadId) => {
-    onThreadClick(threadId);
+    onThreadClick && onThreadClick(threadId);
+  };
+
+  // Handle thread updated - Forward to parent và update local state
+  const handleThreadUpdated = (threadId, updatedData) => {
+    console.log('ThreadList: Thread updated', threadId, updatedData);
+    
+    // Update local state immediately
+    if (setThreads) {
+      setThreads(prevThreads => 
+        prevThreads.map(thread => 
+          (thread._id === threadId || thread.id === threadId) 
+            ? { ...thread, ...updatedData }
+            : thread
+        )
+      );
+    }
+    
+    // Forward to parent callback
+    onThreadUpdated && onThreadUpdated(threadId, updatedData);
+  };
+
+  // Handle thread deleted - Forward to parent và update local state
+  const handleThreadDeleted = (threadId) => {
+    console.log('ThreadList: Thread deleted', threadId);
+    
+    // Update local state immediately
+    if (setThreads) {
+      setThreads(prevThreads => 
+        prevThreads.filter(thread => 
+          thread._id !== threadId && thread.id !== threadId
+        )
+      );
+    }
+    
+    // Forward to parent callback
+    onThreadDeleted && onThreadDeleted(threadId);
   };
   
   // Hiển thị loading skeletons khi đang tải lần đầu
@@ -112,7 +159,8 @@ const ThreadList = ({ threads, loading, onThreadClick, page, totalPages, onPageC
             dislikesCount: thread.dislikesCount || 0,
             comments: thread.commentCount || 0,
             image: thread.image || null,
-            viewCount: thread.viewCount || 0
+            viewCount: thread.viewCount || 0,
+            author: thread.author // Include author for ownership checking
           };
           
           return (
@@ -120,6 +168,8 @@ const ThreadList = ({ threads, loading, onThreadClick, page, totalPages, onPageC
               key={thread._id} 
               thread={mappedThread} 
               onCommentClick={handleCommentClick}
+              onThreadUpdated={handleThreadUpdated}
+              onThreadDeleted={handleThreadDeleted}
             />
           );
         })}
