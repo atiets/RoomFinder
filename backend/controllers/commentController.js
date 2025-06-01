@@ -270,14 +270,40 @@ exports.likeComment = async (req, res) => {
 };
 
 /**
- * Xóa comment
- * @route DELETE /v1/forum/comments/:commentId
+ * Cập nhật/sửa comment
+ * @route PUT /v1/forum/comments/:commentId
  * @access Private
  */
-exports.deleteComment = async (req, res) => {
+exports.updateComment = async (req, res) => {
   try {
     const { commentId } = req.params;
+    const { content } = req.body;
     const userId = req.user.id;
+    const username = req.user.username;
+
+    console.log('✏️ Update comment request:', { commentId, userId, username });
+
+    // Validation
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nội dung bình luận không được để trống'
+      });
+    }
+
+    if (content.trim().length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nội dung bình luận không được vượt quá 1000 ký tự'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID bình luận không hợp lệ'
+      });
+    }
 
     const comment = await Comment.findById(commentId);
     if (!comment) {
@@ -287,28 +313,129 @@ exports.deleteComment = async (req, res) => {
       });
     }
 
-    // Chỉ cho phép xóa comment của chính mình hoặc admin
-    if (comment.author.toString() !== userId && !req.user.admin) {
+    // Kiểm tra quyền sửa: chỉ cho phép chủ comment
+    const canEdit = (
+      comment.username === username || 
+      comment.author.toString() === userId
+    );
+
+    if (!canEdit) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền sửa bình luận này'
+      });
+    }
+
+    // Kiểm tra thời gian: chỉ cho phép sửa trong 24h
+    const createdAt = new Date(comment.created_at);
+    const now = new Date();
+    const hoursDiff = (now - createdAt) / (1000 * 60 * 60);
+
+    if (hoursDiff > 24) {
+      return res.status(403).json({
+        success: false,
+        message: 'Chỉ có thể sửa bình luận trong vòng 24 giờ sau khi đăng'
+      });
+    }
+
+    console.log('✅ User authorized to edit comment');
+
+    // Cập nhật comment
+    const updatedComment = await Comment.findByIdAndUpdate(
+      commentId,
+      {
+        content: content.trim(),
+        updated_at: new Date()
+      },
+      { new: true }
+    ).select('content username avatar likes created_at updated_at parentComment');
+
+    console.log('✅ Comment updated successfully');
+
+    res.json({
+      success: true,
+      message: 'Đã cập nhật bình luận thành công',
+      data: {
+        ...updatedComment.toObject(),
+        likesCount: updatedComment.likes.length,
+        edited: true
+      }
+    });
+  } catch (err) {
+    console.error('❌ Update comment error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi cập nhật bình luận'
+    });
+  }
+};
+
+/**
+ * Xóa comment
+ * @route DELETE /v1/forum/comments/:commentId
+ * @access Private
+ */
+exports.deleteComment = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.id;
+    const username = req.user.username;
+
+    console.log('🗑️ Delete comment request:', { commentId, userId, username });
+
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID bình luận không hợp lệ'
+      });
+    }
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy bình luận'
+      });
+    }
+
+    // Kiểm tra quyền xóa: chỉ cho phép chủ comment
+    const canDelete = (
+      comment.username === username || 
+      comment.author.toString() === userId
+    );
+
+    if (!canDelete) {
       return res.status(403).json({
         success: false,
         message: 'Bạn không có quyền xóa bình luận này'
       });
     }
 
-    // Xóa comment và tất cả replies
-    await Comment.deleteMany({
-      $or: [
-        { _id: commentId },
-        { parentComment: commentId }
-      ]
+    console.log('✅ User authorized to delete comment');
+
+    // Nếu là comment gốc, xóa tất cả replies
+    if (!comment.parentComment) {
+      await Comment.deleteMany({ parentComment: commentId });
+      console.log('✅ Deleted all replies for parent comment');
+    }
+
+    // Xóa comment
+    await Comment.findByIdAndDelete(commentId);
+    
+    // Cập nhật comment count của thread
+    const threadId = comment.thread;
+    await Thread.findByIdAndUpdate(threadId, {
+      $inc: { commentsCount: -1 }
     });
+
+    console.log('✅ Comment deleted successfully');
 
     res.json({
       success: true,
       message: 'Đã xóa bình luận thành công'
     });
   } catch (err) {
-    console.error('Delete comment error:', err);
+    console.error('❌ Delete comment error:', err);
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi xóa bình luận'

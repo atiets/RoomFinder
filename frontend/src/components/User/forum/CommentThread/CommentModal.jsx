@@ -1,3 +1,4 @@
+// src/components/User/forum/CommentModal/CommentModal.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import {
@@ -41,7 +42,7 @@ const CommentInputBox = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
 }));
 
-const CommentModal = ({ open, onClose, thread }) => {
+const CommentModal = ({ open, onClose, thread, onCommentAdded }) => {
   const navigate = useNavigate();
   const currentUser = useSelector((state) => state.auth?.login?.currentUser);
   const accessToken = currentUser?.accessToken;
@@ -155,26 +156,19 @@ const CommentModal = ({ open, onClose, thread }) => {
       );
 
       if (response.success) {
-        // Thêm comment mới vào đầu list (hoặc vào replies nếu là reply)
         const newCommentData = response.data;
 
         if (replyingTo) {
           // Là reply - thêm vào replies của parent comment
           setComments((prev) =>
-            prev.map((comment) => {
-              if (comment._id === replyingTo.commentId) {
-                return {
-                  ...comment,
-                  replies: [...(comment.replies || []), newCommentData],
-                  repliesCount: (comment.repliesCount || 0) + 1,
-                };
-              }
-              return comment;
-            })
+            updateCommentReplies(prev, replyingTo.commentId, newCommentData)
           );
         } else {
           // Là comment gốc - thêm vào đầu list
           setComments((prev) => [newCommentData, ...prev]);
+          
+          // Callback to parent để update comment count
+          onCommentAdded && onCommentAdded();
         }
 
         // Reset form
@@ -210,6 +204,27 @@ const CommentModal = ({ open, onClose, thread }) => {
     }
   };
 
+  // Helper function để update replies trong nested structure
+  const updateCommentReplies = (comments, parentCommentId, newReply) => {
+    return comments.map((comment) => {
+      if (comment._id === parentCommentId) {
+        return {
+          ...comment,
+          replies: [...(comment.replies || []), newReply],
+          repliesCount: (comment.repliesCount || 0) + 1,
+        };
+      }
+      // Kiểm tra trong replies
+      if (comment.replies && comment.replies.length > 0) {
+        const updatedReplies = updateCommentReplies(comment.replies, parentCommentId, newReply);
+        if (updatedReplies !== comment.replies) {
+          return { ...comment, replies: updatedReplies };
+        }
+      }
+      return comment;
+    });
+  };
+
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -225,6 +240,45 @@ const CommentModal = ({ open, onClose, thread }) => {
   const cancelReply = () => {
     setReplyingTo(null);
     setNewComment("");
+  };
+
+  // Handle comment updated callback
+  const handleCommentUpdated = (commentId, updatedData) => {
+    const updateCommentData = (comments) => {
+      return comments.map((comment) => {
+        if (comment._id === commentId) {
+          return { ...comment, ...updatedData };
+        }
+        // Check replies
+        if (comment.replies && comment.replies.length > 0) {
+          const updatedReplies = updateCommentData(comment.replies);
+          return { ...comment, replies: updatedReplies };
+        }
+        return comment;
+      });
+    };
+
+    setComments((prev) => updateCommentData(prev));
+  };
+
+  // Handle comment deleted callback
+  const handleCommentDeleted = (commentId, isParentComment) => {
+    const removeComment = (comments) => {
+      return comments.filter((comment) => {
+        if (comment._id === commentId) {
+          return false; // Remove this comment
+        }
+        // Update replies
+        if (comment.replies && comment.replies.length > 0) {
+          const updatedReplies = removeComment(comment.replies);
+          comment.replies = updatedReplies;
+          comment.repliesCount = updatedReplies.length;
+        }
+        return true;
+      });
+    };
+
+    setComments((prev) => removeComment(prev));
   };
 
   if (!thread) return null;
@@ -282,8 +336,10 @@ const CommentModal = ({ open, onClose, thread }) => {
                   key={comment._id}
                   comment={comment}
                   onReply={handleReply}
-                  // BỎ onLike prop
+                  onCommentUpdated={handleCommentUpdated}
+                  onCommentDeleted={handleCommentDeleted}
                   currentUser={currentUser}
+                  isReply={false}
                 />
               ))}
 

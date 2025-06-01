@@ -59,10 +59,16 @@ router.post(
   commentController.likeComment
 );
 
-// Xóa comment
-router.delete(
-  "/comments/:commentId",
+// Cập nhật comment
+router.put('/comments/:commentId', 
   middlewareControllers.verifyToken,
+  validateComment, 
+  commentController.updateComment
+);
+
+// Xóa comment
+router.delete('/comments/:commentId', 
+  middlewareControllers.verifyToken, 
   commentController.deleteComment
 );
 
