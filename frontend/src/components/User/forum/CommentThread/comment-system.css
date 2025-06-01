@@ -1,0 +1,141 @@
+
+/* Comment animations */
+@keyframes likeAnimation {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.comment-like-button.liked {
+  animation: likeAnimation 0.3s ease-in-out;
+}
+
+/* Comment hover effects */
+.comment-item {
+  transition: all 0.2s ease-in-out;
+}
+
+.comment-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+}
+
+.comment-reply-item:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Reply indicator styling */
+.reply-indicator {
+  background: linear-gradient(90deg, rgba(46, 125, 50, 0.1) 0%, rgba(46, 125, 50, 0.05) 100%);
+  border-left: 3px solid #2E7D32;
+  animation: slideInRight 0.3s ease-in-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Comment input focus styling */
+.comment-input-focused {
+  border-color: #2E7D32 !important;
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2) !important;
+}
+
+/* Comment modal styling */
+.comment-modal-content {
+  max-height: 60vh;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.comment-modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.comment-modal-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.comment-modal-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.comment-modal-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Mention styling */
+.mention {
+  color: #2E7D32;
+  font-weight: 600;
+  background-color: rgba(46, 125, 50, 0.1);
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+/* Like count animation */
+.like-count-change {
+  animation: countChange 0.3s ease-in-out;
+}
+
+@keyframes countChange {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+    color: #2E7D32;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Send button hover effect */
+.comment-send-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.comment-send-button:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
+}
+
+/* Reply button hover effect */
+.reply-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.reply-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background-color: rgba(46, 125, 50, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.reply-button:hover::before {
+  width: 100px;
+  height: 100px;
+}

@@ -2,43 +2,68 @@
 const mongoose = require('mongoose');
 
 const CommentSchema = new mongoose.Schema({
-  thread: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Thread', 
-    required: true 
+  content: {
+    type: String,
+    required: [true, 'Nội dung bình luận là bắt buộc'],
+    trim: true,
+    maxlength: [1000, 'Bình luận không được vượt quá 1000 ký tự']
   },
-  author: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
+  thread: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Thread',
+    required: true
   },
-  content: { 
-    type: String, 
-    required: true, 
-    trim: true 
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  likes: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User' 
-  }],
-  parent: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Comment', 
+  username: {
+    type: String,
+    required: [true, 'Username là bắt buộc'],
+    trim: true
+  },
+  avatar: {
+    type: String,
+    trim: true,
+    default: null
+  },
+  parentComment: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Comment',
     default: null 
   },
-  created_at: { 
-    type: Date, 
-    default: Date.now 
+  likes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  replies: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Comment'
+  }],
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'approved' 
   },
-  updated_at: { 
-    type: Date, 
-    default: Date.now 
+  created_at: {
+    type: Date,
+    default: Date.now
+  },
+  updated_at: {
+    type: Date,
+    default: Date.now
   }
 }, {
-  timestamps: { 
-    createdAt: 'created_at', 
-    updatedAt: 'updated_at' 
+  timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   }
 });
+
+// Index để tối ưu query
+CommentSchema.index({ thread: 1, created_at: -1 });
+CommentSchema.index({ author: 1 });
+CommentSchema.index({ parentComment: 1 });
 
 module.exports = mongoose.model('Comment', CommentSchema);
