@@ -1,26 +1,31 @@
 // src/components/User/forum/ThreadCard.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Card, CardHeader, CardContent, CardActions, 
-  Avatar, Typography, Box, IconButton, CardMedia,
-  Divider, Button, Collapse, CircularProgress
+import { useSelector } from 'react-redux';
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  Avatar,
+  Typography,
+  Box,
+  CardMedia,
+  Divider,
+  Button,
+  Collapse,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import ThumbUpIcon from '@mui/icons-material/ThumbUp';
-import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
-import ThumbDownIcon from '@mui/icons-material/ThumbDown';
-import ThumbDownOutlinedIcon from '@mui/icons-material/ThumbDownOutlined';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import Swal from 'sweetalert2';
 import { useThreadLike } from '../../../hooks/useThreadLike';
+import ThreadMenu from './ThreadMenu'; // Updated import
+import ThreadActions from './ThreadActions'; // Updated import
+import ThreadEditDialog from './ThreadEditDialog'; // Updated import
 import CommentModal from './CommentThread/CommentModal';
 import './CommentThread/comment-system.css';
 
+// Rest of the component remains the same...
 const StyledCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(3),
   borderRadius: '8px',
@@ -31,81 +36,70 @@ const StyledCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-const ActionButton = styled(Box)(({ theme, active, color = '#2E7D32' }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  cursor: 'pointer',
-  padding: '6px 12px',
-  borderRadius: '16px',
-  transition: 'all 0.2s ease-in-out',
-  backgroundColor: active ? `${color}15` : 'transparent',
-  border: `1px solid ${active ? color : 'transparent'}`,
-  '&:hover': {
-    backgroundColor: active ? `${color}20` : `${color}08`,
-    transform: 'translateY(-1px)',
-    boxShadow: `0 2px 8px ${color}20`
-  }
-}));
-
-const ThreadCard = ({ thread, onCommentClick }) => {
+const ThreadCard = ({ thread, onCommentClick, onThreadUpdated, onThreadDeleted }) => {
   const navigate = useNavigate();
+  const currentUser = useSelector((state) => state.auth?.login?.currentUser);
   
-  const { 
-    title, 
-    content, 
+  const {
+    title,
+    content,
     username,
     avatar,
     created_at,
-    createdAt, 
-    tags = [], 
+    createdAt,
+    tags = [],
     likesCount: initialLikesCount = 0,
-    dislikesCount: initialDislikesCount = 0,
-    comments = 0, 
+    comments = 0,
     image = null,
-    viewCount = 0
+    viewCount = 0,
+    author
   } = thread;
 
   // States
   const [expanded, setExpanded] = useState(false);
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [currentCommentCount, setCurrentCommentCount] = useState(comments);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  // Hook để quản lý like/dislike
+  // Hook để quản lý like
   const {
     liked,
-    disliked,
     likesCount,
-    dislikesCount,
     loading,
     error,
     handleLike,
-    handleDislike,
     clearError,
     isLoggedIn
-  } = useThreadLike(thread.id || thread._id, initialLikesCount, initialDislikesCount);
+  } = useThreadLike(thread.id || thread._id, initialLikesCount, 0);
 
-  // Màu pastel theo yêu cầu
+  // Constants
   const pastelGreen = '#C1E1C1';
   const pastelOrange = '#FFD8B1';
-  
-  // Utility functions
-  const getDisplayName = () => {
-    return username || 'Người dùng ẩn danh';
-  };
 
+  // Check ownership
+  const isOwner = currentUser && thread && (
+    (currentUser.username && thread.username && 
+     currentUser.username.toLowerCase() === thread.username.toLowerCase()) ||
+    (currentUser.id && thread.author && 
+     currentUser.id.toString() === thread.author.toString())
+  );
+
+  // Utility functions
+  const getDisplayName = () => username || 'Người dùng ẩn danh';
+  
   const getAvatarLetter = () => {
     const displayName = getDisplayName();
     return displayName.charAt(0).toUpperCase();
   };
 
   const isAnonymous = !username || username === 'anonymous_user';
-  
+
   const getRelativeTime = (dateString) => {
     try {
       const date = new Date(dateString);
       const now = new Date();
       const diffInSeconds = Math.floor((now - date) / 1000);
-      
+
       if (diffInSeconds < 60) return `${diffInSeconds} giây trước`;
       if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
       if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
@@ -119,7 +113,6 @@ const ThreadCard = ({ thread, onCommentClick }) => {
 
   const formatContent = (htmlContent) => {
     if (!htmlContent) return '';
-    
     return htmlContent
       .replace(/<\/p><p>/g, '\n\n')
       .replace(/<p>/g, '')
@@ -140,63 +133,45 @@ const ThreadCard = ({ thread, onCommentClick }) => {
   const contentLines = formattedContent.split('\n').length;
   const contentLength = formattedContent.length;
   const shouldShowReadMore = contentLines > 4 || contentLength > 300;
-
   const truncatedContent = shouldShowReadMore && !expanded
-    ? formattedContent.split('\n').slice(0, 3).join('\n') + 
-      (formattedContent.length > 200 ? '...' : '')
+    ? formattedContent.split('\n').slice(0, 3).join('\n') + (formattedContent.length > 200 ? '...' : '')
     : formattedContent;
 
   // Event handlers
-  const handleExpandClick = () => {
-    setExpanded(!expanded);
-  };
+  const handleExpandClick = () => setExpanded(!expanded);
+  const handleCommentClick = () => setCommentModalOpen(true);
+  const handleCommentModalClose = () => setCommentModalOpen(false);
+  const handleCommentAdded = () => setCurrentCommentCount(prev => prev + 1);
 
-  const handleCommentClick = () => {
-    setCommentModalOpen(true);
-  };
+  // Edit handlers
+  const handleEditOpen = () => setEditDialogOpen(true);
+  const handleEditClose = () => setEditDialogOpen(false);
 
-  const handleCommentModalClose = () => {
-    setCommentModalOpen(false);
-  };
-
-  // Handle new comment added (callback from modal)
-  const handleCommentAdded = () => {
-    setCurrentCommentCount(prev => prev + 1);
-  };
-
-  // Show login alert với SweetAlert2
-  const showLoginAlert = (action) => {
-    Swal.fire({
-      title: "Chưa đăng nhập",
-      text: `Vui lòng đăng nhập để ${action} bài viết.`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Đăng nhập",
-      cancelButtonText: "Hủy",
-      customClass: {
-        popup: 'custom-swal-popup',
-        title: 'custom-swal-title',
-        content: 'custom-swal-content',
-        confirmButton: 'custom-swal-confirm',
-        cancelButton: 'custom-swal-cancel',
-        icon: 'custom-swal-icon'
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        navigate("/login");
-      }
-    });
-  };
-
-  // Like button handler với SweetAlert2
+  // Like handler
   const onLikeClick = async () => {
     if (!isLoggedIn) {
-      showLoginAlert('thích');
+      Swal.fire({
+        title: "Chưa đăng nhập",
+        text: "Vui lòng đăng nhập để thích bài viết.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Đăng nhập",
+        cancelButtonText: "Hủy",
+        customClass: {
+          popup: 'custom-swal-popup',
+          confirmButton: 'custom-swal-confirm',
+          cancelButton: 'custom-swal-cancel'
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/login");
+        }
+      });
       return;
     }
-    
+
     await handleLike();
-    
+
     if (error) {
       Swal.fire({
         title: "Lỗi",
@@ -212,41 +187,17 @@ const ThreadCard = ({ thread, onCommentClick }) => {
     }
   };
 
-  // Dislike button handler với SweetAlert2
-  const onDislikeClick = async () => {
-    if (!isLoggedIn) {
-      showLoginAlert('không thích');
-      return;
-    }
-    
-    await handleDislike();
-    
-    if (error) {
-      Swal.fire({
-        title: "Lỗi",
-        text: error,
-        icon: "error",
-        confirmButtonText: "Đóng",
-        customClass: {
-          popup: 'custom-swal-popup',
-          confirmButton: 'custom-swal-confirm'
-        }
-      });
-      clearError();
-    }
-  };
-  
   return (
     <>
       <StyledCard>
-        {/* Header với avatar, username, thời gian và menu */}
+        {/* Header */}
         <CardHeader
           avatar={
-            <Avatar 
-              alt={getDisplayName()} 
+            <Avatar
+              alt={getDisplayName()}
               src={avatar || ''}
-              sx={{ 
-                width: 40, 
+              sx={{
+                width: 40,
                 height: 40,
                 bgcolor: isAnonymous ? '#e0e0e0' : pastelGreen,
                 color: isAnonymous ? '#757575' : 'inherit',
@@ -257,18 +208,13 @@ const ThreadCard = ({ thread, onCommentClick }) => {
             </Avatar>
           }
           action={
-            <IconButton 
-              aria-label="settings"
-              sx={{
-                '&:hover': {
-                  backgroundColor: 'rgba(46, 125, 50, 0.08)',
-                  transform: 'rotate(90deg)'
-                },
-                transition: 'all 0.2s ease-in-out'
-              }}
-            >
-              <MoreVertIcon />
-            </IconButton>
+            isOwner && (
+              <ThreadMenu
+                thread={thread}
+                onEdit={handleEditOpen}
+                onThreadDeleted={onThreadDeleted}
+              />
+            )
           }
           title={
             <Typography variant="subtitle1" fontWeight="600" color="text.primary">
@@ -282,23 +228,21 @@ const ThreadCard = ({ thread, onCommentClick }) => {
           }
           sx={{ pb: 1 }}
         />
-        
-        {/* Nội dung bài viết */}
+
+        {/* Content */}
         <CardContent sx={{ pt: 0, pb: 1.5 }}>
-          {/* Tiêu đề bài viết */}
+          {/* Title */}
           {title && (
-            <Typography 
-              variant="h6" 
-              component="h2" 
-              fontWeight="bold" 
+            <Typography
+              variant="h6"
+              component="h2"
+              fontWeight="bold"
               color="text.primary"
-              sx={{ 
+              sx={{
                 mb: 1.5,
                 lineHeight: 1.3,
                 cursor: 'pointer',
-                '&:hover': {
-                  color: '#2E7D32'
-                },
+                '&:hover': { color: '#2E7D32' },
                 transition: 'color 0.2s ease'
               }}
               onClick={() => console.log('Navigate to thread detail')}
@@ -306,21 +250,17 @@ const ThreadCard = ({ thread, onCommentClick }) => {
               {title}
             </Typography>
           )}
-          
-          {/* Nội dung văn bản */}
-          <Typography 
-            variant="body1" 
+
+          {/* Content Text */}
+          <Typography
+            variant="body1"
             color="text.primary"
-            sx={{ 
-              mb: 1.5,
-              whiteSpace: 'pre-line',
-              lineHeight: 1.6
-            }}
+            sx={{ mb: 1.5, whiteSpace: 'pre-line', lineHeight: 1.6 }}
           >
             {truncatedContent}
           </Typography>
 
-          {/* Nút xem thêm/thu gọn */}
+          {/* Read More Button */}
           {shouldShowReadMore && (
             <Button
               onClick={handleExpandClick}
@@ -345,7 +285,7 @@ const ThreadCard = ({ thread, onCommentClick }) => {
             </Button>
           )}
 
-          {/* Collapse content */}
+          {/* Collapse Content */}
           <Collapse in={expanded} timeout="auto" unmountOnExit>
             <Box sx={{ mt: 1.5 }}>
               {image && (
@@ -353,8 +293,8 @@ const ThreadCard = ({ thread, onCommentClick }) => {
                   component="img"
                   image={image}
                   alt={title || "Thread image"}
-                  sx={{ 
-                    mt: 2, 
+                  sx={{
+                    mt: 2,
                     borderRadius: '8px',
                     maxHeight: '400px',
                     objectFit: 'contain',
@@ -364,12 +304,12 @@ const ThreadCard = ({ thread, onCommentClick }) => {
               )}
             </Box>
           </Collapse>
-          
+
           {/* Tags */}
           {tags && tags.length > 0 && (
             <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {tags.map((tag, index) => (
-                <Box 
+                <Box
                   key={index}
                   sx={{
                     backgroundColor: index % 2 === 0 ? pastelGreen : pastelOrange,
@@ -393,121 +333,27 @@ const ThreadCard = ({ thread, onCommentClick }) => {
             </Box>
           )}
         </CardContent>
-        
-        {/* Phần tương tác với Like/Dislike/Comment */}
-        <Divider />
-        <CardActions 
-          sx={{ 
-            px: 2, 
-            py: 1.5,
-            display: 'flex',
-            justifyContent: 'space-between',
-            backgroundColor: '#fafafa'
-          }}
-        >
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {/* Like Button */}
-            <ActionButton
-              active={liked}
-              color="#2E7D32"
-              onClick={onLikeClick}
-            >
-              {loading ? (
-                <CircularProgress size={18} sx={{ mr: 0.5 }} />
-              ) : liked ? (
-                <ThumbUpIcon 
-                  sx={{ 
-                    fontSize: 18,
-                    mr: 0.5,
-                    color: '#2E7D32'
-                  }} 
-                />
-              ) : (
-                <ThumbUpOutlinedIcon 
-                  sx={{ 
-                    fontSize: 18,
-                    mr: 0.5,
-                    color: 'text.secondary'
-                  }} 
-                />
-              )}
-              <Typography 
-                variant="body2" 
-                color={liked ? '#2E7D32' : 'text.secondary'}
-                sx={{ fontWeight: liked ? 700 : 500 }}
-              >
-                {likesCount > 0 ? likesCount : 'Thích'}
-              </Typography>
-            </ActionButton>
 
-            {/* Dislike Button */}
-            <ActionButton
-              active={disliked}
-              color="#d32f2f"
-              onClick={onDislikeClick}
-            >
-              {disliked ? (
-                <ThumbDownIcon 
-                  sx={{ 
-                    fontSize: 18,
-                    mr: 0.5,
-                    color: '#d32f2f'
-                  }} 
-                />
-              ) : (
-                <ThumbDownOutlinedIcon 
-                  sx={{ 
-                    fontSize: 18,
-                    mr: 0.5,
-                    color: 'text.secondary'
-                  }} 
-                />
-              )}
-              {dislikesCount > 0 && (
-                <Typography 
-                  variant="body2" 
-                  color={disliked ? '#d32f2f' : 'text.secondary'}
-                  sx={{ fontWeight: disliked ? 700 : 500 }}
-                >
-                  {dislikesCount}
-                </Typography>
-              )}
-            </ActionButton>
-            
-            {/* Comment Button */}
-            <ActionButton
-              active={false}
-              color="#1976d2"
-              onClick={handleCommentClick}
-            >
-              <ChatBubbleOutlineIcon 
-                sx={{ 
-                  fontSize: 18,
-                  mr: 0.5,
-                  color: 'text.secondary'
-                }} 
-              />
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                {currentCommentCount > 0 ? `${currentCommentCount} bình luận` : 'Bình luận'}
-              </Typography>
-            </ActionButton>
-          </Box>
-          
-          {/* View Count */}
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              color: 'text.secondary'
-            }}
-          >
-            <VisibilityIcon sx={{ fontSize: 16, mr: 0.5 }} />
-            <Typography variant="body2" fontSize="12px">
-              {viewCount > 0 ? `${viewCount} lượt xem` : '0 lượt xem'}
-            </Typography>
-          </Box>
-        </CardActions>
+        {/* Actions */}
+        <Divider />
+        <ThreadActions
+          liked={liked}
+          likesCount={likesCount}
+          loading={loading}
+          onLikeClick={onLikeClick}
+          currentCommentCount={currentCommentCount}
+          onCommentClick={handleCommentClick}
+          viewCount={viewCount}
+        />
       </StyledCard>
+
+      {/* Edit Dialog */}
+      <ThreadEditDialog
+        open={editDialogOpen}
+        onClose={handleEditClose}
+        thread={thread}
+        onThreadUpdated={onThreadUpdated}
+      />
 
       {/* Comment Modal */}
       <CommentModal

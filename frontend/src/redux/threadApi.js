@@ -104,25 +104,71 @@ export const createThread = async (threadData, token) => {
   }
 };
 
-// /**
-//  * Like một thread
-//  * @param {string} threadId - ID của thread
-//  * @param {string} token - JWT token để authentication
-//  * @returns {Promise} - Trả về thông tin cập nhật về likes
-//  */
-// export const likeThread = async (threadId, token) => {
-//   try {
-//     const response = await axios.put(`${API_URL}/threads/${threadId}/like`, {}, {
-//       headers: {
-//         Authorization: `Bearer ${token}`,
-//         "Content-Type": "application/json",
-//       },
-//     });
-//     return response.data;
-//   } catch (error) {
-//     throw new Error("Không thể thích bài viết: " + error.message);
-//   }
-// };
+/**
+ * Cập nhật thread
+ * @param {string} threadId - ID của thread
+ * @param {Object} updateData - Data cập nhật
+ * @param {string} token - JWT token
+ * @returns {Promise} - Updated thread data
+ */
+export const updateThread = async (threadId, updateData, token) => {
+  try {
+    const response = await axios.put(`${API_URL}/threads/${threadId}`, updateData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      if (status === 401) {
+        throw new Error("Bạn cần đăng nhập để sửa bài viết");
+      } else if (status === 403) {
+        throw new Error(data.message || "Bạn không có quyền sửa bài viết này");
+      } else if (status === 404) {
+        throw new Error("Không tìm thấy bài viết");
+      } else {
+        throw new Error(data.message || "Không thể sửa bài viết");
+      }
+    }
+    throw new Error("Không thể kết nối đến server");
+  }
+};
+
+/**
+ * Xóa thread
+ * @param {string} threadId - ID của thread
+ * @param {string} token - JWT token
+ * @returns {Promise} - Delete result
+ */
+export const deleteThread = async (threadId, token) => {
+  try {
+    const response = await axios.delete(`${API_URL}/threads/${threadId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      if (status === 401) {
+        throw new Error("Bạn cần đăng nhập để xóa bài viết");
+      } else if (status === 403) {
+        throw new Error(data.message || "Bạn không có quyền xóa bài viết này");
+      } else if (status === 404) {
+        throw new Error("Không tìm thấy bài viết");
+      } else {
+        throw new Error(data.message || "Không thể xóa bài viết");
+      }
+    }
+    throw new Error("Không thể kết nối đến server");
+  }
+};
 
 /**
  * Like một thread

@@ -30,7 +30,7 @@ const ForumHome = () => {
     limit: 10
   });
 
-    const currentUserRedux = useSelector((state) => state.auth?.login?.currentUser);
+  const currentUserRedux = useSelector((state) => state.auth?.login?.currentUser);
   
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
@@ -148,10 +148,90 @@ const ForumHome = () => {
     );
   };
 
+  // Handle thread updated - Update thread trong list realtime
+  const handleThreadUpdated = (threadId, updatedData) => {
+    console.log('Thread updated:', threadId, updatedData);
+    
+    setThreads(prevThreads => 
+      prevThreads.map(thread => {
+        if (thread._id === threadId || thread.id === threadId) {
+          // Merge existing thread data with updated data
+          const updatedThread = {
+            ...thread,
+            ...updatedData,
+            // Ensure we keep the essential fields
+            _id: thread._id,
+            id: thread.id || thread._id,
+            // Update timestamp to show "edited"
+            updated_at: updatedData.updated_at || new Date().toISOString()
+          };
+          
+          console.log('Thread updated in list:', updatedThread);
+          return updatedThread;
+        }
+        return thread;
+      })
+    );
+
+    // Show success message
+    showSnackbar("Bài viết đã được cập nhật thành công!", "success");
+  };
+
+  // Handle thread deleted - Remove thread khỏi list realtime
+  const handleThreadDeleted = (threadId) => {
+    console.log('Thread deleted:', threadId);
+    
+    setThreads(prevThreads => {
+      const filteredThreads = prevThreads.filter(thread => 
+        thread._id !== threadId && thread.id !== threadId
+      );
+      
+      console.log('Thread removed from list. Remaining threads:', filteredThreads.length);
+      return filteredThreads;
+    });
+
+    // Update pagination total count
+    setPagination(prev => ({
+      ...prev,
+      total: Math.max(0, prev.total - 1)
+    }));
+
+    // Show success message
+    showSnackbar("Bài viết đã được xóa thành công!", "success");
+
+    // If current page is empty and not the first page, go to previous page
+    setTimeout(() => {
+      if (threads.length === 1 && pagination.page > 1) {
+        setPagination(prev => ({
+          ...prev,
+          page: prev.page - 1
+        }));
+      }
+    }, 100);
+  };
+
   // Function để refresh threads (có thể gọi từ pull-to-refresh)
   const handleRefresh = () => {
     console.log('Refreshing threads...');
     fetchThreadsData();
+  };
+
+  // Handle thread added (when a new thread is approved)
+  const handleThreadAdded = (newThread) => {
+    console.log('New thread added:', newThread);
+    
+    // Add new thread to the beginning of the list if we're on page 1
+    if (pagination.page === 1) {
+      setThreads(prevThreads => [newThread, ...prevThreads]);
+      
+      // Update pagination total count
+      setPagination(prev => ({
+        ...prev,
+        total: prev.total + 1
+      }));
+    }
+    
+    showSnackbar("Bài viết mới đã được thêm vào diễn đàn!", "info");
   };
 
   return (
@@ -179,6 +259,12 @@ const ForumHome = () => {
             },
             ...(snackbar.severity === 'info' && {
               backgroundColor: '#2196f3',
+              '& .MuiAlert-icon': {
+                color: 'white'
+              }
+            }),
+            ...(snackbar.severity === 'success' && {
+              backgroundColor: '#4caf50',
               '& .MuiAlert-icon': {
                 color: 'white'
               }
@@ -225,14 +311,20 @@ const ForumHome = () => {
           )}
           
           {/* Hiển thị danh sách thread */}
-          <ThreadList 
-            threads={threads}
-            loading={loading}
-            onThreadClick={handleThreadClick}
-            page={pagination.page}
-            totalPages={pagination.pages} 
-            onPageChange={handlePageChange}
-          />
+          {!loading || threads.length > 0 ? (
+            <ThreadList 
+              threads={threads}
+              setThreads={setThreads} // Pass setThreads for direct state manipulation if needed
+              loading={loading}
+              onThreadClick={handleThreadClick}
+              page={pagination.page}
+              totalPages={pagination.pages} 
+              onPageChange={handlePageChange}
+              onThreadUpdated={handleThreadUpdated} // Callback for thread updates
+              onThreadDeleted={handleThreadDeleted} // Callback for thread deletion
+              onThreadAdded={handleThreadAdded} // Callback for new threads (future use)
+            />
+          ) : null}
           
           {/* Nút tạo bài viết nổi ở góc dưới chỉ hiển thị trên mobile */}
           <Box sx={{ display: { xs: 'block', md: 'none' } }}>

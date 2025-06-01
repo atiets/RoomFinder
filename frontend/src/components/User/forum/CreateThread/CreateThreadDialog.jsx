@@ -22,7 +22,7 @@ import { createThread } from '../../../../redux/threadApi';
 // Import các component con
 import ThreadEditor from './ThreadEditor';
 import ImageUploader from './ImageUploader';
-import ThreadCaptcha from './ThreadCaptcha';
+// import ThreadCaptcha from './ThreadCaptcha';
 
 const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
   // States
@@ -167,44 +167,6 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-   // Hiển thị thông tin debug user (chỉ trong development)
-  const renderUserDebugInfo = () => {
-    if (!currentUser || process.env.NODE_ENV !== 'development') return null;
-    
-    return (
-      <Box sx={{ 
-        mb: 2, 
-        p: 2, 
-        bgcolor: '#f0f8ff', 
-        borderRadius: 1,
-        border: '1px solid #e3f2fd'
-      }}>
-        <Typography variant="caption" sx={{ 
-          display: 'block',
-          color: '#1976d2',
-          fontWeight: 500,
-          mb: 1
-        }}>
-          🔧 Debug Info (Development):
-        </Typography>
-        <Box sx={{ fontSize: '0.75rem', color: '#555' }}>
-          <Typography variant="caption" display="block">
-            <strong>Username:</strong> {currentUser.username || '❌ Không có'}
-          </Typography>
-          <Typography variant="caption" display="block">
-            <strong>Avatar:</strong> {currentUser.profile?.picture ? '✅ Có' : '❌ Không có'}
-          </Typography>
-          <Typography variant="caption" display="block">
-            <strong>User ID:</strong> {currentUser.id || '❌ Không có'}
-          </Typography>
-          <Typography variant="caption" display="block">
-            <strong>Email:</strong> {currentUser.email || '❌ Không có'}
-          </Typography>
-        </Box>
-      </Box>
-    );
   };
 
   // Component hiển thị thông báo thành công với countdown
@@ -361,7 +323,6 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
         ) : (
           <>
           {/* Debug info - chỉ hiển thị trong development */}
-            {renderUserDebugInfo()}
             {/* Hiển thị thông báo lỗi nếu có */}
             {error && (
               <Box sx={{ 
@@ -455,12 +416,12 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
             </Box>
             
             {/* Thread Captcha Component */}
-            <ThreadCaptcha 
+            {/* <ThreadCaptcha 
               isCaptchaVerified={isCaptchaVerified}
               setIsCaptchaVerified={setIsCaptchaVerified}
               showSnackbar={showSnackbar}
               disabled={!accessToken || isSubmitting || !validateUserInfo()}
-            />
+            /> */}
             
             <Button
               variant="contained"

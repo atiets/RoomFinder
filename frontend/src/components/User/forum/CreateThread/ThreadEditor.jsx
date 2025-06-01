@@ -1,5 +1,4 @@
 // src/components/User/forum/CreateThread/ThreadEditor.jsx
-//new
 import React, { useRef, useEffect } from 'react';
 import { 
   Box, 
@@ -10,7 +9,7 @@ import {
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
-const ThreadEditor = ({ setContent, setQuillInstance, error, disabled = false }) => {
+const ThreadEditor = ({ setContent, setQuillInstance, error, disabled = false, initialContent = '' }) => {
   const quillRef = useRef(null);
   const quillInstanceRef = useRef(null);
   
@@ -19,24 +18,30 @@ const ThreadEditor = ({ setContent, setQuillInstance, error, disabled = false })
       quillInstanceRef.current = new Quill(quillRef.current, {
         theme: 'snow',
         placeholder: 'Vui lòng ghi nội dung bài viết (bắt buộc)',
-        readOnly: disabled, // Set readonly based on disabled prop
+        readOnly: disabled,
         modules: {
-          toolbar: disabled ? false : [ // Disable toolbar if disabled
+          toolbar: disabled ? false : [
             ['bold', 'italic', 'underline'],
             ['link'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
             ['clean'],
           ],
         },
-        formats: ['bold', 'italic', 'underline', 'link']
+        formats: ['bold', 'italic', 'underline', 'link', 'list']
       });
 
       // Set quillInstance để component cha có thể truy cập
       setQuillInstance && setQuillInstance(quillInstanceRef.current);
 
+      // Set initial content if provided
+      if (initialContent) {
+        quillInstanceRef.current.root.innerHTML = initialContent;
+      }
+
       // Listen for text-change events
       quillInstanceRef.current.on('text-change', () => {
         const editorContent = quillInstanceRef.current.root.innerHTML;
-        setContent(editorContent);
+        setContent && setContent(editorContent);
       });
     }
     
@@ -45,7 +50,14 @@ const ThreadEditor = ({ setContent, setQuillInstance, error, disabled = false })
       quillInstanceRef.current.enable(!disabled);
     }
     
-  }, [setContent, setQuillInstance, disabled]);
+  }, [setContent, setQuillInstance, disabled, initialContent]);
+
+  // Update content when initialContent changes (for edit mode)
+  useEffect(() => {
+    if (quillInstanceRef.current && initialContent) {
+      quillInstanceRef.current.root.innerHTML = initialContent;
+    }
+  }, [initialContent]);
 
   return (
     <FormControl fullWidth sx={{ mb: 3 }}>
@@ -58,7 +70,7 @@ const ThreadEditor = ({ setContent, setQuillInstance, error, disabled = false })
       <Box 
         sx={{ 
           border: '1px solid',
-          borderColor: 'divider',
+          borderColor: error ? 'error.main' : 'divider',
           borderRadius: 1,
           mb: 1,
           opacity: disabled ? 0.6 : 1,

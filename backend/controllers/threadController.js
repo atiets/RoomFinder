@@ -5,7 +5,6 @@ const User = require('../models/User');
 const { validationResult } = require('express-validator');
 const mongoose = require('mongoose');
 
-
 /**
  * Tạo thread mới
  * @route POST /v1/forum/threads
@@ -86,13 +85,6 @@ exports.createThread = async (req, res) => {
 };
 
 /**
- * Lấy tất cả threads với lọc và phân trang
- * @route GET /v1/forum/threads
- * @access Public
- */
-
-
-/**
  * Lấy tất cả threads với phân trang
  * @route GET /v1/forum/threads
  * @access Public
@@ -108,10 +100,10 @@ exports.getAllThreads = async (req, res) => {
     // Tính toán skip cho phân trang
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    // Thực hiện query để lấy threads
+    // Thực hiện query để lấy threads với author field
     let threads = await Thread.find(query)
-      .populate('author', 'name avatar')
-      .sort({ created_at: -1 }) // Mặc định sắp xếp theo thời gian tạo giảm dần
+      .select('title content username avatar tags likes dislikes viewCount created_at status author')
+      .sort({ created_at: -1 })
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
@@ -122,7 +114,7 @@ exports.getAllThreads = async (req, res) => {
     // Lấy threadIds để đếm comments
     const threadIds = threads.map(thread => thread._id);
     
-    // Đếm số comments cho tất cả threads trong một lần gọi (Tối ưu bằng aggregation)
+    // Đếm số comments cho tất cả threads
     const commentCounts = await Comment.aggregate([
       { $match: { thread: { $in: threadIds } } },
       { $group: { _id: '$thread', count: { $sum: 1 } } }
@@ -134,10 +126,21 @@ exports.getAllThreads = async (req, res) => {
       return map;
     }, {});
     
-    // Thêm commentCount vào mỗi thread
+    // Format threads với like/dislike counts và author info
     threads = threads.map(thread => ({
-      ...thread,
-      commentCount: commentCountMap[thread._id.toString()] || 0
+      _id: thread._id,
+      title: thread.title,
+      content: thread.content,
+      username: thread.username,
+      avatar: thread.avatar,
+      tags: thread.tags,
+      likesCount: thread.likes.length,
+      dislikesCount: thread.dislikes.length,
+      commentCount: commentCountMap[thread._id.toString()] || 0,
+      viewCount: thread.viewCount,
+      created_at: thread.created_at,
+      status: thread.status,
+      author: thread.author // Include author ID for ownership checking
     }));
     
     // Trả về kết quả với thông tin phân trang
@@ -156,6 +159,181 @@ exports.getAllThreads = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi lấy danh sách threads'
+    });
+  }
+};
+
+/**
+ * Cập nhật thread
+ * @route PUT /v1/forum/threads/:id
+ * @access Private
+ */
+exports.updateThread = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, tags } = req.body;
+    const userId = req.user.id;
+    const username = req.user.username;
+
+    console.log('✏️ Update thread request:', { id, userId, username });
+
+    // Validation
+    if (!title || title.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tiêu đề không được để trống'
+      });
+    }
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nội dung không được để trống'
+      });
+    }
+
+    if (title.trim().length > 200) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tiêu đề không được vượt quá 200 ký tự'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID bài viết không hợp lệ'
+      });
+    }
+
+    const thread = await Thread.findById(id);
+    if (!thread) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy bài viết'
+      });
+    }
+
+    // Kiểm tra quyền sửa: chỉ cho phép chủ thread
+    const canEdit = (
+      thread.username === username || 
+      thread.author.toString() === userId
+    );
+
+    if (!canEdit) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền sửa bài viết này'
+      });
+    }
+
+    // Kiểm tra thời gian: chỉ cho phép sửa trong 24h
+    const createdAt = new Date(thread.created_at);
+    const now = new Date();
+    const hoursDiff = (now - createdAt) / (1000 * 60 * 60);
+
+    if (hoursDiff > 24) {
+      return res.status(403).json({
+        success: false,
+        message: 'Chỉ có thể sửa bài viết trong vòng 24 giờ sau khi đăng'
+      });
+    }
+
+    console.log('✅ User authorized to edit thread');
+
+    // Cập nhật thread
+    const updatedThread = await Thread.findByIdAndUpdate(
+      id,
+      {
+        title: title.trim(),
+        content: content.trim(),
+        tags: tags || thread.tags,
+        updated_at: new Date()
+      },
+      { new: true }
+    ).select('title content username avatar tags likes dislikes viewCount created_at updated_at author');
+
+    console.log('✅ Thread updated successfully');
+
+    res.json({
+      success: true,
+      message: 'Đã cập nhật bài viết thành công',
+      data: {
+        ...updatedThread.toObject(),
+        likesCount: updatedThread.likes.length,
+        dislikesCount: updatedThread.dislikes.length,
+        edited: true
+      }
+    });
+  } catch (err) {
+    console.error('❌ Update thread error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi cập nhật bài viết'
+    });
+  }
+};
+
+/**
+ * Xóa thread
+ * @route DELETE /v1/forum/threads/:id
+ * @access Private
+ */
+exports.deleteThread = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const username = req.user.username;
+
+    console.log('🗑️ Delete thread request:', { id, userId, username });
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID bài viết không hợp lệ'
+      });
+    }
+
+    const thread = await Thread.findById(id);
+    if (!thread) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy bài viết'
+      });
+    }
+
+    // Kiểm tra quyền xóa: chỉ cho phép chủ thread
+    const canDelete = (
+      thread.username === username || 
+      thread.author.toString() === userId
+    );
+
+    if (!canDelete) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền xóa bài viết này'
+      });
+    }
+
+    console.log('✅ User authorized to delete thread');
+
+    // Xóa tất cả comments của thread trước
+    await Comment.deleteMany({ thread: id });
+    console.log('✅ Deleted all comments for thread');
+
+    // Xóa thread
+    await Thread.findByIdAndDelete(id);
+    console.log('✅ Thread deleted successfully');
+
+    res.json({
+      success: true,
+      message: 'Đã xóa bài viết thành công'
+    });
+  } catch (err) {
+    console.error('❌ Delete thread error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi xóa bài viết'
     });
   }
 };
@@ -428,80 +606,6 @@ exports.getThreadById = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi lấy bài viết'
-    });
-  }
-};
-
-// CẬP NHẬT getAllThreads để include like/dislike counts
-exports.getAllThreads = async (req, res) => {
-  try {
-    // Lấy các tham số từ query string
-    const { page = 1, limit = 10 } = req.query;
-    
-    // Tạo query object
-    const query = { status: 'approved' };
-    
-    // Tính toán skip cho phân trang
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Thực hiện query để lấy threads
-    let threads = await Thread.find(query)
-      .select('title content username avatar tags likes dislikes viewCount created_at status')
-      .sort({ created_at: -1 })
-      .skip(skip)
-      .limit(parseInt(limit))
-      .lean();
-    
-    // Đếm tổng số threads thỏa mãn điều kiện
-    const total = await Thread.countDocuments(query);
-    
-    // Lấy threadIds để đếm comments
-    const threadIds = threads.map(thread => thread._id);
-    
-    // Đếm số comments cho tất cả threads
-    const commentCounts = await Comment.aggregate([
-      { $match: { thread: { $in: threadIds } } },
-      { $group: { _id: '$thread', count: { $sum: 1 } } }
-    ]);
-    
-    // Tạo map từ kết quả aggregate
-    const commentCountMap = commentCounts.reduce((map, item) => {
-      map[item._id.toString()] = item.count;
-      return map;
-    }, {});
-    
-    // Format threads với like/dislike counts
-    threads = threads.map(thread => ({
-      _id: thread._id,
-      title: thread.title,
-      content: thread.content,
-      username: thread.username,
-      avatar: thread.avatar,
-      tags: thread.tags,
-      likesCount: thread.likes.length,
-      dislikesCount: thread.dislikes.length,
-      commentCount: commentCountMap[thread._id.toString()] || 0,
-      viewCount: thread.viewCount,
-      created_at: thread.created_at,
-      status: thread.status
-    }));
-    
-    // Trả về kết quả với thông tin phân trang
-    res.json({
-      success: true,
-      data: threads,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(total / parseInt(limit))
-      }
-    });
-  } catch (err) {
-    console.error('Get threads error:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi lấy danh sách threads'
     });
   }
 };
