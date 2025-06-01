@@ -1,3 +1,4 @@
+// src/components/User/forum/CommentModal/CommentItem.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -8,7 +9,9 @@ import {
   Button,
   CircularProgress,
   Menu,
-  MenuItem
+  MenuItem,
+  TextField,
+  Divider
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
@@ -16,8 +19,12 @@ import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import ReplyIcon from '@mui/icons-material/Reply';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 import Swal from 'sweetalert2';
 import { useCommentLike } from '../../../../hooks/useCommentLike';
+import { updateComment, deleteComment } from '../../../../redux/commentApi';
 import './comment-system.css';
 
 const CommentContainer = styled(Box)(({ theme, isReply }) => ({
@@ -57,9 +64,11 @@ const LikeButton = styled(Box)(({ theme, liked, disabled }) => ({
   cursor: disabled ? 'default' : 'pointer',
   transition: 'all 0.2s ease-in-out',
   backgroundColor: liked ? 'rgba(46, 125, 50, 0.1)' : 'transparent',
+  border: `1px solid ${liked ? '#2E7D32' : 'transparent'}`,
   '&:hover': disabled ? {} : {
     backgroundColor: liked ? 'rgba(46, 125, 50, 0.15)' : 'rgba(46, 125, 50, 0.05)',
-    transform: 'scale(1.05)'
+    transform: 'scale(1.02)',
+    boxShadow: '0 2px 4px rgba(46, 125, 50, 0.2)'
   }
 }));
 
@@ -69,15 +78,45 @@ const CommentContent = styled(Box)(({ theme }) => ({
   borderRadius: '16px',
   marginBottom: theme.spacing(1),
   wordWrap: 'break-word',
+  border: '1px solid #e9ecef',
+  transition: 'all 0.2s ease-in-out',
+  '&:hover': {
+    backgroundColor: '#f1f3f4',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+  },
   '& .mention': {
     color: '#2E7D32',
-    fontWeight: 600
+    fontWeight: 600,
+    backgroundColor: 'rgba(46, 125, 50, 0.1)',
+    padding: '0 4px',
+    borderRadius: '4px'
   }
 }));
 
-const CommentItem = ({ comment, onReply, onLike, currentUser, isReply = false }) => {
+const EditContainer = styled(Box)(({ theme }) => ({
+  backgroundColor: '#fff',
+  padding: theme.spacing(1.5),
+  borderRadius: '12px',
+  border: '2px solid #2E7D32',
+  marginBottom: theme.spacing(1),
+  '& .MuiTextField-root': {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '8px',
+      backgroundColor: '#fafafa',
+      '&.Focused': {
+        backgroundColor: '#fff'
+      }
+    }
+  }
+}));
+
+const CommentItem = ({ comment, onReply, onCommentUpdated, onCommentDeleted, currentUser, isReply = false }) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content || '');
+  const [updating, setUpdating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   
   const {
     liked,
@@ -102,7 +141,8 @@ const CommentItem = ({ comment, onReply, onLike, currentUser, isReply = false })
       if (diffInSeconds < 60) return `${diffInSeconds}s`;
       if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
       if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
-      return `${Math.floor(diffInSeconds / 86400)}d`;
+      if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+      return `${Math.floor(diffInSeconds / 604800)}w`;
     } catch (error) {
       return 'now';
     }
@@ -110,10 +150,23 @@ const CommentItem = ({ comment, onReply, onLike, currentUser, isReply = false })
 
   // Format content with mentions
   const formatContent = (content) => {
+    if (!content) return '';
     return content.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
   };
 
-  // Handle like with callback to parent
+  // Check nếu user có thể edit/delete comment - CHỈ CHỦ COMMENT MỚI CÓ QUYỀN
+  const isOwner = currentUser && comment && (
+    (currentUser.username && comment.username && 
+     currentUser.username.toLowerCase() === comment.username.toLowerCase()) ||
+    (currentUser.id && comment.author && 
+     currentUser.id.toString() === comment.author.toString())
+  );
+
+  // Check if comment is edited
+  const isEdited = comment.updated_at && 
+    new Date(comment.updated_at).getTime() !== new Date(comment.created_at).getTime();
+
+  // Handle like
   const handleLikeClick = async () => {
     if (!currentUser) {
       Swal.fire({
@@ -150,7 +203,7 @@ const CommentItem = ({ comment, onReply, onLike, currentUser, isReply = false })
         }
       });
       clearError();
-    } 
+    }
   };
 
   const handleReplyClick = () => {
@@ -165,12 +218,107 @@ const CommentItem = ({ comment, onReply, onLike, currentUser, isReply = false })
     setAnchorEl(null);
   };
 
+  // Handle edit comment
+  const handleEdit = () => {
+    handleMenuClose();
+    setIsEditing(true);
+    setEditContent(comment.content || '');
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditContent(comment.content || '');
+  };
+
+  const handleSaveEdit = async () => {
+    const trimmedContent = editContent.trim();
+    
+    if (!trimmedContent) {
+      Swal.fire({
+        title: "Lỗi",
+        text: "Nội dung bình luận không được để trống",
+        icon: "error",
+        confirmButtonText: "Đóng",
+        customClass: {
+          popup: 'custom-swal-popup',
+          confirmButton: 'custom-swal-confirm'
+        }
+      });
+      return;
+    }
+
+    if (trimmedContent === comment.content) {
+      setIsEditing(false);
+      return;
+    }
+
+    if (trimmedContent.length > 1000) {
+      Swal.fire({
+        title: "Lỗi",
+        text: "Nội dung bình luận không được vượt quá 1000 ký tự",
+        icon: "error",
+        confirmButtonText: "Đóng",
+        customClass: {
+          popup: 'custom-swal-popup',
+          confirmButton: 'custom-swal-confirm'
+        }
+      });
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      
+      const response = await updateComment(
+        comment._id,
+        { content: trimmedContent },
+        currentUser.accessToken
+      );
+
+      if (response.success) {
+        setIsEditing(false);
+        
+        // Callback to parent để update comment
+        onCommentUpdated && onCommentUpdated(comment._id, response.data);
+        
+        Swal.fire({
+          title: "Thành công",
+          text: "Đã cập nhật bình luận!",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+          customClass: {
+            popup: 'custom-swal-popup'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Update comment error:', error);
+      Swal.fire({
+        title: "Lỗi",
+        text: error.message,
+        icon: "error",
+        confirmButtonText: "Đóng",
+        customClass: {
+          popup: 'custom-swal-popup',
+          confirmButton: 'custom-swal-confirm'
+        }
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // Handle delete comment
   const handleDelete = () => {
     handleMenuClose();
     
     Swal.fire({
       title: "Xác nhận xóa",
-      text: "Bạn có chắc chắn muốn xóa bình luận này?",
+      html: `
+        <p>Bạn có chắc chắn muốn xóa bình luận này?</p>
+        ${!comment.parentComment ? '<p><strong>Lưu ý:</strong> Tất cả replies cũng sẽ bị xóa.</p>' : ''}
+      `,
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Xóa",
@@ -181,19 +329,54 @@ const CommentItem = ({ comment, onReply, onLike, currentUser, isReply = false })
         confirmButton: 'custom-swal-confirm',
         cancelButton: 'custom-swal-cancel'
       }
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        // TODO: Implement delete comment
-        console.log('Delete comment:', comment._id);
+        try {
+          setDeleting(true);
+          
+          const response = await deleteComment(comment._id, currentUser.accessToken);
+          
+          if (response.success) {
+            // Callback to parent để remove comment khỏi list
+            onCommentDeleted && onCommentDeleted(comment._id, !comment.parentComment);
+            
+            Swal.fire({
+              title: "Đã xóa",
+              text: "Bình luận đã được xóa thành công!",
+              icon: "success",
+              timer: 2000,
+              showConfirmButton: false,
+              customClass: {
+                popup: 'custom-swal-popup'
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Delete comment error:', error);
+          Swal.fire({
+            title: "Lỗi",
+            text: error.message,
+            icon: "error",
+            confirmButtonText: "Đóng",
+            customClass: {
+              popup: 'custom-swal-popup',
+              confirmButton: 'custom-swal-confirm'
+            }
+          });
+        } finally {
+          setDeleting(false);
+        }
       }
     });
   };
 
-  // Check if current user can delete comment
-  const canDelete = currentUser && (
-    currentUser.id === comment.author || 
-    currentUser.admin
-  );
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      handleSaveEdit();
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
+  };
 
   return (
     <>
@@ -201,7 +384,12 @@ const CommentItem = ({ comment, onReply, onLike, currentUser, isReply = false })
         {/* Avatar */}
         <Avatar
           src={comment.avatar || ''}
-          sx={{ width: isReply ? 28 : 32, height: isReply ? 28 : 32 }}
+          sx={{ 
+            width: isReply ? 28 : 32, 
+            height: isReply ? 28 : 32,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            border: '2px solid #f0f0f0'
+          }}
         >
           {comment.username?.charAt(0).toUpperCase() || 'U'}
         </Avatar>
@@ -209,88 +397,194 @@ const CommentItem = ({ comment, onReply, onLike, currentUser, isReply = false })
         {/* Comment Content */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           {/* Header */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <Typography variant="subtitle2" fontWeight={600}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
+            <Typography variant="subtitle2" fontWeight={600} color="primary.main">
               {comment.username || 'Unknown User'}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {getRelativeTime(comment.created_at)}
             </Typography>
             
-            {/* Menu button for comment owner */}
-            {canDelete && (
+            {/* Edited indicator */}
+            {isEdited && (
+              <Typography 
+                variant="caption" 
+                color="text.secondary" 
+                sx={{ 
+                  fontStyle: 'italic',
+                  backgroundColor: 'rgba(0,0,0,0.05)',
+                  padding: '2px 6px',
+                  borderRadius: '4px'
+                }}
+              >
+                đã sửa
+              </Typography>
+            )}
+            
+            {/* Menu button - CHỈ HIỂN THỊ KHI LÀ CHỦ COMMENT */}
+            {isOwner && !isEditing && (
               <IconButton
                 size="small"
                 onClick={handleMenuClick}
-                sx={{ ml: 'auto', opacity: 0.7, '&:hover': { opacity: 1 } }}
+                disabled={deleting}
+                sx={{ 
+                  ml: 'auto', 
+                  opacity: 0.6, 
+                  transition: 'all 0.2s ease',
+                  '&:hover': { 
+                    opacity: 1,
+                    backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                    transform: 'scale(1.1)'
+                  },
+                  '&:disabled': { opacity: 0.3 }
+                }}
               >
-                <MoreVertIcon fontSize="small" />
+                {deleting ? (
+                  <CircularProgress size={16} />
+                ) : (
+                  <MoreVertIcon fontSize="small" />
+                )}
               </IconButton>
             )}
           </Box>
 
           {/* Content */}
-          <CommentContent>
-            <Typography 
-              variant="body2" 
-              sx={{ lineHeight: 1.4 }}
-              dangerouslySetInnerHTML={{ __html: formatContent(comment.content) }}
-            />
-          </CommentContent>
-
-          {/* Actions */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {/* Like Button */}
-            <LikeButton
-              liked={liked}
-              disabled={loading}
-              onClick={handleLikeClick}
-            >
-              {loading ? (
-                <CircularProgress size={14} />
-              ) : liked ? (
-                <ThumbUpIcon 
-                  sx={{ fontSize: 14, color: '#2E7D32' }} 
-                />
-              ) : (
-                <ThumbUpOutlinedIcon 
-                  sx={{ fontSize: 14, color: 'text.secondary' }} 
-                />
-              )}
-              
-              {likesCount > 0 && (
-                <Typography 
-                  variant="caption" 
-                  color={liked ? '#2E7D32' : 'text.secondary'}
-                  sx={{ fontWeight: liked ? 600 : 400 }}
+          {isEditing ? (
+            <EditContainer>
+              <TextField
+                fullWidth
+                multiline
+                minRows={2}
+                maxRows={6}
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                onKeyDown={handleKeyPress}
+                disabled={updating}
+                placeholder="Nhập nội dung bình luận..."
+                variant="outlined"
+                size="small"
+                inputProps={{ maxLength: 1000 }}
+                helperText={`${editContent.length}/1000 ký tự (Ctrl+Enter để lưu, Esc để hủy)`}
+              />
+              <Box sx={{ display: 'flex', gap: 1, mt: 1.5, justifyContent: 'flex-end' }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<CancelIcon />}
+                  onClick={handleCancelEdit}
+                  disabled={updating}
+                  sx={{ borderRadius: '20px' }}
                 >
-                  {likesCount}
-                </Typography>
-              )}
-            </LikeButton>
+                  Hủy
+                </Button>
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={updating ? <CircularProgress size={16} /> : <SaveIcon />}
+                  onClick={handleSaveEdit}
+                  disabled={updating || !editContent.trim()}
+                  sx={{ 
+                    bgcolor: '#2E7D32',
+                    borderRadius: '20px',
+                    '&:hover': { bgcolor: '#1B5E20' }
+                  }}
+                >
+                  {updating ? 'Đang lưu...' : 'Lưu'}
+                </Button>
+              </Box>
+            </EditContainer>
+          ) : (
+            <CommentContent>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  lineHeight: 1.5,
+                  wordBreak: 'break-word'
+                }}
+                dangerouslySetInnerHTML={{ 
+                  __html: formatContent(comment.content || '') 
+                }}
+              />
+            </CommentContent>
+          )}
 
-            {/* Reply Button */}
-            {!isReply && (
-              <ReplyButton
-                startIcon={<ReplyIcon sx={{ fontSize: 14 }} />}
-                onClick={handleReplyClick}
+          {/* Actions - CHỈ HIỂN THỊ KHI KHÔNG EDIT */}
+          {!isEditing && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              {/* Like Button */}
+              <LikeButton
+                liked={liked}
+                disabled={loading}
+                onClick={handleLikeClick}
               >
-                Trả lời
-              </ReplyButton>
-            )}
-          </Box>
+                {loading ? (
+                  <CircularProgress size={14} />
+                ) : liked ? (
+                  <ThumbUpIcon 
+                    sx={{ fontSize: 14, color: '#2E7D32' }} 
+                  />
+                ) : (
+                  <ThumbUpOutlinedIcon 
+                    sx={{ fontSize: 14, color: 'text.secondary' }} 
+                  />
+                )}
+                
+                {likesCount > 0 && (
+                  <Typography 
+                    variant="caption" 
+                    color={liked ? '#2E7D32' : 'text.secondary'}
+                    sx={{ fontWeight: liked ? 700 : 500 }}
+                  >
+                    {likesCount}
+                  </Typography>
+                )}
+              </LikeButton>
+
+              {/* Reply Button - HIỂN THỊ CHO TẤT CẢ COMMENT (cả gốc và reply) */}
+              {currentUser && (
+                <ReplyButton
+                  startIcon={<ReplyIcon sx={{ fontSize: 14 }} />}
+                  onClick={handleReplyClick}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: 'rgba(33, 150, 243, 0.08)',
+                      color: '#1976d2'
+                    }
+                  }}
+                >
+                  Trả lời
+                </ReplyButton>
+              )}
+            </Box>
+          )}
         </Box>
       </CommentContainer>
 
-      {/* Replies */}
+      {/* Replies - HIỂN THỊ CHO TẤT CẢ COMMENT CÓ REPLIES */}
       {comment.replies && comment.replies.length > 0 && (
-        <Box sx={{ ml: 2 }}>
+        <Box sx={{ 
+          ml: 3, 
+          borderLeft: '2px solid #e0e0e0',
+          pl: 2,
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            left: -1,
+            top: 0,
+            bottom: 0,
+            width: '2px',
+            background: 'linear-gradient(180deg, #2E7D32 0%, transparent 100%)',
+            opacity: 0.3
+          }
+        }}>
           {comment.replies.map((reply) => (
             <CommentItem
               key={reply._id}
               comment={reply}
               onReply={onReply}
-              onLike={onLike}
+              onCommentUpdated={onCommentUpdated}
+              onCommentDeleted={onCommentDeleted}
               currentUser={currentUser}
               isReply={true}
             />
@@ -298,21 +592,47 @@ const CommentItem = ({ comment, onReply, onLike, currentUser, isReply = false })
         </Box>
       )}
 
-      {/* Context Menu */}
+      {/* Context Menu - CHỈ HIỂN THỊ KHI LÀ CHỦ COMMENT */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
         PaperProps={{
           sx: { 
-            borderRadius: '8px',
-            minWidth: '120px'
+            borderRadius: '12px',
+            minWidth: '150px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            border: '1px solid #e0e0e0'
           }
         }}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
-          <DeleteIcon sx={{ mr: 1, fontSize: 18 }} />
-          Xóa
+        <MenuItem 
+          onClick={handleEdit}
+          sx={{
+            py: 1.5,
+            '&:hover': {
+              backgroundColor: 'rgba(46, 125, 50, 0.08)'
+            }
+          }}
+        >
+          <EditIcon sx={{ mr: 1.5, fontSize: 18, color: '#2E7D32' }} />
+          <Typography variant="body2" fontWeight={500}>Sửa</Typography>
+        </MenuItem>
+        <Divider />
+        <MenuItem 
+          onClick={handleDelete} 
+          sx={{ 
+            py: 1.5,
+            color: 'error.main',
+            '&:hover': {
+              backgroundColor: 'rgba(211, 47, 47, 0.08)'
+            }
+          }}
+        >
+          <DeleteIcon sx={{ mr: 1.5, fontSize: 18 }} />
+          <Typography variant="body2" fontWeight={500}>Xóa</Typography>
         </MenuItem>
       </Menu>
     </>

@@ -97,10 +97,44 @@ export const likeComment = async (commentId, token) => {
 };
 
 /**
+ * Cập nhật comment
+ * @param {string} commentId - ID của comment
+ * @param {Object} updateData - Data cập nhật
+ * @param {string} token - JWT token
+ * @returns {Promise} - Updated comment data
+ */
+export const updateComment = async (commentId, updateData, token) => {
+  try {
+    const response = await axios.put(`${API_URL}/comments/${commentId}`, updateData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      const { status, data } = error.response;
+      
+      if (status === 401) {
+        throw new Error("Bạn cần đăng nhập để sửa bình luận");
+      } else if (status === 403) {
+        throw new Error(data.message || "Bạn không có quyền sửa bình luận này");
+      } else if (status === 404) {
+        throw new Error("Không tìm thấy bình luận");
+      } else {
+        throw new Error(data.message || "Không thể sửa bình luận");
+      }
+    }
+    throw new Error("Không thể kết nối đến server");
+  }
+};
+
+/**
  * Xóa comment
  * @param {string} commentId - ID của comment
  * @param {string} token - JWT token
- * @returns {Promise} - Success status
+ * @returns {Promise} - Delete result
  */
 export const deleteComment = async (commentId, token) => {
   try {
@@ -117,7 +151,7 @@ export const deleteComment = async (commentId, token) => {
       if (status === 401) {
         throw new Error("Bạn cần đăng nhập để xóa bình luận");
       } else if (status === 403) {
-        throw new Error("Bạn không có quyền xóa bình luận này");
+        throw new Error(data.message || "Bạn không có quyền xóa bình luận này");
       } else if (status === 404) {
         throw new Error("Không tìm thấy bình luận");
       } else {
