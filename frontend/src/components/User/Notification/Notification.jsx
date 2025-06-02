@@ -62,9 +62,11 @@ const Notification = ({
     };
 
     socket.on("postModerationStatus", handleIncomingNotification);
+    socket.on("notification", handleIncomingNotification);
 
     return () => {
       socket.off("postModerationStatus", handleIncomingNotification);
+      socket.off("notification", handleIncomingNotification);
     };
   }, [socket]);
 

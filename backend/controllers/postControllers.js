@@ -3,23 +3,27 @@ const User = require("../models/User");
 const cloudinary = require("cloudinary").v2;
 const mongoose = require("mongoose");
 const axios = require("axios");
+const {io} = require("../congfig/websocket");
 
 const sendEmail = require("../services/emailService");
 const { checkPostModeration } = require("./aiController");
 const { onlineUsers, getIO } = require("../congfig/websocket");
+const { checkAlertSubscriptions } = require("./alertSubscription");
 
 function sendSocketNotification(userId, data) {
-  const io = getIO();
+  const socketServer = io(); 
   const socketId = onlineUsers[userId];
+
   if (socketId) {
-    const socket = io.sockets.sockets.get(socketId);
-    if (socket) {
-      socket.emit("notification", data);
+    const userSocket = socketServer.sockets.sockets.get(socketId);
+    if (userSocket) {
+      userSocket.emit("notification", data); 
+      console.log(`[Socket] Đã gửi thông báo tới userId=${userId}`);
     } else {
-      console.log(`[Socket] Không tìm thấy socket cho userId=${userId}`);
+      console.log(`[Socket] Không tìm thấy socket với socketId=${socketId} cho userId=${userId}`);
     }
   } else {
-    console.log(`[Socket] Người dùng không trực tuyến: ${userId}`);
+    console.log(`[Socket] Người dùng không trực tuyến: userId=${userId}`);
   }
 }
 
@@ -121,7 +125,8 @@ exports.createPost = async (req, res) => {
       legalContract,
       furnitureStatus,
       areaUse,
-      area = "m²",
+      area,
+      typeArea,
       dimensions,
       price,
       deposit,
@@ -211,6 +216,7 @@ exports.createPost = async (req, res) => {
       furnitureStatus,
       areaUse,
       area,
+      typeArea,
       dimensions: parsedDimensions,
       price,
       deposit,
@@ -251,6 +257,7 @@ exports.createPost = async (req, res) => {
 
         if (moderationResult.status === "approved") {
           savedPost.visibility = "visible";
+          await checkAlertSubscriptions(savedPost);
         }
 
         await savedPost.save();
@@ -1069,6 +1076,8 @@ exports.approvePost = async (req, res) => {
     post.hoursRemaining = 0;
 
     await post.save();
+    await checkAlertSubscriptions(post);
+
     const owner = await User.findById(post.contactInfo.user);
     if (owner) {
       const notification = {

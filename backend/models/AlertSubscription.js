@@ -65,7 +65,7 @@ const AlertSubscriptionSchema = new mongoose.Schema(
         },
         notifyMethod: {
             type: String,
-            enum: ["email", "web"],
+            enum: ["email", "web", "both"],
             default: "web",
         },
         lastNotifiedAt: {
