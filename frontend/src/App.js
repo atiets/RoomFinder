@@ -39,8 +39,10 @@ import PostsPage from "./components/User/Post/PostPage";
 import SearchPosts from "./components/User/Search/searchPosts";
 import SearchResultsPage from "./components/User/Search/searchResultPage";
 import { ForumHome } from "./pages/forum";
-import ThreadDetail from './pages/forum/ThreadDetail';
-
+import ThreadDetail from "./pages/forum/ThreadDetail";
+import SubscriptionPage from "./pages/payment/Subscription";
+import PaymentPage from "./pages/payment/PaymentPage";
+import PaymentSuccess from "./pages/payment/PaymentSuccess";
 
 function App() {
   return (
@@ -374,6 +376,46 @@ function App() {
                 <>
                   <Header />
                   <ThreadDetail />
+                  <Footer />
+                </>
+              }
+            />
+            <Route 
+              path="/subscription" 
+              element={
+                <>
+                  <Header />
+                  <SubscriptionPage />
+                  <Footer />
+                </>
+              } 
+            />
+            <Route 
+              path="/pricing" 
+              element={
+                <>
+                  <Header />
+                  <SubscriptionPage />
+                  <Footer />
+                </>
+              } 
+            />
+            <Route 
+              path="/payment" 
+              element={
+                <>
+                  <Header />
+                  <PaymentPage />
+                  <Footer />
+                </>
+              }
+            />
+            <Route 
+              path="/payment-success" 
+              element={
+                <>
+                  <Header />
+                  <PaymentSuccess />
                   <Footer />
                 </>
               }
