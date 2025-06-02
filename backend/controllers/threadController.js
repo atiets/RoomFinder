@@ -2,6 +2,7 @@
 const Thread = require('../models/Thread');
 const Comment = require('../models/Comment');
 const User = require('../models/User'); 
+const ForumNotificationService = require('../services/forumNotificationService');
 const { validationResult } = require('express-validator');
 const mongoose = require('mongoose');
 
@@ -164,181 +165,6 @@ exports.getAllThreads = async (req, res) => {
 };
 
 /**
- * Cập nhật thread
- * @route PUT /v1/forum/threads/:id
- * @access Private
- */
-exports.updateThread = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, content, tags } = req.body;
-    const userId = req.user.id;
-    const username = req.user.username;
-
-    console.log('✏️ Update thread request:', { id, userId, username });
-
-    // Validation
-    if (!title || title.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tiêu đề không được để trống'
-      });
-    }
-
-    if (!content || content.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Nội dung không được để trống'
-      });
-    }
-
-    if (title.trim().length > 200) {
-      return res.status(400).json({
-        success: false,
-        message: 'Tiêu đề không được vượt quá 200 ký tự'
-      });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID bài viết không hợp lệ'
-      });
-    }
-
-    const thread = await Thread.findById(id);
-    if (!thread) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy bài viết'
-      });
-    }
-
-    // Kiểm tra quyền sửa: chỉ cho phép chủ thread
-    const canEdit = (
-      thread.username === username || 
-      thread.author.toString() === userId
-    );
-
-    if (!canEdit) {
-      return res.status(403).json({
-        success: false,
-        message: 'Bạn không có quyền sửa bài viết này'
-      });
-    }
-
-    // Kiểm tra thời gian: chỉ cho phép sửa trong 24h
-    const createdAt = new Date(thread.created_at);
-    const now = new Date();
-    const hoursDiff = (now - createdAt) / (1000 * 60 * 60);
-
-    if (hoursDiff > 24) {
-      return res.status(403).json({
-        success: false,
-        message: 'Chỉ có thể sửa bài viết trong vòng 24 giờ sau khi đăng'
-      });
-    }
-
-    console.log('✅ User authorized to edit thread');
-
-    // Cập nhật thread
-    const updatedThread = await Thread.findByIdAndUpdate(
-      id,
-      {
-        title: title.trim(),
-        content: content.trim(),
-        tags: tags || thread.tags,
-        updated_at: new Date()
-      },
-      { new: true }
-    ).select('title content username avatar tags likes dislikes viewCount created_at updated_at author');
-
-    console.log('✅ Thread updated successfully');
-
-    res.json({
-      success: true,
-      message: 'Đã cập nhật bài viết thành công',
-      data: {
-        ...updatedThread.toObject(),
-        likesCount: updatedThread.likes.length,
-        dislikesCount: updatedThread.dislikes.length,
-        edited: true
-      }
-    });
-  } catch (err) {
-    console.error('❌ Update thread error:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi cập nhật bài viết'
-    });
-  }
-};
-
-/**
- * Xóa thread
- * @route DELETE /v1/forum/threads/:id
- * @access Private
- */
-exports.deleteThread = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-    const username = req.user.username;
-
-    console.log('🗑️ Delete thread request:', { id, userId, username });
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID bài viết không hợp lệ'
-      });
-    }
-
-    const thread = await Thread.findById(id);
-    if (!thread) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy bài viết'
-      });
-    }
-
-    // Kiểm tra quyền xóa: chỉ cho phép chủ thread
-    const canDelete = (
-      thread.username === username || 
-      thread.author.toString() === userId
-    );
-
-    if (!canDelete) {
-      return res.status(403).json({
-        success: false,
-        message: 'Bạn không có quyền xóa bài viết này'
-      });
-    }
-
-    console.log('✅ User authorized to delete thread');
-
-    // Xóa tất cả comments của thread trước
-    await Comment.deleteMany({ thread: id });
-    console.log('✅ Deleted all comments for thread');
-
-    // Xóa thread
-    await Thread.findByIdAndDelete(id);
-    console.log('✅ Thread deleted successfully');
-
-    res.json({
-      success: true,
-      message: 'Đã xóa bài viết thành công'
-    });
-  } catch (err) {
-    console.error('❌ Delete thread error:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi xóa bài viết'
-    });
-  }
-};
-
-/**
  * Like một thread
  * @route POST /v1/forum/threads/:id/like
  * @access Private
@@ -347,6 +173,9 @@ exports.likeThread = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
+    const username = req.user.username;
+
+    console.log('👍 Like thread request:', { id, userId, username });
 
     // Tìm thread
     const thread = await Thread.findById(id);
@@ -382,6 +211,18 @@ exports.likeThread = async (req, res) => {
       }
       // Add like
       thread.likes.push(userIdObj);
+
+      // Gửi thông báo khi like thread (chỉ khi add like)
+      try {
+        const fromUser = {
+          userId: userId,
+          username: username,
+          avatar: req.user.profile?.picture || null
+        };
+        await ForumNotificationService.notifyThreadLike(id, fromUser);
+      } catch (notificationError) {
+        console.error('❌ Error sending thread like notification:', notificationError);
+      }
     }
 
     await thread.save();
@@ -606,6 +447,181 @@ exports.getThreadById = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi lấy bài viết'
+    });
+  }
+};
+
+/**
+ * Cập nhật thread
+ * @route PUT /v1/forum/threads/:id
+ * @access Private
+ */
+exports.updateThread = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, tags } = req.body;
+    const userId = req.user.id;
+    const username = req.user.username;
+
+    console.log('✏️ Update thread request:', { id, userId, username });
+
+    // Validation
+    if (!title || title.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tiêu đề không được để trống'
+      });
+    }
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nội dung không được để trống'
+      });
+    }
+
+    if (title.trim().length > 200) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tiêu đề không được vượt quá 200 ký tự'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID bài viết không hợp lệ'
+      });
+    }
+
+    const thread = await Thread.findById(id);
+    if (!thread) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy bài viết'
+      });
+    }
+
+    // Kiểm tra quyền sửa: chỉ cho phép chủ thread
+    const canEdit = (
+      thread.username === username || 
+      thread.author.toString() === userId
+    );
+
+    if (!canEdit) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền sửa bài viết này'
+      });
+    }
+
+    // Kiểm tra thời gian: chỉ cho phép sửa trong 24h
+    const createdAt = new Date(thread.created_at);
+    const now = new Date();
+    const hoursDiff = (now - createdAt) / (1000 * 60 * 60);
+
+    if (hoursDiff > 24) {
+      return res.status(403).json({
+        success: false,
+        message: 'Chỉ có thể sửa bài viết trong vòng 24 giờ sau khi đăng'
+      });
+    }
+
+    console.log('✅ User authorized to edit thread');
+
+    // Cập nhật thread
+    const updatedThread = await Thread.findByIdAndUpdate(
+      id,
+      {
+        title: title.trim(),
+        content: content.trim(),
+        tags: tags || thread.tags,
+        updated_at: new Date()
+      },
+      { new: true }
+    ).select('title content username avatar tags likes dislikes viewCount created_at updated_at author');
+
+    console.log('✅ Thread updated successfully');
+
+    res.json({
+      success: true,
+      message: 'Đã cập nhật bài viết thành công',
+      data: {
+        ...updatedThread.toObject(),
+        likesCount: updatedThread.likes.length,
+        dislikesCount: updatedThread.dislikes.length,
+        edited: true
+      }
+    });
+  } catch (err) {
+    console.error('❌ Update thread error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi cập nhật bài viết'
+    });
+  }
+};
+
+/**
+ * Xóa thread
+ * @route DELETE /v1/forum/threads/:id
+ * @access Private
+ */
+exports.deleteThread = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const username = req.user.username;
+
+    console.log('🗑️ Delete thread request:', { id, userId, username });
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID bài viết không hợp lệ'
+      });
+    }
+
+    const thread = await Thread.findById(id);
+    if (!thread) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy bài viết'
+      });
+    }
+
+    // Kiểm tra quyền xóa: chỉ cho phép chủ thread
+    const canDelete = (
+      thread.username === username || 
+      thread.author.toString() === userId
+    );
+
+    if (!canDelete) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền xóa bài viết này'
+      });
+    }
+
+    console.log('✅ User authorized to delete thread');
+
+    // Xóa tất cả comments của thread trước
+    await Comment.deleteMany({ thread: id });
+    console.log('✅ Deleted all comments for thread');
+
+    // Xóa thread
+    await Thread.findByIdAndDelete(id);
+    console.log('✅ Thread deleted successfully');
+
+    res.json({
+      success: true,
+      message: 'Đã xóa bài viết thành công'
+    });
+  } catch (err) {
+    console.error('❌ Delete thread error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi xóa bài viết'
     });
   }
 };

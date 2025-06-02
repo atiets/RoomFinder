@@ -53,7 +53,7 @@ const userSchema = new mongoose.Schema({
       ref: 'Post',
     }
   ],
-    viewed: [
+      viewed: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Post',
@@ -74,43 +74,72 @@ const userSchema = new mongoose.Schema({
   notifications: [
     {
       message: {
-        type: String, // Nội dung thông báo
+        type: String,
         required: true,
       },
       type: {
-        type: String, // Loại thông báo (ví dụ: 'review', 'message', v.v.)
+        type: String,
+        enum: [
+          'review', 
+          'message', 
+          'post',
+          'forum_comment', 
+          'forum_like', 
+          'forum_mention', 
+          'forum_reply'
+        ],
         required: true,
       },
       post_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Post', // Liên kết với bài đăng nếu cần
+        ref: 'Post',
       },
       review_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Review', // Liên kết với đánh giá nếu cần
+        ref: 'Review',
+      },
+      // New fields for forum notifications
+      thread_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Thread',
+      },
+      comment_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Comment',
+      },
+      from_user: {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+        username: {
+          type: String,
+        },
+        avatar: {
+          type: String,
+        }
       },
       status: {
         type: String, 
-        enum: ['read', 'unread'], // Trạng thái thông báo
+        enum: ['read', 'unread'],
         default: 'unread',
       },
       createdAt: {
         type: Date,
-        default: Date.now, // Thời gian tạo thông báo
+        default: Date.now,
       },
     }
   ],
 
   // Gói đăng tin
-  postQuota: { type: Number, default: 3 },         // Số lượng còn lại trong tháng
-  quotaResetAt: { type: Date, default: new Date() }, // Ngày bắt đầu tính quota
+  postQuota: { type: Number, default: 3 },
+  quotaResetAt: { type: Date, default: new Date() },
   plan: {
-    name: String, // free, 50k, 100k
+    name: String,
     expiredAt: Date
   }
   
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
-
 module.exports = User;

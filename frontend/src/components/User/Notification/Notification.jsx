@@ -1,3 +1,4 @@
+// src/components/User/Notification/Notification.jsx
 import {
   Box,
   Button,
@@ -9,7 +10,6 @@ import {
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import useSocket from "../../../hooks/useSocket";
 import {
   fetchNotifications,
   markNotificationAsRead,
@@ -22,67 +22,132 @@ const Notification = ({
   onNotificationClose,
   userId,
   accessToken,
-  onUpdateUnreadCount, // Thêm callback prop
+  onUpdateUnreadCount,
+  socket,
 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const currentUser = useSelector((state) => state.auth.login.currentUser);
   const token = currentUser?.accessToken;
   const [notifications, setNotifications] = React.useState([]);
-  const [visibleCount, setVisibleCount] = React.useState(5); // Quản lý số lượng thông báo hiển thị
+  const [visibleCount, setVisibleCount] = React.useState(5);
   const loading = useSelector((state) => state.notifications.loading);
   const error = useSelector((state) => state.notifications.error);
   const [refresh, setRefresh] = React.useState(false);
-  const socket = useSocket(userId);
 
   const getNotifications = async () => {
     try {
       const data = await fetchNotifications(token);
       setNotifications(data);
-      console.log("Notifications:", data);
-      // Cập nhật số thông báo chưa đọc
+      console.log("📋 Notifications loaded:", data);
+      
       const unreadCount = data.filter(
         (notification) => notification.status !== "read",
       ).length;
       onUpdateUnreadCount(unreadCount);
     } catch (err) {
-      console.error("Error fetching notifications:", err);
+      console.error("🔥 Error fetching notifications:", err);
     }
   };
 
   useEffect(() => {
-    getNotifications();
-  }, [refresh]);
+    if (token) {
+      getNotifications();
+    }
+  }, [refresh, token]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !socket.on) {
+      console.log("⚠️ Socket not available in Notification component");
+      return;
+    }
+    
+    console.log("🎧 Setting up notification socket listeners");
+    
     const handleIncomingNotification = (message) => {
-      console.log("📩 Received new notification:", message);
+      console.log("📩 Notification component received notification:", message);
+      getNotifications();
+    };
+
+    const handleForumNotification = (data) => {
+      console.log("🏛️ Notification component received forum notification:", data);
       getNotifications();
     };
 
     socket.on("postModerationStatus", handleIncomingNotification);
+    socket.on("forumNotification", handleForumNotification);
 
     return () => {
-      socket.off("postModerationStatus", handleIncomingNotification);
+      if (socket && socket.off) {
+        socket.off("postModerationStatus", handleIncomingNotification);
+        socket.off("forumNotification", handleForumNotification);
+        console.log("🧹 Cleaned up notification socket listeners");
+      }
     };
   }, [socket]);
 
-  const handleNotificationClick = async (notificationId, postId) => {
+  const getNotificationAction = (type) => {
+    switch (type) {
+      case 'forum_comment':
+        return 'đã bình luận về bài viết của bạn';
+      case 'forum_like':
+        return 'đã thích bài viết/bình luận của bạn';
+      case 'forum_mention':
+        return 'đã nhắc đến bạn';
+      case 'forum_reply':
+        return 'đã trả lời bình luận của bạn';
+      default:
+        return 'có hoạt động mới';
+    }
+  };
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'forum_comment':
+        return '💬';
+      case 'forum_like':
+        return '👍';
+      case 'forum_mention':
+        return '@';
+      case 'forum_reply':
+        return '↩️';
+      case 'review':
+        return '⭐';
+      case 'message':
+        return '📨';
+      default:
+        return '📢';
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
     try {
-      if (notificationId && accessToken) {
-        await markNotificationAsRead(notificationId, accessToken, dispatch);
+      if (notification._id && accessToken) {
+        await markNotificationAsRead(notification._id, accessToken, dispatch);
         setRefresh(!refresh);
       } else {
         console.error("Missing notificationId or accessToken.");
       }
-      if (postId) {
-        console.log("Navigating to post:", postId);
-        navigate(`/posts/${postId}`);
+      
+      if (notification.type?.startsWith('forum_')) {
+        if (notification.thread_id) {
+          console.log("🚀 Navigating to forum thread:", notification.thread_id);
+          if (notification.comment_id) {
+            navigate(`/forum/thread/${notification.thread_id}?comment=${notification.comment_id}`);
+          } else {
+            navigate(`/forum/thread/${notification.thread_id}`);
+          }
+        } else {
+          navigate("/forum");
+        }
+      } else if (notification.post_id) {
+        console.log("🚀 Navigating to post:", notification.post_id);
+        navigate(`/posts/${notification.post_id}`);
       }
+      
       onNotificationClose();
     } catch (error) {
-      console.error("Error in handleNotificationClick:", error);
+      console.error("🔥 Error in handleNotificationClick:", error);
     }
   };
 
@@ -91,8 +156,13 @@ const Notification = ({
   };
 
   const handleMenuClose = () => {
-    setVisibleCount(5); // Đặt lại số lượng thông báo hiển thị khi menu đóng
+    setVisibleCount(5);
     onNotificationClose();
+  };
+
+  const formatNotificationMessage = (notification) => {
+    const icon = getNotificationIcon(notification.type);
+    return `${icon} ${notification.message}`;
   };
 
   const sortedNotifications =
@@ -112,6 +182,8 @@ const Notification = ({
           backgroundColor: "#c2f8ab",
           borderRadius: "10px",
           width: "500px",
+          maxHeight: "600px",
+          overflowY: "auto"
         },
       }}
     >
@@ -122,6 +194,7 @@ const Notification = ({
         </Button>
       </Box>
       <hr className="notification-divider" />
+      
       {loading ? (
         <MenuItem sx={{ justifyContent: "center", padding: "15px 0" }}>
           <Typography variant="body2">
@@ -139,14 +212,9 @@ const Notification = ({
       ) : notifications && notifications.length > 0 ? (
         <>
           {notifications.slice(0, visibleCount).map((notification) => (
-            <React.Fragment key={notification._id} sx={{ width: "480px" }}>
+            <React.Fragment key={notification._id}>
               <MenuItem
-                onClick={() =>
-                  handleNotificationClick(
-                    notification._id,
-                    notification.post_id,
-                  )
-                }
+                onClick={() => handleNotificationClick(notification)}
                 className={notification.status === "read" ? "read" : "unread"}
                 sx={{
                   borderRadius: "10px",
@@ -158,28 +226,56 @@ const Notification = ({
                     backgroundColor:
                       notification.status === "read" ? "#9ee380" : "#757575",
                   },
+                  ...(notification.type?.startsWith('forum_') && {
+                    borderLeft: '4px solid #2E7D32',
+                  })
                 }}
               >
                 <Box className="notification-item">
                   <Typography
                     variant="body2"
                     className="notification-message"
-                    sx={{ wordWrap: "break-word", whiteSpace: "normal" }} // Đảm bảo chữ có thể xuống hàng
+                    sx={{ 
+                      wordWrap: "break-word", 
+                      whiteSpace: "normal",
+                      fontWeight: notification.status === "unread" ? 600 : 400
+                    }}
                   >
-                    {notification.message}
+                    {formatNotificationMessage(notification)}
                   </Typography>
+                  
+                  {notification.type?.startsWith('forum_') && notification.from_user && (
+                    <Typography
+                      variant="caption"
+                      sx={{ 
+                        color: '#2E7D32',
+                        fontWeight: 500,
+                        display: 'block',
+                        mt: 0.5
+                      }}
+                    >
+                      👤 {notification.from_user.username}
+                    </Typography>
+                  )}
+                  
                   <Typography
                     variant="caption"
                     className="notification-date"
-                    sx={{ wordWrap: "break-word", whiteSpace: "normal" }} // Đảm bảo chữ có thể xuống hàng
+                    sx={{ 
+                      wordWrap: "break-word", 
+                      whiteSpace: "normal",
+                      color: '#666',
+                      fontSize: '0.75rem'
+                    }}
                   >
-                    {new Date(notification.createdAt).toLocaleString()}
+                    {new Date(notification.createdAt).toLocaleString('vi-VN')}
                   </Typography>
                 </Box>
               </MenuItem>
               <Divider sx={{ margin: "0", borderColor: "#ddd" }} />
             </React.Fragment>
           ))}
+          
           {visibleCount < notifications.length && (
             <MenuItem
               onClick={handleSeeMore}
