@@ -18,6 +18,8 @@ const alertSubscription = require("./routes/alertSubscription");
 const http = require('http');
 const { initializeSocket } = require("./congfig/websocket");
 require('./congfig/cronJobs');
+const subscriptionRoutes = require("./routes/subscription");
+const paymentRoutes = require("./routes/payment");
 
 dotenv.config();
 const app = express();
@@ -72,6 +74,8 @@ app.use("/v1/orders", orderRoutes);
 app.use("/v1/report", reportRoutes);
 app.use('/v1/forum', forumRoutes);
 app.use('/v1/alertSubscription', alertSubscription);
+app.use("/v1/subscriptions", subscriptionRoutes);
+app.use("/v1/payments", paymentRoutes);
 
 const server = http.createServer(app);
 initializeSocket(server);
