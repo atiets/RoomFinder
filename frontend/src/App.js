@@ -39,6 +39,8 @@ import PostsPage from "./components/User/Post/PostPage";
 import SearchPosts from "./components/User/Search/searchPosts";
 import SearchResultsPage from "./components/User/Search/searchResultPage";
 import { ForumHome } from "./pages/forum";
+import ThreadDetail from './pages/forum/ThreadDetail';
+
 
 function App() {
   return (
@@ -361,6 +363,17 @@ function App() {
                 <>
                   <Header />
                   <ForumHome />
+                  <Footer />
+                </>
+              }
+            />
+
+            <Route
+              path="/forum/thread/:threadId"
+              element={
+                <>
+                  <Header />
+                  <ThreadDetail />
                   <Footer />
                 </>
               }

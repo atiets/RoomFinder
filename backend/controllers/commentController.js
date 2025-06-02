@@ -1,8 +1,10 @@
 // controllers/commentController.js
-const mongoose = require('mongoose');
 const Comment = require('../models/Comment');
 const Thread = require('../models/Thread');
+const User = require('../models/User'); 
+const ForumNotificationService = require('../services/forumNotificationService');
 const { validationResult } = require('express-validator');
+const mongoose = require('mongoose');
 
 /**
  * Tạo comment mới
@@ -11,15 +13,38 @@ const { validationResult } = require('express-validator');
  */
 exports.createComment = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, errors: errors.array() });
-    }
-
     const { threadId } = req.params;
     const { content, parentCommentId } = req.body;
+    const userId = req.user.id;
+    const username = req.user.username;
 
-    // Validate thread exists
+    console.log('💬 Create comment request:', { threadId, userId, username, parentCommentId });
+
+    // Validation
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Dữ liệu không hợp lệ',
+        errors: errors.array()
+      });
+    }
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nội dung bình luận không được để trống'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(threadId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID bài viết không hợp lệ'
+      });
+    }
+
+    // Kiểm tra thread tồn tại
     const thread = await Thread.findById(threadId);
     if (!thread) {
       return res.status(404).json({
@@ -28,71 +53,177 @@ exports.createComment = async (req, res) => {
       });
     }
 
-    if (thread.status !== 'approved') {
-      return res.status(403).json({
-        success: false,
-        message: 'Bài viết chưa được phê duyệt'
-      });
-    }
-
-    // Validate parent comment if replying
+    // Kiểm tra parent comment nếu có
+    let parentComment = null;
     if (parentCommentId) {
-      const parentComment = await Comment.findById(parentCommentId);
-      if (!parentComment || parentComment.thread.toString() !== threadId) {
+      if (!mongoose.Types.ObjectId.isValid(parentCommentId)) {
         return res.status(400).json({
           success: false,
-          message: 'Bình luận gốc không hợp lệ'
+          message: 'ID bình luận cha không hợp lệ'
+        });
+      }
+      
+      parentComment = await Comment.findById(parentCommentId);
+      if (!parentComment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy bình luận cha'
         });
       }
     }
 
-    console.log('Creating comment:', {
-      userId: req.user.id,
-      username: req.user.username,
-      threadId,
-      content: content.substring(0, 50) + '...',
-      parentCommentId
-    });
-
     // Tạo comment mới
     const newComment = new Comment({
-      content,
-      thread: threadId,
-      author: req.user.id,
-      username: req.user.username,
+      content: content.trim(),
+      author: userId,
+      username: username,
       avatar: req.user.profile?.picture || null,
-      parentComment: parentCommentId || null
+      thread: threadId,
+      parentComment: parentCommentId || null,
+      likes: [],
+      created_at: new Date()
     });
 
     const savedComment = await newComment.save();
 
-    // Nếu là reply, thêm vào replies array của parent comment
-    if (parentCommentId) {
-      await Comment.findByIdAndUpdate(
-        parentCommentId,
-        { $push: { replies: savedComment._id } }
-      );
-    }
+    // Cập nhật số lượng comment của thread
+    await Thread.findByIdAndUpdate(threadId, {
+      $inc: { commentsCount: 1 }
+    });
 
-    // Populate thông tin cần thiết
-    const populatedComment = await Comment.findById(savedComment._id)
-      .select('content username avatar likes created_at parentComment')
-      .lean();
+    console.log('✅ Comment created successfully:', savedComment._id);
+
+    // Prepare user data for notifications
+    const fromUser = {
+      userId: userId,
+      username: username,
+      avatar: req.user.profile?.picture || null
+    };
+
+    console.log('📤 Preparing to send notifications with fromUser:', fromUser);
+
+    // Gửi thông báo
+    try {
+      if (parentCommentId) {
+        console.log('📨 Sending reply notification for parent comment:', parentCommentId);
+        // Đây là reply - gửi thông báo cho chủ comment gốc
+        await ForumNotificationService.notifyCommentReply(parentCommentId, savedComment, fromUser);
+      } else {
+        console.log('📨 Sending thread comment notification for thread:', threadId);
+        // Đây là comment mới - gửi thông báo cho chủ thread
+        await ForumNotificationService.notifyThreadComment(threadId, savedComment, fromUser);
+      }
+
+      console.log('📨 Processing mentions in content:', content);
+      // Xử lý mentions trong comment
+      await ForumNotificationService.processMentions(content, threadId, savedComment._id, fromUser);
+      
+      console.log('✅ All notifications sent successfully');
+    } catch (notificationError) {
+      console.error('❌ Error sending notifications:', notificationError);
+      // Không throw error để không ảnh hưởng đến việc tạo comment
+    }
 
     res.status(201).json({
       success: true,
-      message: 'Bình luận đã được tạo thành công',
+      message: 'Tạo bình luận thành công',
       data: {
-        ...populatedComment,
-        likesCount: populatedComment.likes.length,
-        repliesCount: 0
+        _id: savedComment._id,
+        content: savedComment.content,
+        username: savedComment.username,
+        avatar: savedComment.avatar,
+        likes: savedComment.likes,
+        likesCount: 0,
+        created_at: savedComment.created_at,
+        parentComment: savedComment.parentComment,
+        replies: []
       }
     });
   } catch (err) {
-    console.error('Create comment error:', err);
+    console.error('❌ Create comment error:', err);
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi tạo bình luận'
+    });
+  }
+};
+
+/**
+ * Like một comment
+ * @route POST /v1/forum/comments/:commentId/like
+ * @access Private
+ */
+exports.likeComment = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.id;
+    const username = req.user.username;
+
+    console.log('👍 Like comment request:', { commentId, userId });
+
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID bình luận không hợp lệ'
+      });
+    }
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy bình luận'
+      });
+    }
+
+    const userIdObj = new mongoose.Types.ObjectId(userId);
+    const hasLiked = comment.likes.includes(userIdObj);
+
+    if (hasLiked) {
+      // Remove like
+      comment.likes.pull(userIdObj);
+    } else {
+      // Add like
+      comment.likes.push(userIdObj);
+      
+      // Gửi thông báo khi like (chỉ khi add like, không gửi khi unlike)
+      try {
+        const fromUser = {
+          userId: userId,
+          username: username,
+          avatar: req.user.profile?.picture || null
+        };
+        await ForumNotificationService.notifyCommentLike(commentId, fromUser);
+      } catch (notificationError) {
+        console.error('❌ Error sending like notification:', notificationError);
+      }
+    }
+
+    await comment.save();
+
+    console.log('✅ Comment like updated successfully');
+
+    res.json({
+      success: true,
+      message: hasLiked ? 'Đã bỏ thích bình luận' : 'Đã thích bình luận',
+      data: {
+        liked: !hasLiked,
+        likesCount: comment.likes.length
+      }
+    });
+  } catch (err) {
+    console.error('❌ Like comment error:', err);
+    
+    if (err.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'ID bình luận không hợp lệ'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi thích bình luận'
     });
   }
 };
@@ -183,88 +314,6 @@ exports.getThreadComments = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi lấy bình luận'
-    });
-  }
-};
-
-/**
- * Like comment
- * @route POST /v1/forum/comments/:commentId/like
- * @access Private
- */
-
-// controllers/commentController.js
-exports.likeComment = async (req, res) => {
-  try {
-    const { commentId } = req.params;
-    const userId = req.user.id;
-
-    console.log('🔍 Like comment request:', { commentId, userId });
-
-    if (!mongoose.Types.ObjectId.isValid(commentId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID bình luận không hợp lệ'
-      });
-    }
-
-    const comment = await Comment.findById(commentId);
-    if (!comment) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy bình luận'
-      });
-    }
-
-    // SỬA: Clean duplicates trước khi check
-    const userIdStr = userId.toString();
-    const uniqueLikes = [...new Set(comment.likes.map(id => id.toString()))];
-    const hasLiked = uniqueLikes.includes(userIdStr);
-
-    console.log('📊 Before update:', { 
-      hasLiked, 
-      originalLikes: comment.likes.length,
-      uniqueLikes: uniqueLikes.length,
-      duplicatesFound: comment.likes.length - uniqueLikes.length
-    });
-
-    // SỬA: Dùng MongoDB operators thay vì array manipulation
-    let updateQuery;
-    
-    if (hasLiked) {
-      // Remove ALL instances of user ID (including duplicates)
-      updateQuery = { $pull: { likes: userId } };
-      console.log('👎 Removing like (including duplicates)');
-    } else {
-      // Add like only if not exists (prevent duplicates)
-      updateQuery = { $addToSet: { likes: userId } }; // $addToSet prevents duplicates
-      console.log('👍 Adding like');
-    }
-
-    // Use findByIdAndUpdate with atomic operation
-    const updatedComment = await Comment.findByIdAndUpdate(
-      commentId,
-      updateQuery,
-      { new: true }
-    );
-
-    const result = {
-      liked: !hasLiked,
-      likesCount: updatedComment.likes.length
-    };
-
-    console.log('✅ After update:', result);
-
-    res.json({
-      success: true,
-      message: hasLiked ? 'Đã bỏ thích bình luận' : 'Đã thích bình luận',
-      data: result
-    });
-  } catch (err) {
-    console.error('❌ Like comment error:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi thích bình luận'
     });
   }
 };
