@@ -335,6 +335,13 @@ const Header = () => {
             <Button className="user-header-btn" onClick={handleAddPost}>
               Đăng tin mới
             </Button>
+            
+            <Button
+              className="user-header-btn"
+              onClick={() => navigate("/subscription")}
+            >
+              Gói dịch vụ
+            </Button>
 
             <Button
               className="user-header-btn"
