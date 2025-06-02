@@ -44,8 +44,8 @@ const AddPost = () => {
     const handleContentChange = useCallback((data) => {
         setContentData(data);
     }, []);
-    // console.log('Media Data:', mediaData);
 
+    console.log("Content data: ", contentData);
     const submitPost = async () => {
         setIsSubmitting(true);
         try {
@@ -92,7 +92,7 @@ const AddPost = () => {
             finalData.append('furnitureStatus', contentData?.furnitureStatus || '');
             finalData.append('area', parseFloat(contentData?.area || 0));
             finalData.append('areaUse', parseFloat(contentData?.areaUse || 0));
-            finalData.append('typeArea', contentData?.typeArea || 'm²');
+            finalData.append('typeArea', contentData?.typeArea || "m²");
             finalData.append('dimensions', JSON.stringify({
                 width: parseFloat(contentData?.width || 0),
                 length: parseFloat(contentData?.length || 0),

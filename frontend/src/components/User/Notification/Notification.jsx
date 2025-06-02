@@ -39,14 +39,13 @@ const Notification = ({
     try {
       const data = await fetchNotifications(token);
       setNotifications(data);
-      console.log("📋 Notifications loaded:", data);
-      
+
       const unreadCount = data.filter(
-        (notification) => notification.status !== "read",
+        (notification) => notification.status !== "read"
       ).length;
       onUpdateUnreadCount(unreadCount);
     } catch (err) {
-      console.error("🔥 Error fetching notifications:", err);
+      console.error(err);
     }
   };
 
@@ -58,19 +57,15 @@ const Notification = ({
 
   useEffect(() => {
     if (!socket || !socket.on) {
-      console.log("⚠️ Socket not available in Notification component");
       return;
     }
-    
-    console.log("🎧 Setting up notification socket listeners");
-    
+
     const handleIncomingNotification = (message) => {
-      console.log("📩 Notification component received notification:", message);
+      console.log(message);
       getNotifications();
     };
 
     const handleForumNotification = (data) => {
-      console.log("🏛️ Notification component received forum notification:", data);
       getNotifications();
     };
 
@@ -81,42 +76,41 @@ const Notification = ({
       if (socket && socket.off) {
         socket.off("postModerationStatus", handleIncomingNotification);
         socket.off("forumNotification", handleForumNotification);
-        console.log("🧹 Cleaned up notification socket listeners");
       }
     };
   }, [socket]);
 
   const getNotificationAction = (type) => {
     switch (type) {
-      case 'forum_comment':
-        return 'đã bình luận về bài viết của bạn';
-      case 'forum_like':
-        return 'đã thích bài viết/bình luận của bạn';
-      case 'forum_mention':
-        return 'đã nhắc đến bạn';
-      case 'forum_reply':
-        return 'đã trả lời bình luận của bạn';
+      case "forum_comment":
+        return "đã bình luận về bài viết của bạn";
+      case "forum_like":
+        return "đã thích bài viết/bình luận của bạn";
+      case "forum_mention":
+        return "đã nhắc đến bạn";
+      case "forum_reply":
+        return "đã trả lời bình luận của bạn";
       default:
-        return 'có hoạt động mới';
+        return "có hoạt động mới";
     }
   };
 
   const getNotificationIcon = (type) => {
     switch (type) {
-      case 'forum_comment':
-        return '💬';
-      case 'forum_like':
-        return '👍';
-      case 'forum_mention':
-        return '@';
-      case 'forum_reply':
-        return '↩️';
-      case 'review':
-        return '⭐';
-      case 'message':
-        return '📨';
+      case "forum_comment":
+        return "💬";
+      case "forum_like":
+        return "👍";
+      case "forum_mention":
+        return "@";
+      case "forum_reply":
+        return "↩️";
+      case "review":
+        return "⭐";
+      case "message":
+        return "📨";
       default:
-        return '📢';
+        return "📢";
     }
   };
 
@@ -128,12 +122,14 @@ const Notification = ({
       } else {
         console.error("Missing notificationId or accessToken.");
       }
-      
-      if (notification.type?.startsWith('forum_')) {
+
+      if (notification.type?.startsWith("forum_")) {
         if (notification.thread_id) {
           console.log("🚀 Navigating to forum thread:", notification.thread_id);
           if (notification.comment_id) {
-            navigate(`/forum/thread/${notification.thread_id}?comment=${notification.comment_id}`);
+            navigate(
+              `/forum/thread/${notification.thread_id}?comment=${notification.comment_id}`
+            );
           } else {
             navigate(`/forum/thread/${notification.thread_id}`);
           }
@@ -144,7 +140,7 @@ const Notification = ({
         console.log("🚀 Navigating to post:", notification.post_id);
         navigate(`/posts/${notification.post_id}`);
       }
-      
+
       onNotificationClose();
     } catch (error) {
       console.error("🔥 Error in handleNotificationClick:", error);
@@ -168,8 +164,8 @@ const Notification = ({
   const sortedNotifications =
     notifications && notifications.length > 0
       ? [...notifications].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-      )
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        )
       : [];
 
   return (
@@ -183,7 +179,7 @@ const Notification = ({
           borderRadius: "10px",
           width: "500px",
           maxHeight: "600px",
-          overflowY: "auto"
+          overflowY: "auto",
         },
       }}
     >
@@ -194,7 +190,7 @@ const Notification = ({
         </Button>
       </Box>
       <hr className="notification-divider" />
-      
+
       {loading ? (
         <MenuItem sx={{ justifyContent: "center", padding: "15px 0" }}>
           <Typography variant="body2">
@@ -226,56 +222,57 @@ const Notification = ({
                     backgroundColor:
                       notification.status === "read" ? "#9ee380" : "#757575",
                   },
-                  ...(notification.type?.startsWith('forum_') && {
-                    borderLeft: '4px solid #2E7D32',
-                  })
+                  ...(notification.type?.startsWith("forum_") && {
+                    borderLeft: "4px solid #2E7D32",
+                  }),
                 }}
               >
                 <Box className="notification-item">
                   <Typography
                     variant="body2"
                     className="notification-message"
-                    sx={{ 
-                      wordWrap: "break-word", 
+                    sx={{
+                      wordWrap: "break-word",
                       whiteSpace: "normal",
-                      fontWeight: notification.status === "unread" ? 600 : 400
+                      fontWeight: notification.status === "unread" ? 600 : 400,
                     }}
                   >
                     {formatNotificationMessage(notification)}
                   </Typography>
-                  
-                  {notification.type?.startsWith('forum_') && notification.from_user && (
-                    <Typography
-                      variant="caption"
-                      sx={{ 
-                        color: '#2E7D32',
-                        fontWeight: 500,
-                        display: 'block',
-                        mt: 0.5
-                      }}
-                    >
-                      👤 {notification.from_user.username}
-                    </Typography>
-                  )}
-                  
+
+                  {notification.type?.startsWith("forum_") &&
+                    notification.from_user && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "#2E7D32",
+                          fontWeight: 500,
+                          display: "block",
+                          mt: 0.5,
+                        }}
+                      >
+                        👤 {notification.from_user.username}
+                      </Typography>
+                    )}
+
                   <Typography
                     variant="caption"
                     className="notification-date"
-                    sx={{ 
-                      wordWrap: "break-word", 
+                    sx={{
+                      wordWrap: "break-word",
                       whiteSpace: "normal",
-                      color: '#666',
-                      fontSize: '0.75rem'
+                      color: "#666",
+                      fontSize: "0.75rem",
                     }}
                   >
-                    {new Date(notification.createdAt).toLocaleString('vi-VN')}
+                    {new Date(notification.createdAt).toLocaleString("vi-VN")}
                   </Typography>
                 </Box>
               </MenuItem>
               <Divider sx={{ margin: "0", borderColor: "#ddd" }} />
             </React.Fragment>
           ))}
-          
+
           {visibleCount < notifications.length && (
             <MenuItem
               onClick={handleSeeMore}

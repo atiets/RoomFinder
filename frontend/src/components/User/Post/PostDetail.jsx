@@ -43,6 +43,7 @@ import Header from "../Header/Header";
 import PostMap from "../MapIntegration/PostMap";
 import AddReviewForm from "../Review/ReviewForm/ReviewForm";
 import ReviewsList from "../Review/ReviewList/ReviewsList";
+import AlertSubscription from "./ModalAddAlertSubscription";
 import ModalAppointment from "./ModalAppointment";
 import ComplaintModal from "./ModalComplaint";
 import ContactInfoCard from "./PostContactCard";
@@ -286,7 +287,7 @@ const PostDetail = ({ onToggleFavorite }) => {
         <TableCell className="title-cell">
           <MapOutlinedIcon className="style-icon" /> Diện tích
         </TableCell>
-        <TableCell>{post.area} m²</TableCell>
+        <TableCell>{post.area} {post.typeArea}</TableCell>
       </TableRow>
     );
   }
@@ -582,6 +583,9 @@ const PostDetail = ({ onToggleFavorite }) => {
             getHiddenPhoneNumber={getHiddenPhoneNumber}
             handleChat={handleChat}
           />
+          <div className="post-detail-container-right-btn">
+            <AlertSubscription post = {post}/>
+          </div>
         </div>
       </div>
       <div className="suggestion-posts-wrapper">

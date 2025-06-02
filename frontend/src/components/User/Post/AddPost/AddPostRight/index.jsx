@@ -44,8 +44,6 @@ const AddPostRight = ({ onContentChange, isSubmitting }) => {
     const [floorCount, setFloorCount] = useState(0);
     const [selectedFeaturesOfHouse, setSelectedFeaturesOfHouse] = useState([]);
     const [selectedFeaturesOfLand, setSelectedFeaturesOfLand] = useState([]);
-    const [typeLand, setTypeLand] = useState('');
-    const [typeOffice, setTypeOffice] = useState('');
     const [lanDirection, setLandDirection] = useState('');
     const [area, setArea] = useState('');
     const [projectName, setProjectName] = useState('');
@@ -86,8 +84,6 @@ const AddPostRight = ({ onContentChange, isSubmitting }) => {
             floorCount,
             selectedFeaturesOfHouse,
             selectedFeaturesOfLand,
-            typeLand,
-            typeOffice,
             lanDirection,
             area,
             projectName,
@@ -124,8 +120,6 @@ const AddPostRight = ({ onContentChange, isSubmitting }) => {
         floorCount,
         selectedFeaturesOfHouse,
         selectedFeaturesOfLand,
-        typeLand,
-        typeOffice,
         lanDirection,
         area,
         projectName,
@@ -152,11 +146,11 @@ const AddPostRight = ({ onContentChange, isSubmitting }) => {
     };
 
     const handleTypeOffice = (event) => {
-        setTypeOffice(event);
+        setPropertyCategory(event);
     };
 
     const handleTypeLand = (event) => {
-        setTypeLand(event);
+        setPropertyCategory(event);
     };
     const handleFloorCountChange = (event) => {
         setFloorCount(event);
@@ -357,7 +351,7 @@ const AddPostRight = ({ onContentChange, isSubmitting }) => {
                                     ) : selectedCategory === 'Đất' ? (
                                         <SelectValue
                                             label="Loại hình đất"
-                                            value={typeLand}
+                                            value={propertyCategory}
                                             onChange={handleTypeLand}
                                             options={typeOfLand}
                                             required={true}
@@ -366,7 +360,7 @@ const AddPostRight = ({ onContentChange, isSubmitting }) => {
                                     ) : selectedCategory === 'Văn phòng, mặt bằng kinh doanh' ? (
                                         <SelectValue
                                             label="Loại hình văn phòng, mặt bằng kinh doanh"
-                                            value={typeOffice}
+                                            value={propertyCategory}
                                             onChange={handleTypeOffice}
                                             options={typeOfOffice}
                                             required={true}
