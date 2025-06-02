@@ -1,0 +1,295 @@
+.alert-subscription-container {
+    margin-top: 20px;
+}
+
+.alert-subscription-button {
+    width: 100%;
+}
+
+.alert-subscription-button.MuiButton-root {
+    border: 1px solid #007700;
+    font-weight: 500;
+    background-color: #007700;
+    color: #ffffff;
+    text-transform: none;
+}
+
+.add-alert-subscription-btn-submit.MuiButton-root:hover,
+.alert-subscription-button.MuiButton-root:hover {
+    background-color: #005500;
+}
+
+.add-alert-subscription-title {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+}
+
+.add-alert-subscription-title-text {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    color: #333333;
+}
+
+/* Tùy chỉnh modal */
+/* Lớp container chính của modal */
+.modal-add-alert-subscription-container.MuiModal-root {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-add-alert-subscription-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: #ffffff;
+    width: 800px;
+    height: 500px;
+    border-radius: 8px;
+    padding: 40px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    outline: none;
+    overflow-y: auto;
+    border-radius: 8px;
+}
+
+.add-alert-subscription-header-label {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #999191;
+    margin-top: 1rem;
+    text-align: left;
+}
+
+.add-alert-subscription-header-transaction {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.add-alert-subscription-transaction-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+}
+
+.add-alert-subscription-transaction-btn.MuiButton-root {
+    background-color: #ffffff;
+    color: #63ab45;
+    border: 1px solid #63ab45;
+    border-radius: 18px;
+    text-transform: none;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.add-alert-subscription-transaction-btn.selected {
+    background-color: #63ab45;
+    color: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 18px;
+    text-transform: none;
+    padding: 8px;
+}
+
+.add-alert-subscription-required {
+    color: red;
+    margin-left: 4px;
+}
+
+.add-alert-subscription-btn-submit.MuiButton-root {
+    border: 1px solid #007700;
+    font-weight: 500;
+    background-color: #007700;
+    color: #ffffff;
+    text-transform: none;
+    width: 20%;
+}
+
+.add-alert-subscription-address {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+.add-alert-subscription-title {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.add-alert-subscription-address-select-group {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.add-alert-subscription-select-box {
+    flex: 1;
+    min-width: 250px;
+}
+
+.add-alert-subscription-info-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+.add-alert-subscription-title {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.add-alert-subscription-info-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.add-alert-subscription-info-item {
+    text-align: center;
+}
+
+.full-span {
+    grid-column: span 2;
+}
+
+/* Responsive: 1 column on small screens */
+@media (max-width: 768px) {
+    .add-alert-subscription-info-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .full-span {
+        grid-column: span 1;
+    }
+
+    .add-alert-subscription-info-item {
+        text-align: left;
+    }
+}
+
+.add-alert-subscription-other-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+.add-alert-subscription-other-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+/* Responsive: 1 column on smaller screens */
+@media (max-width: 768px) {
+    .add-alert-subscription-other-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.add-alert-subscription-area-price {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+.add-alert-subscription-area-price-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.add-alert-subscription-area-price-grid-item {
+    width: 100%;
+}
+
+/* Responsive: stack items on smaller screens */
+@media (max-width: 768px) {
+    .add-alert-subscription-area-price-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.add-post-right-container-submit {
+    display: flex;
+    justify-content: center;
+}
+
+.add-alert-subscription-notifyMethod {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.notifyMethod-title {
+    font-size: 18px;
+    font-weight: 700;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.notifyMethod-options {
+    display: flex;
+    gap: 24px;
+}
+
+.notifyMethod-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    user-select: none;
+    position: relative;
+}
+
+.notifyMethod-option input[type="radio"] {
+    opacity: 0;
+    position: absolute;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* Tạo vòng tròn bên cạnh label */
+.custom-radio {
+    height: 20px;
+    width: 20px;
+    border: 2px solid #007700;
+    border-radius: 50%;
+    position: relative;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+}
+
+/* Vòng tròn nhỏ khi radio được chọn */
+.notifyMethod-option input[type="radio"]:checked+.custom-radio::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 10px;
+    height: 10px;
+    background-color: #007700;
+    border-radius: 50%;
+}
