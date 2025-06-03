@@ -305,8 +305,8 @@ const processDistrictData = async () => {
   const firstDayCurrentMonth = new Date(currentYear, currentMonth, 1);
   const firstDayPreviousMonth = new Date(currentYear, currentMonth - 1, 1);
 
-  console.log(`Tháng hiện tại: ${firstDayCurrentMonth.toISOString()}`);
-  console.log(`Tháng trước: ${firstDayPreviousMonth.toISOString()}`);
+  // console.log(`Tháng hiện tại: ${firstDayCurrentMonth.toISOString()}`);
+  // console.log(`Tháng trước: ${firstDayPreviousMonth.toISOString()}`);
 
   // Lấy tất cả bài đăng đã được phê duyệt và hiển thị với các trường cần thiết
   const posts = await Post.find(
@@ -871,18 +871,21 @@ exports.searchPosts = async (req, res) => {
     const {
       keyword,
       province,
+      district,
+      ward,
       category,
+      transactionType,
       minPrice,
       maxPrice,
       minArea,
       maxArea,
     } = req.query;
-    // console.log("minPrice từ request:", minPrice);
 
-    // Hàm chuyển đổi chuỗi thành số
+    console.log("🔍 Search params:", req.query);
+
     const convertToNumber = (value) => {
       if (!value) return null;
-      const numericValue = parseFloat(value.replace(/[^\d.-]/g, "")); // Loại bỏ tất cả ký tự không phải số
+      const numericValue = parseFloat(value.replace(/[^\d.-]/g, ""));
       return isNaN(numericValue) ? null : numericValue;
     };
 
@@ -893,127 +896,73 @@ exports.searchPosts = async (req, res) => {
 
     const filtersExpr = [];
 
-    // Lọc theo tỉnh
+    // **Lọc theo địa điểm phân cấp**
     if (province) filter["address.province"] = province;
+    if (district) filter["address.district"] = district;
+    if (ward) filter["address.ward"] = ward;
 
-    // Lọc theo từ khóa
+    // **Lọc theo category (model mới)**
+    if (category) filter.category = category;
+
+    // **Lọc theo transactionType**
+    if (transactionType) filter.transactionType = transactionType;
+
+    // **Lọc theo từ khóa**
     if (keyword) {
       filter.$or = [
         { category: { $regex: keyword, $options: "i" } },
         { title: { $regex: keyword, $options: "i" } },
         { content: { $regex: keyword, $options: "i" } },
+        { transactionType: { $regex: keyword, $options: "i" } },
+        { "address.exactaddress": { $regex: keyword, $options: "i" } },
+        { "address.province": { $regex: keyword, $options: "i" } },
+        { "address.district": { $regex: keyword, $options: "i" } },
+        { "address.ward": { $regex: keyword, $options: "i" } },
+        { projectName: { $regex: keyword, $options: "i" } },
+        { "propertyDetails.propertyCategory": { $regex: keyword, $options: "i" } },
+        { "propertyDetails.apartmentType": { $regex: keyword, $options: "i" } },
       ];
     }
 
-    // Lọc theo category
-    if (category) filter.category = category;
-
-    // Lọc theo rentalPrice
+    // **Lọc theo price (sử dụng field price trong model mới)**
     if (minPrice || maxPrice) {
       const numericMinPrice = convertToNumber(minPrice);
       const numericMaxPrice = convertToNumber(maxPrice);
 
       if (numericMinPrice !== null || numericMaxPrice !== null) {
-        const rentalPriceFilter = {};
-
-        if (numericMinPrice !== null) rentalPriceFilter.$gte = numericMinPrice;
-        if (numericMaxPrice !== null) rentalPriceFilter.$lte = numericMaxPrice;
-
-        filtersExpr.push(
-          numericMinPrice !== null
-            ? {
-              $gte: [
-                {
-                  $toDouble: {
-                    $replaceAll: {
-                      input: {
-                        $arrayElemAt: [{ $split: ["$rentalPrice", " "] }, 0],
-                      },
-                      find: ",",
-                      replacement: ".",
-                    },
-                  },
-                },
-                numericMinPrice,
-              ],
-            }
-            : null,
-          numericMaxPrice !== null
-            ? {
-              $lte: [
-                {
-                  $toDouble: {
-                    $replaceAll: {
-                      input: {
-                        $arrayElemAt: [{ $split: ["$rentalPrice", " "] }, 0],
-                      },
-                      find: ",",
-                      replacement: ".",
-                    },
-                  },
-                },
-                numericMaxPrice,
-              ],
-            }
-            : null
-        );
+        const priceFilter = {};
+        if (numericMinPrice !== null) priceFilter.$gte = numericMinPrice;
+        if (numericMaxPrice !== null) priceFilter.$lte = numericMaxPrice;
+        filter.price = priceFilter;
       }
     }
 
-    // Lọc theo area
+    // **Lọc theo area (sử dụng field area trong model mới)**
     if (minArea || maxArea) {
       const numericMinArea = convertToNumber(minArea);
       const numericMaxArea = convertToNumber(maxArea);
 
       if (numericMinArea !== null || numericMaxArea !== null) {
-        filtersExpr.push(
-          numericMinArea !== null
-            ? {
-              $gte: [
-                {
-                  $toDouble: {
-                    $replaceAll: {
-                      input: {
-                        $arrayElemAt: [{ $split: ["$area", " "] }, 0],
-                      },
-                      find: ",",
-                      replacement: ".",
-                    },
-                  },
-                },
-                numericMinArea,
-              ],
-            }
-            : null,
-          numericMaxArea !== null
-            ? {
-              $lte: [
-                {
-                  $toDouble: {
-                    $replaceAll: {
-                      input: {
-                        $arrayElemAt: [{ $split: ["$area", " "] }, 0],
-                      },
-                      find: ",",
-                      replacement: ".",
-                    },
-                  },
-                },
-                numericMaxArea,
-              ],
-            }
-            : null
-        );
+        const areaFilter = {};
+        if (numericMinArea !== null) areaFilter.$gte = numericMinArea;
+        if (numericMaxArea !== null) areaFilter.$lte = numericMaxArea;
+        filter.area = areaFilter;
       }
     }
 
-    if (filtersExpr.length > 0) {
-      filter.$expr = { $and: filtersExpr.filter(Boolean) };
-    }
+    console.log("🎯 Final filter:", JSON.stringify(filter, null, 2));
 
-    const posts = await Post.find(filter).sort({ createdAt: -1 }); // Sắp xếp theo thứ tự từ mới nhất đến cũ nhất
+    const posts = await Post.find(filter)
+      .populate('contactInfo.user', 'username phoneNumber email')
+      .sort({ 
+        is_priority: -1,  // Ưu tiên bài VIP
+        createdAt: -1     // Mới nhất
+      });
+
+    console.log(`✅ Found ${posts.length} posts`);
     res.status(200).json(posts);
   } catch (error) {
+    console.error("❌ Search error:", error);
     res.status(500).json({ error: error.message });
   }
 };
