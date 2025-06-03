@@ -258,15 +258,19 @@ export const getUserPostsByUserId = async (token, userId) => {
 
 export const searchPosts = async (params, token) => {
   try {
+    console.log("🔍 Searching with params:", params);
+    
     const response = await axios.get(`${API_URL}search`, {
       params: params,
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
+    
+    console.log("🎯 Search results:", response.data.length, "posts found");
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi tìm kiếm bài đăng:", error);
+    console.error("❌ Search error:", error);
     throw error;
   }
 };
@@ -410,38 +414,57 @@ export const updateDefaultDaysToShow = async (days, token) => {
   }
 };
 
+// export const searchAndCategorizePosts = async (params, token) => {
+//   try {
+//     const posts = await searchPosts(params, token);
+
+//     const category1 = [];
+//     const category2 = [];
+//     const category3 = [];
+
+//     posts.forEach((post) => {
+//       if (post.category === "Nhà trọ, phòng trọ") {
+//         category1.push(post);
+//       } else if (
+//         [
+//           "Nhà nguyên căn",
+//           "Cho thuê căn hộ",
+//           "Cho thuê căn hộ mini",
+//           "Cho thuê căn hộ dịch vụ",
+//         ].includes(post.category)
+//       ) {
+//         category2.push(post);
+//       } else if (post.category === "Cho thuê mặt bằng, văn phòng") {
+//         category3.push(post);
+//       }
+//     });
+
+//     return {
+//       category1,
+//       category2,
+//       category3,
+//     };
+//   } catch (error) {
+//     console.error("Lỗi khi phân loại bài đăng:", error);
+//     throw error;
+//   }
+// };
+
 export const searchAndCategorizePosts = async (params, token) => {
   try {
-    const posts = await searchPosts(params, token);
-
-    const category1 = [];
-    const category2 = [];
-    const category3 = [];
-
-    posts.forEach((post) => {
-      if (post.category === "Nhà trọ, phòng trọ") {
-        category1.push(post);
-      } else if (
-        [
-          "Nhà nguyên căn",
-          "Cho thuê căn hộ",
-          "Cho thuê căn hộ mini",
-          "Cho thuê căn hộ dịch vụ",
-        ].includes(post.category)
-      ) {
-        category2.push(post);
-      } else if (post.category === "Cho thuê mặt bằng, văn phòng") {
-        category3.push(post);
-      }
+    const response = await axios.get(`${API_URL}search`, {
+      params: {
+        ...params,
+        category: params.category.join(',') // Convert array to string
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
-
-    return {
-      category1,
-      category2,
-      category3,
-    };
+    
+    return response.data;
   } catch (error) {
-    console.error("Lỗi khi phân loại bài đăng:", error);
+    console.error("Lỗi khi tìm kiếm và phân loại bài đăng:", error);
     throw error;
   }
 };
