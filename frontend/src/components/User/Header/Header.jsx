@@ -15,7 +15,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { createAxios } from "../../../createInstance";
-import useSocket from '../../../hooks/useSocket';
+import useSocketForum from '../../../hooks/useSocketForum';
 import { logout } from "../../../redux/apiRequest";
 import { logoutSuccess } from "../../../redux/authSlice";
 import Notification from "../Notification/Notification";
@@ -42,7 +42,7 @@ const Header = () => {
     return id;
   }, [currentUser]);
   
-  const { socket, isConnected } = useSocket(userId);
+  const { socket, isConnected } = useSocketForum(userId);
   
   const axiosJWT = createAxios(currentUser, dispatch, logoutSuccess);
   const [unreadCount, setUnreadCount] = useState(0);
