@@ -1,4 +1,4 @@
-// src/components/User/forum/ThreadEditDialog.jsx
+// src/components/User/forum/ThreadEditDialog.jsx - Thêm import và update component
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import {
@@ -21,11 +21,13 @@ import IconButton from '@mui/material/IconButton';
 import Swal from 'sweetalert2';
 import { updateThread } from '../../../redux/threadApi';
 import ThreadEditor from './CreateThread/ThreadEditor';
+import TagInput from './CreateThread/TagInput'; // Import TagInput
 
 const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
   const currentUser = useSelector((state) => state.auth?.login?.currentUser);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
+  const [editTags, setEditTags] = useState([]); // Thêm state cho tags
   const [updating, setUpdating] = useState(false);
   const [quillInstance, setQuillInstance] = useState(null);
   const [error, setError] = useState(null);
@@ -35,6 +37,7 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
     if (open && thread) {
       setEditTitle(thread.title || '');
       setEditContent(thread.content || '');
+      setEditTags(thread.tags || []); // Set tags từ thread
       setError(null);
       
       // Set content to Quill editor after a short delay to ensure Quill is initialized
@@ -55,6 +58,7 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
     onClose();
     setEditTitle(thread?.title || '');
     setEditContent(thread?.content || '');
+    setEditTags(thread?.tags || []); // Reset tags
     setError(null);
     
     // Reset Quill content
@@ -103,7 +107,10 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
       return;
     }
 
-    if (trimmedTitle === thread.title && trimmedContent === thread.content) {
+    // Check if anything has changed
+    if (trimmedTitle === thread.title && 
+        trimmedContent === thread.content && 
+        JSON.stringify(editTags) === JSON.stringify(thread.tags)) {
       onClose();
       return;
     }
@@ -132,7 +139,7 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
         { 
           title: trimmedTitle,
           content: trimmedContent,
-          tags: thread.tags
+          tags: editTags // Thêm tags vào update data
         },
         currentUser.accessToken
       );
@@ -145,6 +152,7 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
           ...thread,
           title: trimmedTitle,
           content: trimmedContent,
+          tags: editTags, // Include updated tags
           updated_at: new Date().toISOString(),
           ...response.data
         };
@@ -259,6 +267,14 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
           setQuillInstance={setQuillInstance}
           error={error}
           disabled={updating}
+        />
+
+        {/* Tags Input */}
+        <TagInput
+          tags={editTags}
+          setTags={setEditTags}
+          disabled={updating}
+          error={null}
         />
       </DialogContent>
       

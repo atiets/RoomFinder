@@ -22,12 +22,13 @@ import { createThread } from '../../../../redux/threadApi';
 // Import các component con
 import ThreadEditor from './ThreadEditor';
 import ImageUploader from './ImageUploader';
-// import ThreadCaptcha from './ThreadCaptcha';
+import TagInput from './TagInput'; // Import TagInput component mới
 
 const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
   // States
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [tags, setTags] = useState([]); // Thêm state cho tags
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,7 +57,6 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
         setCountdown(countdown - 1);
       }, 1000);
     } else if (showSuccessMessage && countdown === 0) {
-      // Auto close when countdown reaches 0
       handleSuccessClose();
     }
     
@@ -82,6 +82,7 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
   const resetForm = () => {
     setTitle('');
     setContent('');
+    setTags([]); // Reset tags
     setImage(null);
     setImagePreview(null);
     setIsSubmitting(false);
@@ -133,7 +134,7 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
       const threadData = {
         title: title.trim() || '',
         content: content.trim(),
-        tags: []
+        tags: tags // Thêm tags vào data
       };
 
       // Debug log để kiểm tra thông tin user
@@ -153,7 +154,7 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
       if (response.success) {
         // Hiển thị message thành công trong dialog với countdown 8 giây
         setShowSuccessMessage(true);
-        setCountdown(8); // 8 giây countdown
+        setCountdown(8);
         
         console.log('Thread created successfully:', response.data);
         
@@ -322,7 +323,6 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
           <SuccessMessage />
         ) : (
           <>
-          {/* Debug info - chỉ hiển thị trong development */}
             {/* Hiển thị thông báo lỗi nếu có */}
             {error && (
               <Box sx={{ 
@@ -404,6 +404,14 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
                 error={error}
                 disabled={!accessToken || isSubmitting || !validateUserInfo()}
               />
+
+              {/* Tags Input Component - Thêm component mới */}
+              <TagInput
+                tags={tags}
+                setTags={setTags}
+                disabled={!accessToken || isSubmitting || !validateUserInfo()}
+                error={null}
+              />
               
               {/* Image Uploader Component - Tạm thời disable */}
               <ImageUploader
@@ -414,14 +422,6 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
                 disabled={true}
               />
             </Box>
-            
-            {/* Thread Captcha Component */}
-            {/* <ThreadCaptcha 
-              isCaptchaVerified={isCaptchaVerified}
-              setIsCaptchaVerified={setIsCaptchaVerified}
-              showSnackbar={showSnackbar}
-              disabled={!accessToken || isSubmitting || !validateUserInfo()}
-            /> */}
             
             <Button
               variant="contained"
