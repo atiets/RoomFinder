@@ -1,6 +1,6 @@
 // controllers/commentController.js
 const Comment = require('../models/Comment');
-const Thread = require('../models/Thread');
+const Thread = require('../models/thread');
 const User = require('../models/User'); 
 const ForumNotificationService = require('../services/forumNotificationService');
 const { validationResult } = require('express-validator');

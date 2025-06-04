@@ -1,5 +1,5 @@
 // controllers/threadController.js
-const Thread = require('../models/Thread');
+const Thread = require('../models/thread'); 
 const Comment = require('../models/Comment');
 const User = require('../models/User'); 
 const ForumNotificationService = require('../services/forumNotificationService');
