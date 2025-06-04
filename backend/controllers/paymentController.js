@@ -308,7 +308,63 @@ exports.createVNPayPayment = async (payment, subscription) => {
   }
 };
 
-// Update user plan after successful payment
+// Định nghĩa plan configuration
+const PLAN_CONFIGS = {
+  pro: {
+    name: 'Gói Pro',
+    features: {
+      posting: {
+        monthlyPostLimit: -1, // unlimited
+        isUnlimitedPosts: true
+      },
+      vipFeatures: {
+        vipPostsPerMonth: 5,
+        isUnlimitedVipPosts: false
+      },
+      contactFeatures: {
+        canViewHiddenPhone: true,
+        hiddenPhoneViewsPerMonth: -1 // unlimited
+      },
+      processingFeatures: {
+        approvalTimeHours: 24,
+        prioritySupport: true
+      },
+      premiumFeatures: {
+        hasDetailedReports: false,
+        hasBrandLogo: false,
+        alwaysShowFirst: false
+      }
+    }
+  },
+  plus: {
+    name: 'Gói Plus',
+    features: {
+      posting: {
+        monthlyPostLimit: -1, // unlimited
+        isUnlimitedPosts: true
+      },
+      vipFeatures: {
+        vipPostsPerMonth: -1, // unlimited
+        isUnlimitedVipPosts: true
+      },
+      contactFeatures: {
+        canViewHiddenPhone: true,
+        hiddenPhoneViewsPerMonth: -1 // unlimited
+      },
+      processingFeatures: {
+        approvalTimeHours: 2,
+        prioritySupport: true
+      },
+      premiumFeatures: {
+        hasDetailedReports: true,
+        hasBrandLogo: true,
+        alwaysShowFirst: true
+      }
+    }
+  }
+};
+
+// Update function after successful payment
 exports.updateUserPlan = async (payment) => {
   try {
     const subscription = await Subscription.findById(payment.subscriptionId);
@@ -316,35 +372,83 @@ exports.updateUserPlan = async (payment) => {
       throw new Error("Invalid subscription");
     }
 
+    const user = await User.findById(payment.userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
     const startDate = new Date();
-    const endDate = new Date(
-      startDate.getTime() + subscription.duration * 24 * 60 * 60 * 1000
+    const endDate = new Date(startDate.getTime() + subscription.duration * 24 * 60 * 60 * 1000);
+    
+    // Determine plan type based on subscription
+    let planType = 'free';
+    if (subscription.name === 'pro' || subscription.displayName.includes('Pro')) {
+      planType = 'pro';
+    } else if (subscription.name === 'plus' || subscription.displayName.includes('Plus')) {
+      planType = 'plus';
+    }
+
+    const planConfig = PLAN_CONFIGS[planType];
+    if (!planConfig) {
+      throw new Error("Invalid plan type");
+    }
+
+    // Deactivate current subscription
+    await UserSubscription.updateMany(
+      { userId: payment.userId, isActive: true },
+      { isActive: false }
     );
 
-    // Create or update user subscription
-    await UserSubscription.findOneAndUpdate(
-      { userId: payment.userId, isActive: true },
-      {
-        userId: payment.userId,
-        subscriptionId: subscription._id,
-        startDate: startDate,
-        endDate: endDate,
-        isActive: true,
-        currentUsage: {
+    const userSubscription = new UserSubscription({
+      userId: payment.userId,
+      userName: user.username,  
+      userEmail: user.email,   
+      subscriptionId: subscription._id,
+      planType: planType,
+      planName: planConfig.name,
+      startDate: startDate,
+      endDate: endDate,
+      isActive: true,
+      features: planConfig.features,
+      currentUsage: {
+        periodStartDate: startDate,
+        periodEndDate: new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate()),
+        usage: {
           postsCreated: 0,
           vipPostsUsed: 0,
-          phoneViewsUsed: 0,
-          lastResetDate: startDate,
+          hiddenPhoneViews: 0
         },
+        lastResetDate: startDate
       },
-      { upsert: true, new: true }
+      paymentInfo: {
+        paymentId: payment._id,
+        amount: payment.amount,
+        currency: payment.currency,
+        paymentMethod: payment.paymentMethod,
+        transactionId: payment.transactionId
+      }
+    });
+
+    await userSubscription.save();
+
+    // Update user's current plan (simple)
+    await User.findByIdAndUpdate(
+      payment.userId,
+      { 
+        currentPlan: planType,
+        // Update legacy fields for backward compatibility
+        postQuota: planConfig.features.posting.isUnlimitedPosts ? 999999 : 3,
+        quotaResetAt: endDate
+      }
     );
 
     // Update payment record
     payment.status = "completed";
     payment.paymentDate = new Date();
+    payment.userSubscriptionId = userSubscription._id;
     await payment.save();
 
+    console.log(`✅ User plan updated successfully: ${user.username} (${user.email}) -> ${planType} until ${endDate}`);
     return true;
   } catch (error) {
     console.error("Error updating user subscription:", error);

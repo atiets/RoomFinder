@@ -20,6 +20,9 @@ const { initializeSocket } = require("./congfig/websocket");
 require('./congfig/cronJobs');
 const subscriptionRoutes = require("./routes/subscription");
 const paymentRoutes = require("./routes/payment");
+const SubscriptionService = require('./services/subscriptionService');
+
+SubscriptionService.initCronJobs();
 
 dotenv.config();
 const app = express();
