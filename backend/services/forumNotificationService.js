@@ -1,5 +1,5 @@
 const User = require("../models/User");
-const Thread = require("../models/Thread");
+const Thread = require("../models/thread");
 const Comment = require("../models/Comment");
 
 class ForumNotificationService {

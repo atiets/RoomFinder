@@ -131,13 +131,20 @@ const userSchema = new mongoose.Schema({
     }
   ],
 
+  plan: {
+    type: String,
+    enum: ['free', 'plus', 'pro'],
+    default: 'free',
+    expiredAt: {
+      type: Date,
+      default: null,
+    }
+  },
+
   // Gói đăng tin
   postQuota: { type: Number, default: 3 },
   quotaResetAt: { type: Date, default: new Date() },
-  plan: {
-    name: String,
-    expiredAt: Date
-  }
+    
   
 }, { timestamps: true });
 
