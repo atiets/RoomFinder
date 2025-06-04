@@ -9,6 +9,7 @@ const sendEmail = require("../services/emailService");
 const { checkPostModeration } = require("./aiController");
 const { onlineUsers, getIO } = require("../congfig/websocket");
 const { checkAlertSubscriptions } = require("./alertSubscription");
+const SubscriptionService = require('../services/subscriptionService');
 
 function sendSocketNotification(userId, data) {
   const socketServer = io(); 
@@ -135,6 +136,7 @@ exports.createPost = async (req, res) => {
       defaultDaysToShow = 7,
       latitude,
       longitude,
+      isVip = false,
     } = req.body;
 
     // Kiểm tra các trường bắt buộc
@@ -182,11 +184,20 @@ exports.createPost = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
-    if (user.postQuota <= 0) {
+    const canCreatePost = await SubscriptionService.canUserPerformAction(userId, 'create_post');
+    if (!canCreatePost) {
       return res.status(403).json({
-        message:
-          "Bạn đã hết lượt đăng bài miễn phí trong tháng này. Vui lòng đợi tới tháng sau hoặc nâng cấp tài khoản.",
+        message: "Bạn đã hết lượt đăng bài trong tháng này. Vui lòng đợi tới tháng sau hoặc nâng cấp tài khoản.",
       });
+    }
+
+    if (isVip) {
+      const canCreateVipPost = await SubscriptionService.canUserPerformAction(userId, 'create_vip_post');
+      if (!canCreateVipPost) {
+        return res.status(403).json({
+          message: "Bạn đã hết lượt đăng tin VIP trong tháng này hoặc gói của bạn không hỗ trợ tin VIP.",
+        });
+      }
     }
 
     if (!req.files?.images || req.files.images.length === 0) {
@@ -197,11 +208,9 @@ exports.createPost = async (req, res) => {
 
     // Xử lý hình ảnh
     const imageUrls = (req.files?.images || []).map((file) => file.path);
-
     const videoUrls = (req.files?.videoUrl || []).map((file) => file.path);
     const videoUrl = videoUrls[0] || null;
 
-    // Tạo bài đăng mới
     const newPost = new Post({
       title,
       content,
@@ -234,20 +243,40 @@ exports.createPost = async (req, res) => {
       expiryDate: null,
       latitude: coordinates?.latitude || null,
       longitude: coordinates?.longitude || null,
+      isVip: isVip, // Thêm field VIP
+      userId: userId, // Đảm bảo có userId
     });
 
-    // Trừ quota và lưu user
-    user.postQuota -= 1;
-    await user.save();
-
     // Lưu bài đăng
-
     const savedPost = await newPost.save();
+
+    try {
+      const subscription = await SubscriptionService.getUserSubscription(userId);
+      if (subscription) {
+        // Cập nhật usage cho subscription hiện tại
+        subscription.currentUsage.usage.postsCreated += 1;
+        if (isVip) {
+          subscription.currentUsage.usage.vipPostsUsed += 1;
+        }
+        await subscription.save();
+        console.log(`✅ Updated usage for user ${userId}: posts=${subscription.currentUsage.usage.postsCreated}, vip=${subscription.currentUsage.usage.vipPostsUsed}`);
+      } else {
+        // User đang dùng free plan, update User model legacy fields
+        user.postQuota = Math.max(0, user.postQuota - 1);
+        await user.save();
+        console.log(`✅ Updated free plan quota for user ${userId}: remaining=${user.postQuota}`);
+      }
+    } catch (usageError) {
+      console.error("Error updating usage tracking:", usageError);
+      // Không throw error để không ảnh hưởng đến việc tạo post
+    }
+
     res.status(201).json({
       message: "Tạo bài đăng thành công",
       post: savedPost,
     });
 
+    // Background processing for moderation (không thay đổi)
     (async () => {
       try {
         const moderationResult = await checkPostModeration(savedPost);
@@ -272,7 +301,7 @@ exports.createPost = async (req, res) => {
           });
         } else if (moderationResult.status === "pending") {
           sendSocketNotification(userId, {
-            message: `Bài đăng của bạn với tiêu đề "${savedPost.title}" đang đợi admin duyệt. `,
+            message: `Bài đăng của bạn với tiêu đề "${savedPost.title}" đang đợi admin duyệt.`,
           });
         }
       } catch (err) {
@@ -292,8 +321,6 @@ exports.createPost = async (req, res) => {
     });
   }
 };
-
-// controllers/postController.js
 
 // Hàm chung để xử lý dữ liệu quận/huyện
 const processDistrictData = async () => {
