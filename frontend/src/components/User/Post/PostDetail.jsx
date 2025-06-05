@@ -66,7 +66,6 @@ const PostDetail = ({ onToggleFavorite }) => {
   const { toggleFavorite } = useFavoriteToggle(user);
   const { reviews } = useSelector((state) => state.reviews);
   const [favoriteCount, setFavoriteCount] = useState(0);
-  const [showFullPhone, setShowFullPhone] = useState(false);
   const [showModalAppointment, setShowModalAppointment] = useState(false);
   const [openModalComplaint, setOpenModalComplaint] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -111,10 +110,6 @@ const PostDetail = ({ onToggleFavorite }) => {
 
   const showLeftArrow = currentScroll > 0;
   const showRightArrow = currentScroll < maxScroll;
-
-  const togglePhoneVisibility = () => {
-    setShowFullPhone((prev) => !prev);
-  };
 
   const getHiddenPhoneNumber = (number) => {
     if (!number || number.length < 3) return number;

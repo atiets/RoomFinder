@@ -2,21 +2,21 @@
 const mongoose = require('mongoose');
 
 const ThreadSchema = new mongoose.Schema({
-  title: { 
-    type: String, 
+  title: {
+    type: String,
     required: [true, 'Tiêu đề là bắt buộc'],
     trim: true,
-    maxlength: [200, 'Tiêu đề không được vượt quá 200 ký tự'] 
+    maxlength: [200, 'Tiêu đề không được vượt quá 200 ký tự']
   },
-  content: { 
-    type: String, 
-    required: [true, 'Nội dung là bắt buộc'], 
-    trim: true 
+  content: {
+    type: String,
+    required: [true, 'Nội dung là bắt buộc'],
+    trim: true
   },
-  author: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
   username: {
     type: String,
@@ -28,39 +28,39 @@ const ThreadSchema = new mongoose.Schema({
     trim: true,
     default: null
   },
-  tags: [{ 
+  tags: [{
     type: String,
-    trim: true 
+    trim: true
   }],
-  likes: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User' 
+  likes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }],
-  dislikes: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User' 
+  dislikes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }],
-  viewCount: { 
-    type: Number, 
-    default: 0 
+  viewCount: {
+    type: Number,
+    default: 0
   },
-  status: { 
-    type: String, 
-    enum: ['pending', 'approved', 'rejected'], 
-    default: 'pending' 
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
   },
-  created_at: { 
-    type: Date, 
-    default: Date.now 
+  created_at: {
+    type: Date,
+    default: Date.now
   },
-  updated_at: { 
-    type: Date, 
-    default: Date.now 
+  updated_at: {
+    type: Date,
+    default: Date.now
   }
 }, {
-  timestamps: { 
-    createdAt: 'created_at', 
-    updatedAt: 'updated_at' 
+  timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   }
 });
 
@@ -68,5 +68,6 @@ const ThreadSchema = new mongoose.Schema({
 ThreadSchema.index({ status: 1, created_at: -1 });
 ThreadSchema.index({ author: 1 });
 ThreadSchema.index({ username: 1 });
+ThreadSchema.index({ tags: 1 });
 
-module.exports = mongoose.model('Thread', ThreadSchema);
+module.exports = mongoose.models.Thread || mongoose.model("Thread", ThreadSchema);

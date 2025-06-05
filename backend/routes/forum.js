@@ -90,5 +90,10 @@ router.delete('/comments/:commentId',
   commentController.deleteComment
 );
 
+//Lấy tất cả Tag
+router.get('/tags', threadController.getAllTags);
+//tìm kiếm threads theo nhiều tiêu chí
+router.get('/search', threadController.searchThreads);
+
 // Export router
 module.exports = router;

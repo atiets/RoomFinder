@@ -1,38 +1,18 @@
-import React, { useState } from "react";
+import { Pagination } from "@mui/material";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { getViewedPosts } from "../../../redux/chatApi";
 import RoomPostManage from "../Post/RoomPostManage";
-
-const viewedPostsData = [
-    {
-        _id: "1",
-        title: "Căn hộ cao cấp Quận 1",
-        images: ["https://res.cloudinary.com/dcpxl1u8g/image/upload/v1742888071/tsoqw6k2deh9bw06zsw8.jpg"],
-        rentalPrice: "10",
-        typePrice: "1",
-        address: { district: "Quận 1", province: "TP.HCM" },
-        area: 80,
-    },
-    {
-        _id: "2",
-        title: "Phòng trọ giá rẻ Gò Vấp",
-        images: ["https://res.cloudinary.com/dcpxl1u8g/image/upload/v1742888071/tsoqw6k2deh9bw06zsw8.jpg"],
-        rentalPrice: "3",
-        typePrice: "2",
-        address: { district: "Gò Vấp", province: "TP.HCM" },
-        area: 20,
-    },
-    {
-        _id: "3",
-        title: "Nhà nguyên căn Quận 7",
-        images: ["https://res.cloudinary.com/dcpxl1u8g/image/upload/v1742888071/tsoqw6k2deh9bw06zsw8.jpg"],
-        rentalPrice: "15",
-        typePrice: "1",
-        address: { district: "Quận 7", province: "TP.HCM" },
-        area: 120,
-    },
-];
+import './ViewedPost.css';
 
 const ViewedPost = () => {
+    const user = useSelector((state) => state.auth.login.currentUser);
+    const token = user?.accessToken;
+    const userID = user?._id;
     const [favoritePosts, setFavoritePosts] = useState({});
+    const [viewedPost, setViewPost] = useState([]);
+    const [page, setPage] = useState(1);
+    const itemsPerPage = 3;
 
     const handleTitleClick = (postId) => {
         console.log(`Xem chi tiết bài viết ${postId}`);
@@ -42,18 +22,45 @@ const ViewedPost = () => {
         setFavoritePosts((prev) => ({ ...prev, [postId]: isFav }));
     };
 
+    const fetchViewedPosts = async () => {
+        const response = await getViewedPosts(userID, token);
+        setViewPost(response?.data?.viewedPosts || []);
+        console.log("Viewed Posts Response:", response?.data);
+    };
+
+    useEffect(() => {
+        fetchViewedPosts();
+    }, [userID]);
+
+    const paginatedPosts = viewedPost.slice(
+        (page - 1) * itemsPerPage,
+        page * itemsPerPage
+    );
+
     return (
-        <div>
-            <h2>Lịch sử xem bài viết</h2>
-            {viewedPostsData.map((post) => (
+        <div className="viewed-post-container">
+            <h2 className="viewed-post-title">Lịch sử xem bài viết</h2>
+            {paginatedPosts.map((post) => (
                 <RoomPostManage
                     key={post._id}
                     post={post}
                     onTitleClick={handleTitleClick}
                     onToggleFavorite={handleToggleFavorite}
                     isFavorite={!!favoritePosts[post._id]}
+                    type="history"
                 />
             ))}
+
+            {viewedPost.length > itemsPerPage && (
+                <div className="pagination-wrapper">
+                    <Pagination
+                        count={Math.ceil(viewedPost.length / itemsPerPage)}
+                        page={page}
+                        onChange={(event, value) => setPage(value)}
+                        color="primary"
+                    />
+                </div>
+            )}
         </div>
     );
 };

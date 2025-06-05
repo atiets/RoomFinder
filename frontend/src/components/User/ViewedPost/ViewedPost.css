@@ -1,0 +1,15 @@
+.viewed-post-container {
+    max-height: 500px;
+    padding: 16px;
+}
+
+.viewed-post-title {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}

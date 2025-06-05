@@ -12,7 +12,7 @@ import {
   MenuItem,
   Typography,
 } from "@mui/material";
-import React, { useState } from "react";
+import { useState } from "react";
 import "./RoomPostManage.css"; // Import CSS tùy chỉnh
 
 const RoomPostManage = ({
@@ -22,6 +22,7 @@ const RoomPostManage = ({
   onHidePost,
   onDeletePost,
   onVisiblePost,
+  type,
 }) => {
   const [menuVisible, setMenuVisible] = useState(null);
 
@@ -70,14 +71,13 @@ const RoomPostManage = ({
             alignItems: "center",
           }}
         >
-          {post.visibility === "visible" && post.status === "approved" && (
-            <>
+          {post.visibility === "visible" &&
+            post.status === "approved" &&
+            type !== "history" && (
               <Typography className="room-post-manage-date-visible">
-                Bài đăng sẽ ẩn sau: {post.daysRemaining} ngày,{" "}
-                {post.hoursRemaining} giờ
+                Bài đăng sẽ ẩn sau: {post.daysRemaining} ngày, {post.hoursRemaining} giờ
               </Typography>
-            </>
-          )}
+            )}
           <Button className="post-area">{post.area}m²</Button>
           <Button
             className="room-post-more"
