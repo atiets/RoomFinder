@@ -132,8 +132,12 @@ const ListPostHome = ({ post = [], title, favorite }) => {
                       navigate("/posts");
                     } else if (title === "Cho thuê căn hộ, nhà ở") {
                       navigate("/CanHoPost");
-                    } else if (title === "Văn phòng, mặt bằng") {
+                    } else if (title === "Văn phòng, mặt bằng kinh doanh") {
                       navigate("/VanPhongPost");
+                    } else if (title === "Nhà ở") {
+                      navigate("/NhaO");
+                    } else if (title === "Đất") {
+                      navigate("/Dat");
                     }
                   }}
                 >

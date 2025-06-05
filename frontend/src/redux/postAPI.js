@@ -414,60 +414,44 @@ export const updateDefaultDaysToShow = async (days, token) => {
   }
 };
 
+export const searchAndCategorizePosts = async (params, token) => {
+  const categoryList = {
+    category1: "phòng trọ",
+    category2: "Căn hộ/chung cư",
+    category3: "Văn phòng, mặt bằng kinh doanh",
+    category4: "Nhà ở",
+    category5: "Đất",
+  };
+
+  const [category1, category2, category3, category4, category5] = await Promise.all([
+    searchPosts({ ...params, category: categoryList.category1 }, token),
+    searchPosts({ ...params, category: categoryList.category2 }, token),
+    searchPosts({ ...params, category: categoryList.category3 }, token),
+    searchPosts({ ...params, category: categoryList.category4 }, token),
+    searchPosts({ ...params, category: categoryList.category5 }, token),
+  ]);
+
+  return { category1, category2, category3, category4, category5 };
+};
+
 // export const searchAndCategorizePosts = async (params, token) => {
 //   try {
-//     const posts = await searchPosts(params, token);
-
-//     const category1 = [];
-//     const category2 = [];
-//     const category3 = [];
-
-//     posts.forEach((post) => {
-//       if (post.category === "Nhà trọ, phòng trọ") {
-//         category1.push(post);
-//       } else if (
-//         [
-//           "Nhà nguyên căn",
-//           "Cho thuê căn hộ",
-//           "Cho thuê căn hộ mini",
-//           "Cho thuê căn hộ dịch vụ",
-//         ].includes(post.category)
-//       ) {
-//         category2.push(post);
-//       } else if (post.category === "Cho thuê mặt bằng, văn phòng") {
-//         category3.push(post);
-//       }
+//     const response = await axios.get(`${API_URL}search`, {
+//       params: {
+//         ...params,
+//         category: params.category.join(',') // Convert array to string
+//       },
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//       },
 //     });
-
-//     return {
-//       category1,
-//       category2,
-//       category3,
-//     };
+    
+//     return response.data;
 //   } catch (error) {
-//     console.error("Lỗi khi phân loại bài đăng:", error);
+//     console.error("Lỗi khi tìm kiếm và phân loại bài đăng:", error);
 //     throw error;
 //   }
 // };
-
-export const searchAndCategorizePosts = async (params, token) => {
-  try {
-    const response = await axios.get(`${API_URL}search`, {
-      params: {
-        ...params,
-        category: params.category.join(',') // Convert array to string
-      },
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    
-    return response.data;
-  } catch (error) {
-    console.error("Lỗi khi tìm kiếm và phân loại bài đăng:", error);
-    throw error;
-  }
-};
 
 export const useFavoriteToggle = (user) => {
   const [favorites, setFavorites] = useState([]);
