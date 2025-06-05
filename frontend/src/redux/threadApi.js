@@ -11,7 +11,7 @@ const API_URL = `${process.env.REACT_APP_BASE_URL_API}/v1/forum`;
 export const getForumThreads = async (page = 1, limit = 10) => {
   try {
     const response = await axios.get(`${API_URL}/threads?page=${page}&limit=${limit}`);
-    
+
     if (response.status === 200) {
       return response.data;
     } else {
@@ -21,7 +21,7 @@ export const getForumThreads = async (page = 1, limit = 10) => {
     // Xử lý các loại lỗi khác nhau
     if (error.response) {
       const { status, data } = error.response;
-      
+
       if (status === 404) {
         throw new Error("API endpoint không tồn tại");
       } else if (status === 500) {
@@ -65,7 +65,7 @@ export const createThread = async (threadData, token) => {
         "Content-Type": "application/json",
       },
     });
-    
+
     if (response.status === 201 || response.status === 200) {
       return response.data;
     } else {
@@ -76,7 +76,7 @@ export const createThread = async (threadData, token) => {
     if (error.response) {
       // Server trả về response với status code lỗi
       const { status, data } = error.response;
-      
+
       if (status === 401) {
         throw new Error("Bạn cần đăng nhập để tạo bài viết");
       } else if (status === 403) {
@@ -123,7 +123,7 @@ export const updateThread = async (threadId, updateData, token) => {
   } catch (error) {
     if (error.response) {
       const { status, data } = error.response;
-      
+
       if (status === 401) {
         throw new Error("Bạn cần đăng nhập để sửa bài viết");
       } else if (status === 403) {
@@ -155,7 +155,7 @@ export const deleteThread = async (threadId, token) => {
   } catch (error) {
     if (error.response) {
       const { status, data } = error.response;
-      
+
       if (status === 401) {
         throw new Error("Bạn cần đăng nhập để xóa bài viết");
       } else if (status === 403) {
@@ -188,7 +188,7 @@ export const likeThread = async (threadId, token) => {
   } catch (error) {
     if (error.response) {
       const { status, data } = error.response;
-      
+
       if (status === 401) {
         throw new Error("Bạn cần đăng nhập để thích bài viết");
       } else if (status === 403) {
@@ -221,7 +221,7 @@ export const dislikeThread = async (threadId, token) => {
   } catch (error) {
     if (error.response) {
       const { status, data } = error.response;
-      
+
       if (status === 401) {
         throw new Error("Bạn cần đăng nhập để không thích bài viết");
       } else if (status === 403) {
@@ -266,3 +266,43 @@ export const getThreadLikeStatus = async (threadId, token) => {
     throw new Error("Không thể lấy trạng thái like");
   }
 };
+
+export const searchThreads = async ({
+  keyword = '',
+  authorId = '',
+  username = '',
+  tags = '',
+  status = 'approved',
+  page = 1,
+  limit = 10,
+  sort = 'newest'
+} = {}) => {
+  try {
+    const response = await axios.get(`${API_URL}/search`, {
+      params: {
+        keyword,
+        authorId,
+        username,
+        tags,
+        status,
+        page,
+        limit,
+        sort
+      }
+    });
+    return response;
+  } catch (error) {
+    console.error('Lỗi khi gọi API searchThreads:', error);
+    throw error;
+  }
+};
+
+export const getThreadsTags = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/tags`);
+    return response;
+  } catch (error) {
+    console.error('Lỗi khi gọi API getThreadsTags:', error);
+    throw error;
+  }
+}

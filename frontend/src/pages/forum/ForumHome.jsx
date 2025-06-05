@@ -1,20 +1,21 @@
 // src/pages/forum/ForumHome.jsx
-import React, { useState, useEffect } from 'react';
-import { 
-  Container, 
-  Box, 
-  Typography,
-  Grid,
+import {
   Alert,
+  Box,
+  CircularProgress,
+  Container,
+  Grid,
   Snackbar,
-  CircularProgress
+  Typography
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useSelector } from "react-redux";
-import ForumHeader from '../../components/User/forum/ForumHeader';
-import ThreadList from '../../components/User/forum/ThreadList';
-import CreateThreadButton from '../../components/User/forum/CreateThreadButton';
+import { useNavigate } from 'react-router-dom';
 import CreateThread from '../../components/User/forum/CreateThread';
+import CreateThreadButton from '../../components/User/forum/CreateThreadButton';
+import ForumHeader from '../../components/User/forum/ForumHeader';
+import SeachAndFilter from '../../components/User/forum/SeachAndFilter';
+import ThreadList from '../../components/User/forum/ThreadList';
 import { getForumThreads } from '../../redux/threadApi';
 
 const ForumHome = () => {
@@ -236,6 +237,7 @@ const ForumHome = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      <SeachAndFilter />
       {/* Custom Snackbar với UI đẹp hơn */}
       <Snackbar
         open={snackbar.open}

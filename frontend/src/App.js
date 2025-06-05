@@ -39,10 +39,11 @@ import PostsPage from "./components/User/Post/PostPage";
 import SearchPosts from "./components/User/Search/searchPosts";
 import SearchResultsPage from "./components/User/Search/searchResultPage";
 import { ForumHome } from "./pages/forum";
+import SearchResultThreads from "./pages/forum/SearchResultThreads/SearchResultThreads";
 import ThreadDetail from "./pages/forum/ThreadDetail";
-import SubscriptionPage from "./pages/payment/Subscription";
 import PaymentPage from "./pages/payment/PaymentPage";
 import PaymentSuccess from "./pages/payment/PaymentSuccess";
+import SubscriptionPage from "./pages/payment/Subscription";
 
 function App() {
   return (
@@ -416,6 +417,16 @@ function App() {
                 <>
                   <Header />
                   <PaymentSuccess />
+                  <Footer />
+                </>
+              }
+            />
+            <Route
+              path="/search-threads"
+              element={
+                <>
+                  <Header />
+                  <SearchResultThreads />
                   <Footer />
                 </>
               }

@@ -1,7 +1,7 @@
 // controllers/threadController.js
-const Thread = require('../models/thread'); 
+const Thread = require('../models/thread');
 const Comment = require('../models/Comment');
-const User = require('../models/User'); 
+const User = require('../models/User');
 const ForumNotificationService = require('../services/forumNotificationService');
 const { validationResult } = require('express-validator');
 const mongoose = require('mongoose');
@@ -20,7 +20,7 @@ exports.createThread = async (req, res) => {
     }
 
     const { title, content, tags } = req.body;
-    
+
     // Kiểm tra thông tin user
     if (!req.user) {
       return res.status(401).json({
@@ -28,7 +28,7 @@ exports.createThread = async (req, res) => {
         message: 'Thông tin người dùng không hợp lệ'
       });
     }
-    
+
     // Kiểm tra username
     if (!req.user.username) {
       return res.status(400).json({
@@ -36,7 +36,7 @@ exports.createThread = async (req, res) => {
         message: 'Username không tồn tại. Vui lòng cập nhật thông tin tài khoản.'
       });
     }
-    
+
     // Tạo thread mới với username và avatar
     const newThread = new Thread({
       title,
@@ -47,9 +47,9 @@ exports.createThread = async (req, res) => {
       avatar: req.user.profile?.picture || null, // Lưu trực tiếp avatar URL
       status: 'pending' // Hoặc 'approved' nếu không cần duyệt
     });
-    
+
     const savedThread = await newThread.save();
-    
+
     // Trả về thread đã được lưu
     res.status(201).json({
       success: true,
@@ -67,7 +67,7 @@ exports.createThread = async (req, res) => {
     });
   } catch (err) {
     console.error('Create thread error:', err.message);
-    
+
     // Handle các lỗi cụ thể
     if (err.name === 'ValidationError') {
       const errors = Object.values(err.errors).map(e => e.message);
@@ -77,7 +77,7 @@ exports.createThread = async (req, res) => {
         errors
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi tạo bài viết'
@@ -94,13 +94,13 @@ exports.getAllThreads = async (req, res) => {
   try {
     // Lấy các tham số từ query string
     const { page = 1, limit = 10 } = req.query;
-    
+
     // Tạo query object
     const query = { status: 'approved' };
-    
+
     // Tính toán skip cho phân trang
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
+
     // Thực hiện query để lấy threads với author field
     let threads = await Thread.find(query)
       .select('title content username avatar tags likes dislikes viewCount created_at status author')
@@ -108,25 +108,25 @@ exports.getAllThreads = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
-    
+
     // Đếm tổng số threads thỏa mãn điều kiện
     const total = await Thread.countDocuments(query);
-    
+
     // Lấy threadIds để đếm comments
     const threadIds = threads.map(thread => thread._id);
-    
+
     // Đếm số comments cho tất cả threads
     const commentCounts = await Comment.aggregate([
       { $match: { thread: { $in: threadIds } } },
       { $group: { _id: '$thread', count: { $sum: 1 } } }
     ]);
-    
+
     // Tạo map từ kết quả aggregate
     const commentCountMap = commentCounts.reduce((map, item) => {
       map[item._id.toString()] = item.count;
       return map;
     }, {});
-    
+
     // Format threads với like/dislike counts và author info
     threads = threads.map(thread => ({
       _id: thread._id,
@@ -143,7 +143,7 @@ exports.getAllThreads = async (req, res) => {
       status: thread.status,
       author: thread.author // Include author ID for ownership checking
     }));
-    
+
     // Trả về kết quả với thông tin phân trang
     res.json({
       success: true,
@@ -195,7 +195,7 @@ exports.likeThread = async (req, res) => {
     }
 
     const userIdObj = new mongoose.Types.ObjectId(userId);
-    
+
     // Kiểm tra user đã like chưa
     const hasLiked = thread.likes.includes(userIdObj);
     const hasDisliked = thread.dislikes.includes(userIdObj);
@@ -239,14 +239,14 @@ exports.likeThread = async (req, res) => {
     });
   } catch (err) {
     console.error('Like thread error:', err);
-    
+
     if (err.name === 'CastError') {
       return res.status(400).json({
         success: false,
         message: 'ID bài viết không hợp lệ'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi thích bài viết'
@@ -282,7 +282,7 @@ exports.dislikeThread = async (req, res) => {
     }
 
     const userIdObj = new mongoose.Types.ObjectId(userId);
-    
+
     // Kiểm tra user đã dislike chưa
     const hasLiked = thread.likes.includes(userIdObj);
     const hasDisliked = thread.dislikes.includes(userIdObj);
@@ -314,14 +314,14 @@ exports.dislikeThread = async (req, res) => {
     });
   } catch (err) {
     console.error('Dislike thread error:', err);
-    
+
     if (err.name === 'CastError') {
       return res.status(400).json({
         success: false,
         message: 'ID bài viết không hợp lệ'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi không thích bài viết'
@@ -363,14 +363,14 @@ exports.getThreadLikeStatus = async (req, res) => {
     });
   } catch (err) {
     console.error('Get like status error:', err);
-    
+
     if (err.name === 'CastError') {
       return res.status(400).json({
         success: false,
         message: 'ID bài viết không hợp lệ'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi lấy trạng thái thích'
@@ -386,23 +386,23 @@ exports.getThreadLikeStatus = async (req, res) => {
 exports.getThreadById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Tìm thread và tăng view count
     const thread = await Thread.findByIdAndUpdate(
       id,
       { $inc: { viewCount: 1 } },
       { new: true }
     )
-    .select('title content username avatar tags likes dislikes viewCount created_at status')
-    .lean();
-    
+      .select('title content username avatar tags likes dislikes viewCount created_at status')
+      .lean();
+
     if (!thread) {
       return res.status(404).json({
         success: false,
         message: 'Không tìm thấy bài viết'
       });
     }
-    
+
     // Check if thread is approved
     if (thread.status !== 'approved') {
       return res.status(403).json({
@@ -410,10 +410,10 @@ exports.getThreadById = async (req, res) => {
         message: 'Bài viết chưa được phê duyệt'
       });
     }
-    
+
     // Count comments
     const commentCount = await Comment.countDocuments({ thread: id });
-    
+
     // Format response
     const formattedThread = {
       _id: thread._id,
@@ -429,21 +429,21 @@ exports.getThreadById = async (req, res) => {
       created_at: thread.created_at,
       status: thread.status
     };
-    
+
     res.json({
       success: true,
       data: formattedThread
     });
   } catch (err) {
     console.error('Get thread by ID error:', err);
-    
+
     if (err.name === 'CastError') {
       return res.status(400).json({
         success: false,
         message: 'ID bài viết không hợp lệ'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi lấy bài viết'
@@ -504,7 +504,7 @@ exports.updateThread = async (req, res) => {
 
     // Kiểm tra quyền sửa: chỉ cho phép chủ thread
     const canEdit = (
-      thread.username === username || 
+      thread.username === username ||
       thread.author.toString() === userId
     );
 
@@ -592,7 +592,7 @@ exports.deleteThread = async (req, res) => {
 
     // Kiểm tra quyền xóa: chỉ cho phép chủ thread
     const canDelete = (
-      thread.username === username || 
+      thread.username === username ||
       thread.author.toString() === userId
     );
 
@@ -622,6 +622,138 @@ exports.deleteThread = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi xóa bài viết'
+    });
+  }
+};
+
+exports.getAllTags = async (req, res) => {
+  try {
+    const tags = await Thread.aggregate([
+      { $unwind: '$tags' },
+      { $group: { _id: '$tags', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    const allTags = tags.map(tag => tag._id);
+    const top8Tags = allTags.slice(0, 8);
+
+    res.json({ allTags, top8Tags });
+  } catch (error) {
+    console.error("Lỗi khi lấy tags:", error); // ✅ In ra lỗi cụ thể
+    res.status(500).json({ error: 'Lỗi lấy tags', message: error.message, stack: error.stack });
+  }
+};
+
+//Tìm kiếm threads với nhiều tiêu chí
+exports.searchThreads = async (req, res) => {
+  try {
+    const {
+      keyword,
+      authorId,
+      username,
+      tags,
+      status = 'approved',
+      page = 1,
+      limit = 10,
+      sort = 'newest'
+    } = req.query;
+
+    const query = {};
+
+    // Lọc theo trạng thái
+    if (status) query.status = status;
+
+    // Tìm theo keyword mở rộng (title, content, username, authorId)
+    if (keyword) {
+      const regex = new RegExp(keyword, 'i');
+      const keywordConditions = [
+        { title: regex },
+        { content: regex },
+        { username: regex }
+      ];
+
+      // Nếu keyword là ObjectId hợp lệ, thêm vào điều kiện author
+      if (mongoose.Types.ObjectId.isValid(keyword)) {
+        keywordConditions.push({ author: keyword });
+      }
+
+      query.$or = keywordConditions;
+    }
+
+    // Nếu người dùng truyền authorId riêng
+    if (authorId) {
+      query.author = authorId;
+    }
+
+    // Nếu người dùng truyền username riêng
+    if (username) {
+      query.username = new RegExp(username, 'i');
+    }
+
+    // Lọc theo tags
+    if (tags) {
+      const tagArray = Array.isArray(tags) ? tags : tags.split(',');
+      query.tags = { $in: tagArray };
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const sortOption = sort === 'oldest' ? { created_at: 1 } : { created_at: -1 };
+
+    // Truy vấn thread
+    let threads = await Thread.find(query)
+      .select('title content username avatar tags likes dislikes viewCount created_at status author')
+      .sort(sortOption)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    const total = await Thread.countDocuments(query);
+
+    // Đếm số lượng comment
+    const threadIds = threads.map(thread => thread._id);
+    const commentCounts = await Comment.aggregate([
+      { $match: { thread: { $in: threadIds } } },
+      { $group: { _id: '$thread', count: { $sum: 1 } } }
+    ]);
+
+    const commentCountMap = commentCounts.reduce((map, item) => {
+      map[item._id.toString()] = item.count;
+      return map;
+    }, {});
+
+    // Format lại kết quả
+    threads = threads.map(thread => ({
+      _id: thread._id,
+      title: thread.title,
+      content: thread.content,
+      username: thread.username,
+      avatar: thread.avatar,
+      tags: thread.tags,
+      likesCount: thread.likes.length,
+      dislikesCount: thread.dislikes.length,
+      commentCount: commentCountMap[thread._id.toString()] || 0,
+      viewCount: thread.viewCount,
+      created_at: thread.created_at,
+      status: thread.status,
+      author: thread.author
+    }));
+
+    res.json({
+      success: true,
+      data: threads,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+
+  } catch (err) {
+    console.error('Search threads error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi tìm kiếm threads'
     });
   }
 };

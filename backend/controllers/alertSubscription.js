@@ -115,7 +115,7 @@ const createInAppNotification = async (userId, post) => {
         const message = `Có bài đăng mới phù hợp: ${post.title}`;
         const newNotification = {
             message,
-            type: "alert", // bạn có thể thay đổi tùy loại
+            type:'post',
             post_id: post._id,
             status: "unread",
             createdAt: new Date(),
