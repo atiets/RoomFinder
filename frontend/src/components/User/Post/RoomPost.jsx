@@ -8,7 +8,6 @@ import {
   CardMedia,
   Typography,
 } from "@mui/material";
-import React from "react";
 import "./RoomPost.css";
 
 const RoomPost = ({ post, onTitleClick, onToggleFavorite, isFavorite }) => {
@@ -20,6 +19,27 @@ const RoomPost = ({ post, onTitleClick, onToggleFavorite, isFavorite }) => {
     } else {
       console.error("onToggleFavorite không được cung cấp!");
     }
+  };
+
+  const formatPriceToText = (price) => {
+    if (typeof price !== "number" || isNaN(price)) {
+      return "Giá không hợp lệ";
+    }
+
+    if (price >= 1_000_000_000) {
+      const billions = Math.floor(price / 1_000_000_000);
+      return `${billions} Tỷ VNĐ`;
+    }
+
+    if (price >= 1_000_000) {
+      const millions = Math.floor(price / 1_000_000);
+      const rest = Math.floor((price % 1_000_000) / 1_000);
+      return rest > 0
+        ? `${millions} triệu ${rest} nghìn VND`
+        : `${millions} triệu VND`;
+    }
+
+    return `${price.toLocaleString()} VND`;
   };
 
   return (
@@ -34,12 +54,9 @@ const RoomPost = ({ post, onTitleClick, onToggleFavorite, isFavorite }) => {
           />
         )}
         <Button className="room-post-price" variant="contained" color="primary">
-          {post.rentalPrice}
-          {post.typePrice === "1"
-            ? " Triệu/Tháng"
-            : post.typePrice === "2"
-              ? " Triệu/m²/tháng"
-              : ""}
+          {post.price !== undefined
+            ? formatPriceToText(post.price)
+            : "Không có giá"}
         </Button>
       </Box>
       <CardContent className="room-post-content">
@@ -57,7 +74,7 @@ const RoomPost = ({ post, onTitleClick, onToggleFavorite, isFavorite }) => {
         </Box>
         <Box>
           <Button className="post-area" variant="outlined">
-            {post.area}m²
+            {post.area}{post.typeArea}
           </Button>
         </Box>
       </CardContent>

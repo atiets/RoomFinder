@@ -24,9 +24,11 @@ const Home = () => {
 
   const currentUser = useSelector((state) => state.auth.login.currentUser);
   const token = currentUser?.accessToken;
-  const [category1Posts, setTroPosts] = useState([]);
-  const [category2Posts, setCanHoPosts] = useState([]);
-  const [category3Posts, setVanPhongPosts] = useState([]);
+  const [category1Posts, setCategory1Posts] = useState([]); // phòng trọ
+  const [category2Posts, setCategory2Posts] = useState([]); // căn hộ
+  const [category3Posts, setCategory3Posts] = useState([]); // văn phòng
+  const [category4Posts, setCategory4Posts] = useState([]); // nhà ở
+  const [category5Posts, setCategory5Posts] = useState([]); // đất
   const [openChat, setOpenChat] = useState(false);
 
   let axiosJWT = axios.create({
@@ -36,25 +38,14 @@ const Home = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const params = {
-          category: [
-            "Nhà trọ, phòng trọ",
-            "Nhà nguyên căn",
-            "Cho thuê căn hộ",
-            "Cho thuê căn hộ mini",
-            "Cho thuê căn hộ dịch vụ",
-            "Cho thuê mặt bằng, văn phòng",
-          ],
-        };
-        const { category1, category2, category3 } =
-          await searchAndCategorizePosts(params, token);
-        setTroPosts(Array.isArray(category1) ? category1.map(formatPost) : []);
-        setCanHoPosts(
-          Array.isArray(category2) ? category2.map(formatPost) : [],
-        );
-        setVanPhongPosts(
-          Array.isArray(category3) ? category3.map(formatPost) : [],
-        );
+        const { category1, category2, category3, category4, category5 } =
+          await searchAndCategorizePosts({}, token);
+
+        setCategory1Posts(Array.isArray(category1) ? category1.map(formatPost) : []);
+        setCategory2Posts(Array.isArray(category2) ? category2.map(formatPost) : []);
+        setCategory3Posts(Array.isArray(category3) ? category3.map(formatPost) : []);
+        setCategory4Posts(Array.isArray(category4) ? category4.map(formatPost) : []);
+        setCategory5Posts(Array.isArray(category5) ? category5.map(formatPost) : []);
       } catch (error) {
         console.error("Lỗi khi lấy bài đăng:", error);
       }
@@ -76,8 +67,9 @@ const Home = () => {
       phoneNumber: post.contactInfo?.phoneNumber || "",
     },
     rentalPrice: post.rentalPrice,
-    typePrice: post.typePrice,
+    price: post.price,
     area: post.area,
+    typeArea: post.typeArea,
     images: post.images ? post.images.slice(0, 2) : [],
   });
 
@@ -126,19 +118,27 @@ const Home = () => {
           title="Nhà trọ, phòng trọ"
           favorite={favorites}
         />
+        <ListPostHome
+          post={category2Posts}
+          title="Cho thuê căn hộ, chung cư"
+          favorite={favorites}
+        />
+        <ListPostHome
+          post={category4Posts}
+          title="Nhà ở"
+          favorite={favorites}
+        />
+        <ListPostHome
+          post={category5Posts}
+          title="Đất"
+          favorite={favorites}
+        />
+        <ListPostHome
+          post={category3Posts}
+          title="Văn phòng, mặt bằng kinh doanh"
+          favorite={favorites}
+        />
         <div style={{ width: "100%", height: "auto" }}>
-          <ListPostHome
-            post={category2Posts}
-            title="Cho thuê căn hộ, nhà ở"
-            favorite={favorites}
-          />
-        </div>
-        <div style={{ width: "100%", height: "auto" }}>
-          <ListPostHome
-            post={category3Posts}
-            title="Văn phòng, mặt bằng"
-            favorite={favorites}
-          />
           <div style={{ width: "100%", height: "auto" }}>
             <CompareArea />
           </div>

@@ -101,6 +101,24 @@ function App() {
               }
             />
             <Route
+              path="/NhaO"
+              element={
+                <>
+                  <PostsPage />
+                  <Footer />
+                </>
+              }
+            />
+            <Route
+              path="/Dat"
+              element={
+                <>
+                  <PostsPage />
+                  <Footer />
+                </>
+              }
+            />
+            <Route
               path="/news"
               element={
                 <>

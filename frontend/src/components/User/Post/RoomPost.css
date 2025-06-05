@@ -64,7 +64,7 @@
 .post-area {
   font-family: Inter !important;
   font-weight: 300 !important;
-  font-size: 1rem !important;
+  font-size: 12px !important;
   color: #333333 !important;
   pointer-events: none;
   border: 1px solid #cccccc !important;
