@@ -5,6 +5,8 @@ const User = require('../models/User');
 const ForumNotificationService = require('../services/forumNotificationService');
 const { validationResult } = require('express-validator');
 const mongoose = require('mongoose');
+const { io } = require('../congfig/websocket');
+const { requestThreadApproval } = require('./aiController');
 
 /**
  * Tạo thread mới
@@ -12,6 +14,8 @@ const mongoose = require('mongoose');
  * @access Private
  */
 exports.createThread = async (req, res) => {
+  console.log("Request body:", req.body);
+
   try {
     // Kiểm tra lỗi validation
     const errors = validationResult(req);
@@ -50,6 +54,18 @@ exports.createThread = async (req, res) => {
 
     const savedThread = await newThread.save();
 
+    let approvalResult;
+    try {
+      approvalResult = await requestThreadApproval(title, content);
+    } catch (err) {
+      console.error("Lỗi khi gọi AI kiểm duyệt:", err.message);
+      approvalResult = { approve: false, reason: "Không thể kiểm duyệt tự động, cần duyệt thủ công" };
+    }
+
+    // Cập nhật trạng thái bài viết dựa trên AI
+    savedThread.status = approvalResult.approve ? 'approved' : 'rejected';
+    await savedThread.save();
+    await createThreadApprovalNotification(req.user.id, savedThread, savedThread.status, approvalResult.reason);
     // Trả về thread đã được lưu
     res.status(201).json({
       success: true,
@@ -755,5 +771,89 @@ exports.searchThreads = async (req, res) => {
       success: false,
       message: 'Lỗi server khi tìm kiếm threads'
     });
+  }
+};
+
+//controler của admin
+//Duyệt thread
+// DUYỆT BÀI VIẾT
+exports.approveThread = async (req, res) => {
+  try {
+    const { threadId } = req.params;
+
+    const thread = await Thread.findById(threadId);
+    if (!thread) {
+      return res.status(404).json({ message: 'Bài viết không tồn tại' });
+    }
+
+    thread.status = 'approved';
+    thread.updated_at = Date.now();
+    await thread.save();
+
+    res.status(200).json({ message: 'Bài viết đã được duyệt thành công', thread });
+  } catch (error) {
+    console.error('Lỗi khi duyệt bài viết:', error);
+    res.status(500).json({ message: 'Lỗi máy chủ' });
+  }
+};
+
+// TỪ CHỐI BÀI VIẾT
+exports.rejectThread = async (req, res) => {
+  try {
+    const { threadId } = req.params;
+
+    const thread = await Thread.findById(threadId);
+    if (!thread) {
+      return res.status(404).json({ message: 'Bài viết không tồn tại' });
+    }
+
+    thread.status = 'rejected';
+    thread.updated_at = Date.now();
+    await thread.save();
+
+    res.status(200).json({ message: 'Bài viết đã bị từ chối', thread });
+  } catch (error) {
+    console.error('Lỗi khi từ chối bài viết:', error);
+    res.status(500).json({ message: 'Lỗi máy chủ' });
+  }
+};
+
+const createThreadApprovalNotification = async (userId, thread, status, reason) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      console.error('User not found:', userId);
+      return;
+    }
+
+    // Tạo nội dung thông báo tùy theo trạng thái duyệt bài
+    let message;
+    if (status === 'approved') {
+      message = `Bài viết "${thread.title}" của bạn đã được duyệt thành công!`;
+    } else if (status === 'rejected') {
+      message = `Bài viết "${thread.title}" của bạn đã bị từ chối. Lý do: ${reason}`;
+    } else {
+      message = `Bài viết "${thread.title}" của bạn đang chờ duyệt.`;
+    }
+
+    const newNotification = {
+      message,
+      type: 'thread_approval',
+      thread_id: thread._id,
+      status: 'unread',
+      createdAt: new Date(),
+    };
+
+    // Push thông báo vào mảng notifications của user
+    user.notifications.push(newNotification);
+    await user.save();
+
+    // Gửi thông báo realtime qua socket
+    const socket = io();
+    socket.to(userId.toString()).emit('notification', newNotification);
+
+    console.log(`Thread approval notification sent to user ${userId}`);
+  } catch (error) {
+    console.error('Error creating thread approval notification:', error);
   }
 };

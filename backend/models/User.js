@@ -86,7 +86,8 @@ const userSchema = new mongoose.Schema({
           'forum_comment', 
           'forum_like', 
           'forum_mention', 
-          'forum_reply'
+          'forum_reply',
+          'thread_approval'
         ],
         required: true,
       },

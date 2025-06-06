@@ -1,34 +1,38 @@
 // src/components/User/forum/ThreadList.jsx
-import React from 'react';
-import { Box, Typography, Pagination, Skeleton, Button } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import { Box, Pagination, Skeleton, Typography } from '@mui/material';
+import { useSelector } from 'react-redux';
+import { toast } from "react-toastify";
+import { approveThread, rejectThread } from '../../../redux/threadApi';
 import ThreadCard from './ThreadCard';
 
-const ThreadList = ({ 
-  threads, 
+const ThreadList = ({
+  threads,
   setThreads, // Direct state setter
-  loading, 
-  onThreadClick, 
-  page, 
-  totalPages, 
+  loading,
+  onThreadClick,
+  page,
+  totalPages,
   onPageChange,
   onThreadUpdated, // Callback from parent
   onThreadDeleted, // Callback from parent
-  onThreadAdded    // Callback from parent (future use)
+  onThreadAdded,   // Callback from parent (future use)
+  type,
 }) => {
+  const user = useSelector((state) => state.auth.login.currentUser);
+  const accessToken = user?.accessToken;
   // Skeleton để hiển thị khi đang loading
   const ThreadSkeleton = () => (
     <Box sx={{ mb: 2 }}>
       <Skeleton variant="rectangular" height={150} sx={{ borderRadius: '12px' }} />
     </Box>
   );
-  
+
   // Component hiển thị khi không có threads
   const EmptyState = () => (
-    <Box 
-      sx={{ 
-        p: 4, 
-        textAlign: 'center', 
+    <Box
+      sx={{
+        p: 4,
+        textAlign: 'center',
         bgcolor: 'background.paper',
         borderRadius: '12px',
         border: '1px solid',
@@ -43,13 +47,13 @@ const ThreadList = ({
       </Typography>
       <Box sx={{ mt: 2 }}>
         <svg width="120" height="120" viewBox="0 0 120 120" style={{ opacity: 0.3 }}>
-          <circle cx="60" cy="60" r="50" fill="none" stroke="#ccc" strokeWidth="2"/>
-          <path d="M40 60 L80 60 M60 40 L60 80" stroke="#ccc" strokeWidth="2"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#ccc" strokeWidth="2" />
+          <path d="M40 60 L80 60 M60 40 L60 80" stroke="#ccc" strokeWidth="2" />
         </svg>
       </Box>
     </Box>
   );
-  
+
   // Handle comment click - chuyển đến detail thread
   const handleCommentClick = (threadId) => {
     onThreadClick && onThreadClick(threadId);
@@ -58,18 +62,18 @@ const ThreadList = ({
   // Handle thread updated - Forward to parent và update local state
   const handleThreadUpdated = (threadId, updatedData) => {
     console.log('ThreadList: Thread updated', threadId, updatedData);
-    
+
     // Update local state immediately
     if (setThreads) {
-      setThreads(prevThreads => 
-        prevThreads.map(thread => 
-          (thread._id === threadId || thread.id === threadId) 
+      setThreads(prevThreads =>
+        prevThreads.map(thread =>
+          (thread._id === threadId || thread.id === threadId)
             ? { ...thread, ...updatedData }
             : thread
         )
       );
     }
-    
+
     // Forward to parent callback
     onThreadUpdated && onThreadUpdated(threadId, updatedData);
   };
@@ -77,20 +81,20 @@ const ThreadList = ({
   // Handle thread deleted - Forward to parent và update local state
   const handleThreadDeleted = (threadId) => {
     console.log('ThreadList: Thread deleted', threadId);
-    
+
     // Update local state immediately
     if (setThreads) {
-      setThreads(prevThreads => 
-        prevThreads.filter(thread => 
+      setThreads(prevThreads =>
+        prevThreads.filter(thread =>
           thread._id !== threadId && thread.id !== threadId
         )
       );
     }
-    
+
     // Forward to parent callback
     onThreadDeleted && onThreadDeleted(threadId);
   };
-  
+
   // Hiển thị loading skeletons khi đang tải lần đầu
   if (loading && threads.length === 0) {
     return (
@@ -101,18 +105,42 @@ const ThreadList = ({
       </Box>
     );
   }
-  
+
+  const handleApprove = async (id) => {
+    if (!accessToken) return;
+    try {
+      const res = await approveThread(id, accessToken);
+      setThreads(prev => prev.filter(thread => thread._id !== id));
+      toast.success('Đã duyệt thành công!');
+    } catch (err) {
+      console.error('Lỗi duyệt:', err);
+      toast.error('Lỗi duyệt bài viết!');
+    }
+  };
+
+  const handleReject = async (id) => {
+    if (!accessToken) return;
+    try {
+      const res = await rejectThread(id, accessToken);
+      setThreads(prev => prev.filter(thread => thread._id !== id));
+      toast.success('Đã từ chối thành công!');
+    } catch (err) {
+      console.error('Lỗi từ chối:', err);
+      toast.error('Lỗi từ chối bài viết!');
+    }
+  };
+
   // Hiển thị trạng thái không có bài viết
   if (!loading && threads.length === 0) {
     return <EmptyState />;
   }
-  
+
   return (
     <Box>
       {/* Hiển thị loading overlay khi chuyển trang */}
       {loading && threads.length > 0 && (
-        <Box 
-          sx={{ 
+        <Box
+          sx={{
             position: 'relative',
             '&::before': {
               content: '""',
@@ -127,7 +155,7 @@ const ThreadList = ({
             }
           }}
         >
-          <Box 
+          <Box
             sx={{
               position: 'absolute',
               top: '50%',
@@ -140,7 +168,7 @@ const ThreadList = ({
           </Box>
         </Box>
       )}
-      
+
       {/* Danh sách threads */}
       <Box sx={{ position: 'relative' }}>
         {threads.map((thread) => {
@@ -150,8 +178,8 @@ const ThreadList = ({
             _id: thread._id, // Keep both for compatibility
             title: thread.title || '',
             content: thread.content || '',
-            username: thread.username || 'Unknown User', 
-            avatar: thread.avatar || null, 
+            username: thread.username || 'Unknown User',
+            avatar: thread.avatar || null,
             created_at: thread.created_at || thread.createdAt || new Date().toISOString(),
             tags: thread.tags || [],
             // Sử dụng data từ backend đã format với like/dislike counts
@@ -162,19 +190,23 @@ const ThreadList = ({
             viewCount: thread.viewCount || 0,
             author: thread.author // Include author for ownership checking
           };
-          
+
           return (
-            <ThreadCard 
-              key={thread._id} 
-              thread={mappedThread} 
+            <ThreadCard
+              key={thread._id}
+              thread={mappedThread}
               onCommentClick={handleCommentClick}
               onThreadUpdated={handleThreadUpdated}
               onThreadDeleted={handleThreadDeleted}
+              type={type}
+              handleApprove={() => handleApprove(thread._id)}
+              handleReject={() => handleReject(thread._id)}
+              handleHide={() => handleReject(thread._id)}
             />
           );
         })}
       </Box>
-      
+
       {/* Phân trang */}
       {totalPages > 1 && (
         <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>

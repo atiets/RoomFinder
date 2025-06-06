@@ -94,6 +94,13 @@ router.delete('/comments/:commentId',
 router.get('/tags', threadController.getAllTags);
 //tìm kiếm threads theo nhiều tiêu chí
 router.get('/search', threadController.searchThreads);
+//Người dùng lấy thread
+router.get('/threadsByUser', middlewareControllers.verifyToken, threadController.searchThreads);
+// Approve thread
+router.put('/:threadId/approve', middlewareControllers.verifyTokenAndAdminAuth, threadController.approveThread);
+
+// Reject thread
+router.put('/:threadId/reject', middlewareControllers.verifyTokenAndAdminAuth, threadController.rejectThread);
 
 // Export router
 module.exports = router;

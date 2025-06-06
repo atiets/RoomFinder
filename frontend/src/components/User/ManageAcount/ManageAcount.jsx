@@ -1,4 +1,3 @@
-import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedMenu } from "../../../redux/menuSlice";
 import ChangePassword from "../ChangePassword/ChangePassword";
@@ -8,6 +7,7 @@ import ViewedPost from "../ViewedPost/ViewedPost";
 import EditProfile from "./EditProfile";
 import ListUserPost from "./listUserPost";
 import "./ManageAcount.css";
+import ManageThread from "./ManageThread";
 import Sidebar from "./Sidebar";
 import UpdatePost from "./UpdatePost";
 import UserStatistics from "./UserStatistics";
@@ -40,6 +40,8 @@ const ManageAcount = () => {
         return <ViewedPost />;
       case "statistics":
         return <UserStatistics />;
+        case "forumPosts":
+        return <ManageThread />;
       default:
         return <EditProfile user={currentUser || null} />;
     }

@@ -90,3 +90,10 @@
     color: white !important;
     border-color: #006600 !important;
 }
+
+.selected-tag-wrapper{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}

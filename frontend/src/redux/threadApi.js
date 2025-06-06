@@ -306,3 +306,69 @@ export const getThreadsTags = async () => {
     throw error;
   }
 }
+
+export const getUserThread = async ({
+  keyword = '',
+  authorId = '',
+  status = '',
+  page = 1,
+  limit = 10,
+  token = ''
+} = {}) => {
+  try {
+    const response = await axios.get(`${API_URL}/threadsByUser`, {
+      params: {
+        authorId,
+        status,
+        page,
+        limit,
+        keyword
+      },
+      headers: token
+        ? {
+          Authorization: `Bearer ${token}`
+        }
+        : undefined
+    });
+    return response;
+  } catch (error) {
+    console.error('Lỗi khi gọi API getUserThread:', error);
+    throw error;
+  }
+};
+
+// Duyệt bài viết
+export const approveThread = async (threadId, token) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/${threadId}/approve`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Từ chối bài viết
+export const rejectThread = async (threadId, token) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/${threadId}/reject`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

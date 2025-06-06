@@ -116,7 +116,69 @@ const checkPostModeration = async (post) => {
     }
 };
 
+const requestThreadApproval = async (title, content) => {
+    if (!title || !content) {
+        throw new Error("Thiếu tiêu đề hoặc nội dung bài viết");
+    }
+
+    const prompt = `
+Bạn là một quản trị viên diễn đàn. Dưới đây là một bài viết mới gồm tiêu đề và nội dung. Hãy đánh giá xem bài viết có nên được duyệt hay không.
+
+Tiêu đề: """${title}"""
+Nội dung: """${content}"""
+
+Chỉ trả lời bằng một từ duy nhất:
+- Nếu **duyệt**, trả lời: duyệt
+- Nếu **không duyệt**, trả lời: không duyệt
+
+Không thêm bất kỳ lời giải thích hay định dạng nào khác.
+    `.trim();
+
+    try {
+        const response = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+            {
+                contents: [
+                    {
+                        parts: [{ text: prompt }],
+                    },
+                ],
+            },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        );
+
+        const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text?.toLowerCase().trim();
+
+        if (!rawText) {
+            throw new Error("Không nhận được phản hồi từ AI");
+        }
+
+        if (rawText === "duyệt") {
+            return {
+                approve: true,
+                reason: "Hệ thống đánh giá bài viết hợp lệ và đã được duyệt."
+            };
+        }
+
+        if (rawText === "không duyệt") {
+            return {
+                approve: false,
+                reason: "Hệ thống đánh giá bài viết không đủ điều kiện để được duyệt."
+            };
+        }
+
+        throw new Error(`Phản hồi không hợp lệ từ AI: "${rawText}"`);
+
+    } catch (error) {
+        console.error("Lỗi khi gọi Gemini API hoặc xử lý dữ liệu:", error.message);
+        throw error;
+    }
+};
+
 module.exports = {
     suggestQuestions,
     checkPostModeration,
+    requestThreadApproval,
 };

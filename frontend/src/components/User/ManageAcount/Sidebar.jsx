@@ -1,4 +1,3 @@
-import React from "react";
 import userpic from "../../../assets/images/user.png";
 import "./Sidebar.css";
 const Sidebar = ({ user, setSelectedMenu }) => {
@@ -35,6 +34,9 @@ const Sidebar = ({ user, setSelectedMenu }) => {
           <li onClick={() => setSelectedMenu("changePass")}>🔒 Đổi mật khẩu</li>
           <li onClick={() => setSelectedMenu("favoritePosts")}>
             ❤️ Danh sách yêu thích
+          </li>
+          <li onClick={() => setSelectedMenu("forumPosts")}>
+            🕒 Bài viết trên diễn đàn
           </li>
           <li onClick={() => setSelectedMenu("viewedPosts")}>
             🕒 Bài đăng đã xem

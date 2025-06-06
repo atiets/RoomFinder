@@ -3,6 +3,7 @@ import { setSelectedMenu } from "../../../redux/menuSlice";
 import AdminDashboard from "../AdminDashboard/AdminDashboard";
 import AdminHeader from "../AdminHeader/AdminHeader";
 import AdminReports from "../ManageReport";
+import ManageThread from "../ManageThread";
 import ManageUsers from "../ManageUsers/ManageUsers";
 import UserPosts from "../ManageUsers/UserPosts";
 import NewsForm from "../News/NewsForm/NewsForm";
@@ -41,6 +42,8 @@ const HomeAdmin = () => {
         return <UserPosts />;
       case "report":
         return <AdminReports />;
+      case "thread":
+        return <ManageThread />;
       default:
         return <AdminDashboard />;
     }

@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { getThreadsTags } from '../../../../redux/threadApi';
 import './index.css';
 
-const SeachAndFilter = ({ onSearchChange }) => {
+const SeachAndFilter = ({ onSearchChange, initialSearchParams }) => {
     const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
@@ -24,6 +24,14 @@ const SeachAndFilter = ({ onSearchChange }) => {
     const [allTags, setAllTags] = useState([]);
     const [topTags, setTopTags] = useState([]);
     const [searchTagText, setSearchTagText] = useState("");
+
+    useEffect(() => {
+        if (!initialSearchParams) return;
+
+        setSearchText(initialSearchParams.keyword || "");
+        setSelectedTag(initialSearchParams.tags || "");
+        setSelectedFilter(initialSearchParams.sortBy || "newest");
+    }, [initialSearchParams]);
 
     // Mở filter menu
     const handleFilterClick = (event) => {
@@ -97,8 +105,13 @@ const SeachAndFilter = ({ onSearchChange }) => {
     }, []);
 
     const handleTagClick = (tag) => {
-        setSelectedTag(tag);
-        triggerSearch(searchText, tag, selectedFilter);
+        if (selectedTag === tag) {
+            setSelectedTag('');
+            triggerSearch(searchText, '', selectedFilter);
+        } else {
+            setSelectedTag(tag);
+            triggerSearch(searchText, tag, selectedFilter);
+        }
     };
 
     return (
@@ -168,34 +181,53 @@ const SeachAndFilter = ({ onSearchChange }) => {
                         </MenuItem>
                     </Menu>
                 </div>
-                {/* Chỉ hiển thị top tags khi ô tìm kiếm rỗng */}
-                {/* Top Tags (chỉ khi không search) */}
-                {!searchTagText.trim() && (
-                    <div className="filter-buttons">
-                        {topTags.map((tag, index) => (
-                            <Button
-                                key={index}
-                                variant="outlined"
-                                className={`filter-btn ${selectedTag === tag ? "selected-tag" : ""}`}
-                                onClick={() => handleTagClick(tag)}
-                            >
-                                {tag}
-                            </Button>
-                        ))}
+                {/* Luôn hiển thị tag đã chọn (nếu có) */}
+                {selectedTag && (
+                    <div className="selected-tag-wrapper">
+                        <Button
+                            variant="outlined"
+                            className="filter-btn selected-tag"
+                            onClick={() => handleTagClick(selectedTag)}
+                        >
+                            ❌ {selectedTag}
+                        </Button>
                     </div>
                 )}
 
-                {/* Filtered Tags (chỉ khi đang search) */}
+                {/* Danh sách top tags (chỉ khi không tìm kiếm) */}
+                {!searchTagText.trim() && (
+                    <div className="filter-buttons">
+                        {topTags.map((tag, index) => {
+                            if (tag === selectedTag) return null;
+                            return (
+                                <Button
+                                    key={index}
+                                    variant="outlined"
+                                    className="filter-btn"
+                                    onClick={() => handleTagClick(tag)}
+                                >
+                                    {tag}
+                                </Button>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* Danh sách tag lọc theo search (chỉ khi có text search) */}
                 {searchTagText.trim() && (
                     <div className="filtered-tags">
                         {allTags
-                            .filter(tag => tag.toLowerCase().includes(searchTagText.toLowerCase()))
+                            .filter(
+                                tag =>
+                                    tag.toLowerCase().includes(searchTagText.toLowerCase()) &&
+                                    tag !== selectedTag
+                            )
                             .slice(0, 10)
                             .map((tag, index) => (
                                 <Button
                                     key={index}
                                     variant="outlined"
-                                    className={`filter-btn ${selectedTag === tag ? "selected-tag" : ""}`}
+                                    className="filter-btn"
                                     onClick={() => handleTagClick(tag)}
                                 >
                                     {tag}
