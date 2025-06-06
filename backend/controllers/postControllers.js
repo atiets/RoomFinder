@@ -3,7 +3,7 @@ const User = require("../models/User");
 const cloudinary = require("cloudinary").v2;
 const mongoose = require("mongoose");
 const axios = require("axios");
-const {io} = require("../congfig/websocket");
+const { io } = require("../congfig/websocket");
 
 const sendEmail = require("../services/emailService");
 const { checkPostModeration } = require("./aiController");
@@ -12,13 +12,13 @@ const { checkAlertSubscriptions } = require("./alertSubscription");
 const SubscriptionService = require('../services/subscriptionService');
 
 function sendSocketNotification(userId, data) {
-  const socketServer = io(); 
+  const socketServer = io();
   const socketId = onlineUsers[userId];
 
   if (socketId) {
     const userSocket = socketServer.sockets.sockets.get(socketId);
     if (userSocket) {
-      userSocket.emit("notification", data); 
+      userSocket.emit("notification", data);
       console.log(`[Socket] Đã gửi thông báo tới userId=${userId}`);
     } else {
       console.log(`[Socket] Không tìm thấy socket với socketId=${socketId} cho userId=${userId}`);
@@ -977,7 +977,7 @@ exports.searchPosts = async (req, res) => {
 
     const posts = await Post.find(filter)
       .populate('contactInfo.user', 'username phoneNumber email')
-      .sort({ 
+      .sort({
         is_priority: -1,  // Ưu tiên bài VIP
         createdAt: -1     // Mới nhất
       });
@@ -1493,3 +1493,40 @@ exports.getSuggestedPosts = async (req, res) => {
   }
 };
 
+//Đếm số bài đăng 5 tỉnh
+exports.countPostsByCity = async (req, res) => {
+  try {
+    const { transactionType, category } = req.query;
+
+    if (!transactionType || !category) {
+      return res.status(400).json({ message: "Thiếu transactionType hoặc category" });
+    }
+
+    const cities = [
+      "Thành phố Hồ Chí Minh",
+      "Đà Nẵng",
+      "Cần Thơ",
+      "Bình Dương",
+      "Hà Nội",
+    ];
+
+    const results = {};
+
+    for (const city of cities) {
+      const count = await Post.countDocuments({
+        "address.province": city,
+        transactionType,
+        category,
+        status: "approved",
+        visibility: "visible",
+      });
+
+      results[city] = count;
+    }
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.error("Lỗi khi đếm bài viết theo thành phố:", error);
+    res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+};

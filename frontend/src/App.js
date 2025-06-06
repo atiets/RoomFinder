@@ -74,7 +74,7 @@ function App() {
               }
             />
             <Route
-              path="/posts"
+              path="/ChoThue"
               element={
                 <>
                   <PostsPage />
@@ -83,34 +83,7 @@ function App() {
               }
             />
             <Route
-              path="/CanHoPost"
-              element={
-                <>
-                  <PostsPage />
-                  <Footer />
-                </>
-              }
-            />
-            <Route
-              path="/VanPhongPost"
-              element={
-                <>
-                  <PostsPage />
-                  <Footer />
-                </>
-              }
-            />
-            <Route
-              path="/NhaO"
-              element={
-                <>
-                  <PostsPage />
-                  <Footer />
-                </>
-              }
-            />
-            <Route
-              path="/Dat"
+              path="/CanBan"
               element={
                 <>
                   <PostsPage />

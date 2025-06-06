@@ -23,17 +23,11 @@ const PostsPage = () => {
     try {
       const {
         category1,
-        category2,
-        category3,
-        category4,
-        category5,
+        category2
       } = await searchAndCategorizePosts({}, token);
 
       setCategory1Posts(category1);
       setCategory2Posts(category2);
-      setCategory3Posts(category3);
-      setCategory4Posts(category4);
-      setCategory5Posts(category5);
     } catch (error) {
       console.error("Lỗi khi lấy bài đăng:", error);
     } finally {
@@ -53,21 +47,12 @@ const PostsPage = () => {
     );
 
   let posts = [];
-  if (location.pathname === "/posts") {
+  if (location.pathname === "/ChoThue") {
     posts = category1Posts;
-    document.title = "Cho thuê phòng trọ";
-  } else if (location.pathname === "/CanHoPost") {
+    document.title = "Cho thuê bất động sản";
+  } else if (location.pathname === "/CanBan") {
     posts = category2Posts;
-    document.title = "Cho thuê căn hộ/chung cư";
-  } else if (location.pathname === "/VanPhongPost") {
-    posts = category3Posts;
-    document.title = "Cho thuê văn phòng, mặt bằng kinh doanh";
-  } else if (location.pathname === "/NhaO") {
-    posts = category4Posts;
-    document.title = "Cho thuê nhà ở";
-  } else if (location.pathname === "/Dat") {
-    posts = category5Posts;
-    document.title = "Cho thuê đất";
+    document.title = "Mua bán bất động sản";
   }
 
   const handleTitleClick = (id) => {

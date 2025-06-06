@@ -63,7 +63,7 @@ export const getCompareChartData = async (province, district, category, transact
         transactionType
       }
     });
-    
+
     return response.data;
   } catch (error) {
     // Xử lý lỗi chi tiết hơn
@@ -259,14 +259,14 @@ export const getUserPostsByUserId = async (token, userId) => {
 export const searchPosts = async (params, token) => {
   try {
     console.log("🔍 Searching with params:", params);
-    
+
     const response = await axios.get(`${API_URL}search`, {
       params: params,
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    
+
     console.log("🎯 Search results:", response.data.length, "posts found");
     return response.data;
   } catch (error) {
@@ -416,22 +416,16 @@ export const updateDefaultDaysToShow = async (days, token) => {
 
 export const searchAndCategorizePosts = async (params, token) => {
   const categoryList = {
-    category1: "phòng trọ",
-    category2: "Căn hộ/chung cư",
-    category3: "Văn phòng, mặt bằng kinh doanh",
-    category4: "Nhà ở",
-    category5: "Đất",
+    category1: "Cho thuê",
+    category2: "Cần bán",
   };
 
-  const [category1, category2, category3, category4, category5] = await Promise.all([
-    searchPosts({ ...params, category: categoryList.category1 }, token),
-    searchPosts({ ...params, category: categoryList.category2 }, token),
-    searchPosts({ ...params, category: categoryList.category3 }, token),
-    searchPosts({ ...params, category: categoryList.category4 }, token),
-    searchPosts({ ...params, category: categoryList.category5 }, token),
+  const [category1, category2] = await Promise.all([
+    searchPosts({ ...params, transactionType: categoryList.category1 }, token),
+    searchPosts({ ...params, transactionType: categoryList.category2 }, token),
   ]);
 
-  return { category1, category2, category3, category4, category5 };
+  return { category1, category2 };
 };
 
 // export const searchAndCategorizePosts = async (params, token) => {
@@ -445,7 +439,7 @@ export const searchAndCategorizePosts = async (params, token) => {
 //         Authorization: `Bearer ${token}`,
 //       },
 //     });
-    
+
 //     return response.data;
 //   } catch (error) {
 //     console.error("Lỗi khi tìm kiếm và phân loại bài đăng:", error);
@@ -494,4 +488,18 @@ export async function fetchSuggestedPosts(postId, token, page) {
   }
 }
 
+export const fetchPostCountByCity = async (transactionType, category) => {
+  try {
+    const response = await axios.get(`${API_URL}/count-by-city`, {
+      params: {
+        transactionType,
+        category,
+      },
+    });
 
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu bài đăng theo tỉnh:", error);
+    throw error;
+  }
+};
