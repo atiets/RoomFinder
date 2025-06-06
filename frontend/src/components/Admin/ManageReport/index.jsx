@@ -18,31 +18,6 @@ import { toast, ToastContainer } from "react-toastify";
 import { getReport, handleReports, markReportAsViewed } from "../../../redux/apiReport";
 import ReportDetailModal from "./ReportDetailModal";
 
-const mockReports = [
-    {
-        reportId: 1,
-        postId: 101,
-        postTitle: "Phòng trọ gần đại học",
-        reportCount: 5,
-        commonReason: "Nội dung sai sự thật",
-        status: "Pending",
-        note: "Thông tin sai giá thuê",
-        reporterEmail: "user@example.com",
-        authorId: 201,
-    },
-    {
-        reportId: 2,
-        postId: 102,
-        postTitle: "Căn hộ cao cấp",
-        reportCount: 3,
-        commonReason: "Hình ảnh không đúng",
-        status: "Pending",
-        note: "Hình ảnh khác thực tế",
-        reporterEmail: "user2@example.com",
-        authorId: 202,
-    },
-];
-
 const AdminReports = () => {
     const [reports, setReports] = useState([]);
     const [filteredReports, setFilteredReports] = useState([]);

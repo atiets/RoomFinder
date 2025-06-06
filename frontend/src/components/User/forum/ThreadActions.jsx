@@ -1,16 +1,15 @@
 // src/components/User/forum/ThreadActions.jsx
-import React from 'react';
-import {
-  CardActions,
-  Box,
-  Typography,
-  CircularProgress
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import {
+  Box,
+  CardActions,
+  CircularProgress,
+  Typography
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import { Button } from 'react-bootstrap';
 
 const ActionButton = styled(Box)(({ theme, active, color = '#2E7D32' }) => ({
   display: 'flex',
@@ -45,14 +44,18 @@ const LikeButton = styled(Box)(({ theme, liked, disabled }) => ({
   }
 }));
 
-const ThreadActions = ({ 
-  liked, 
-  likesCount, 
-  loading, 
-  onLikeClick, 
-  currentCommentCount, 
-  onCommentClick, 
-  viewCount 
+const ThreadActions = ({
+  liked,
+  likesCount,
+  loading,
+  onLikeClick,
+  currentCommentCount,
+  onCommentClick,
+  viewCount,
+  type,
+  handleApprove,
+  handleReject,
+  handleHide,
 }) => {
   return (
     <CardActions
@@ -64,49 +67,73 @@ const ThreadActions = ({
         backgroundColor: '#fafafa'
       }}
     >
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        {/* Like Button */}
-        <LikeButton
-          liked={liked}
-          disabled={loading}
-          onClick={onLikeClick}
-        >
-          {loading ? (
-            <CircularProgress size={18} />
-          ) : liked ? (
-            <ThumbUpIcon 
-              sx={{ fontSize: 18, color: '#2E7D32' }} 
-            />
-          ) : (
-            <ThumbUpOutlinedIcon 
-              sx={{ fontSize: 18, color: 'text.secondary' }} 
-            />
-          )}
-          
-          {likesCount > 0 && (
-            <Typography 
-              variant="body2" 
-              color={liked ? '#2E7D32' : 'text.secondary'}
-              sx={{ fontWeight: liked ? 700 : 500 }}
-            >
-              {likesCount}
+      {type === 'pending' ? (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            color="success"
+            onClick={handleApprove}
+          >
+            Duyệt
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            color="error"
+            onClick={handleReject}
+          >
+            Từ chối
+          </Button>
+        </Box>
+      ) : type === 'approved' ? (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            color="warning"
+            onClick={handleHide}
+          >
+            Ẩn bài viết
+          </Button>
+        </Box>
+      ) : (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <LikeButton
+            liked={liked}
+            disabled={loading}
+            onClick={onLikeClick}
+          >
+            {loading ? (
+              <CircularProgress size={18} />
+            ) : liked ? (
+              <ThumbUpIcon sx={{ fontSize: 18, color: '#2E7D32' }} />
+            ) : (
+              <ThumbUpOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+            )}
+            {likesCount > 0 && (
+              <Typography
+                variant="body2"
+                color={liked ? '#2E7D32' : 'text.secondary'}
+                sx={{ fontWeight: liked ? 700 : 500 }}
+              >
+                {likesCount}
+              </Typography>
+            )}
+          </LikeButton>
+
+          <ActionButton
+            active={false}
+            color="#1976d2"
+            onClick={onCommentClick}
+          >
+            <ChatBubbleOutlineIcon sx={{ fontSize: 18, mr: 0.5, color: 'text.secondary' }} />
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+              {currentCommentCount > 0 ? `${currentCommentCount} bình luận` : 'Bình luận'}
             </Typography>
-          )}
-        </LikeButton>
-
-        {/* Comment Button */}
-        <ActionButton
-          active={false}
-          color="#1976d2"
-          onClick={onCommentClick}
-        >
-          <ChatBubbleOutlineIcon sx={{ fontSize: 18, mr: 0.5, color: 'text.secondary' }} />
-          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-            {currentCommentCount > 0 ? `${currentCommentCount} bình luận` : 'Bình luận'}
-          </Typography>
-        </ActionButton>
-      </Box>
-
+          </ActionButton>
+        </Box>
+      )}
       {/* View Count */}
       {/* <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary' }}>
         <VisibilityIcon sx={{ fontSize: 16, mr: 0.5 }} />

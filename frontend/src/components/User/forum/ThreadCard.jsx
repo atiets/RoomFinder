@@ -1,29 +1,29 @@
 // src/components/User/forum/ThreadCard.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
-  Card,
-  CardHeader,
-  CardContent,
   Avatar,
-  Typography,
   Box,
-  CardMedia,
-  Divider,
   Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardMedia,
   Collapse,
+  Divider,
+  Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { useThreadLike } from '../../../hooks/useThreadLike';
-import ThreadMenu from './ThreadMenu'; // Updated import
-import ThreadActions from './ThreadActions'; // Updated import
-import ThreadEditDialog from './ThreadEditDialog'; // Updated import
 import CommentModal from './CommentThread/CommentModal';
 import './CommentThread/comment-system.css';
+import ThreadActions from './ThreadActions'; // Updated import
+import ThreadEditDialog from './ThreadEditDialog'; // Updated import
+import ThreadMenu from './ThreadMenu'; // Updated import
 
 // Rest of the component remains the same...
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -36,7 +36,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-const ThreadCard = ({ thread, onCommentClick, onThreadUpdated, onThreadDeleted }) => {
+const ThreadCard = ({ thread, onCommentClick, onThreadUpdated, onThreadDeleted, type, handleApprove, handleHide, handleReject }) => {
   const navigate = useNavigate();
   const currentUser = useSelector((state) => state.auth?.login?.currentUser);
   
@@ -344,6 +344,10 @@ const ThreadCard = ({ thread, onCommentClick, onThreadUpdated, onThreadDeleted }
           currentCommentCount={currentCommentCount}
           onCommentClick={handleCommentClick}
           viewCount={viewCount}
+          type={type}
+          handleApprove={handleApprove}
+          handleHide={handleHide}
+          handleReject={handleReject}
         />
       </StyledCard>
 

@@ -45,10 +45,16 @@ const Sidebar = ({ setSelectedMenu }) => {
             🏡 Quản lý bài đăng
           </li>
           <li
+            className={selectedMenu === "thread" ? "active" : ""}
+            onClick={() => handleMenuClick("thread")}
+          >
+            🧵 Quản lý bài viết ở diễn đàn
+          </li>
+          <li
             className={selectedMenu === "report" ? "active" : ""}
             onClick={() => handleMenuClick("report")}
           >
-            🏡 Khíu nại, phản hồi
+            📢 Khiếu nại, phản hồi
           </li>
           <li
             className={selectedMenu === "news" ? "active" : ""}

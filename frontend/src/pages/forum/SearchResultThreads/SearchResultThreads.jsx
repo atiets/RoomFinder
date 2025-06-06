@@ -18,15 +18,30 @@ const SearchResultThreads = () => {
         sortBy: 'newest',
     });
 
+    console.log("SearchResultThreads rendered with searchParams:", searchParams);
+
     useEffect(() => {
         const queryParams = new URLSearchParams(location.search);
         const q = queryParams.get("q") || "";
         const t = queryParams.get("tags") || "";
         const s = queryParams.get("sort") || "newest";
 
-        setSearchParams({ keyword: q, tags: t, sortBy: s });
+        const newParams = { keyword: q, tags: t, sortBy: s };
+
+        setSearchParams((prev) => {
+            if (
+                prev.keyword !== newParams.keyword ||
+                prev.tags !== newParams.tags ||
+                prev.sortBy !== newParams.sortBy
+            ) {
+                return newParams;
+            }
+            return prev;
+        });
+
         setPage(1);
     }, [location.search]);
+
 
     useEffect(() => {
         if (!searchParams.keyword.trim()) return;
@@ -61,7 +76,10 @@ const SearchResultThreads = () => {
     };
     return (
         <div className="search-result-threads-container">
-            <SeachAndFilter onSearchChange={handleSearchChange} />
+            <SeachAndFilter
+                onSearchChange={handleSearchChange}
+                initialSearchParams={searchParams}
+            />
             {!loading || threads.length > 0 ? (
                 <ThreadList
                     threads={threads}
