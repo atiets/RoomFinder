@@ -1,6 +1,6 @@
 // components/Search/SearchPosts.js
 import { Box, Divider } from "@mui/material";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Slider from "react-slick";
@@ -8,13 +8,9 @@ import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
 
 import categoryIcon from "../../../assets/images/categoryIcon.png";
-// import transactionIcon from "../../../assets/images/transactionIcon.png"; // Thêm icon mới
 import filterIcon from "../../../assets/images/filterIcon.png";
 import locationIcon from "../../../assets/images/locationIcon.png";
 import searchIcon from "../../../assets/images/searchIcon.png";
-import slide1 from "../../../assets/images/slide1.jpg";
-import slide2 from "../../../assets/images/slide2.jpg";
-import slide3 from "../../../assets/images/slide3.jpg";
 
 import { searchPosts } from "../../../redux/postAPI";
 import { setError, setLoading, setPosts } from "../../../redux/postSlice";
@@ -29,6 +25,8 @@ const SearchPosts = () => {
   const [isDropdownCategoryOpen, setIsDropdownCategoryOpen] = useState(false);
   const [isDropdownTransactionOpen, setIsDropdownTransactionOpen] = useState(false);
   const [isDropdownFilterOpen, setIsDropdownFilterOpen] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [textAnimation, setTextAnimation] = useState(true);
 
   const [filters, setFilters] = useState({
     keyword: "",
@@ -43,7 +41,60 @@ const SearchPosts = () => {
     maxArea: "",
   });
 
-  // **Categories theo model mới**
+  // **Slides data mới cho website tìm phòng trọ**
+  const slidesData = [
+    {
+      id: 1,
+      image: "https://gotrangtri.vn/wp-content/uploads/2021/04/thiet-ke-noi-that-chung-cu-bia.jpg",
+      title: "Căn hộ chung cư hiện đại",
+      subtitle: "Tìm kiếm căn hộ chung cư với thiết kế hiện đại, đầy đủ tiện nghi và vị trí thuận lợi",
+      highlight: "Căn hộ/Chung cư",
+      primaryColor: "#66BB6A",
+      secondaryColor: "#FF8A65",
+      category: "apartment"
+    },
+    {
+      id: 2,
+      image: "https://luci.vn/wp-content/uploads/2020/12/phong-ngu-hien-dai-duoc-thiet-ke-voi-phong-cach-toi-gian.jpg",
+      title: "Phòng trọ cao cấp",
+      subtitle: "Khám phá các phòng trọ được thiết kế hiện đại, thoáng mát với giá cả hợp lý",
+      highlight: "Phòng trọ",
+      primaryColor: "#FF8A65",
+      secondaryColor: "#66BB6A",
+      category: "room"
+    },
+    {
+      id: 3,
+      image: "https://static-images.vnncdn.net/files/publish/2023/3/31/nha-cap-4-1345.jpg",
+      title: "Nhà ở gia đình",
+      subtitle: "Tìm ngôi nhà lý tưởng cho gia đình với không gian rộng rãi và môi trường an toàn",
+      highlight: "Nhà ở",
+      primaryColor: "#4CAF50",
+      secondaryColor: "#FFB74D",
+      category: "house"
+    },
+    {
+      id: 4,
+      image: "https://static-1.happynest.vn/storage/uploads/2020/04/eb04e52da19ab9268166fe578b9817ee.jpg",
+      title: "Văn phòng & Mặt bằng",
+      subtitle: "Cho thuê văn phòng và mặt bằng kinh doanh tại vị trí đắc địa, thuận tiện giao thông",
+      highlight: "Văn phòng",
+      primaryColor: "#2196F3",
+      secondaryColor: "#FF9800",
+      category: "office"
+    },
+    {
+      id: 5,
+      image: "https://i.pinimg.com/736x/88/3e/8f/883e8f1913122b98e55901c398fd3d08.jpg",
+      title: "Đất đầu tư sinh lời",
+      subtitle: "Cơ hội đầu tư đất nền với tiềm năng sinh lời cao và pháp lý rõ ràng",
+      highlight: "Đất đai",
+      primaryColor: "#795548",
+      secondaryColor: "#FF7043",
+      category: "land"
+    }
+  ];
+
   const categories = [
     { value: "", label: "Tất cả danh mục" },
     { value: "Căn hộ/chung cư", label: "Căn hộ/chung cư" },
@@ -53,7 +104,6 @@ const SearchPosts = () => {
     { value: "phòng trọ", label: "Phòng trọ" },
   ];
 
-  // **Transaction Types theo model mới**
   const transactionTypes = [
     { value: "", label: "Tất cả loại giao dịch" },
     { value: "Cho thuê", label: "Cho thuê" },
@@ -91,6 +141,22 @@ const SearchPosts = () => {
     }));
   };
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.search-filter-box')) {
+        setIsDropdownCategoryOpen(false);
+        setIsDropdownTransactionOpen(false);
+        setIsDropdownFilterOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const convertValue = (value) => {
     if (!value) return "";
     const converted = parseFloat(value.replace(/[^\d.-]/g, ""));
@@ -110,7 +176,6 @@ const SearchPosts = () => {
         maxArea: convertValue(filters.maxArea),
       };
 
-      // Loại bỏ các giá trị trống
       const filtersWithoutEmptyValues = Object.fromEntries(
         Object.entries(preparedFilters).filter(([key, value]) => value !== ""),
       );
@@ -137,28 +202,96 @@ const SearchPosts = () => {
 
   const settings = {
     infinite: true,
-    speed: 500,
+    speed: 1200,
     slidesToShow: 1,
     slidesToScroll: 1,
     autoplay: true,
-    autoplaySpeed: 2500,
+    autoplaySpeed: 4000,
+    fade: true,
+    cssEase: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    beforeChange: (current, next) => {
+      setTextAnimation(false);
+      setTimeout(() => {
+        setCurrentSlide(next);
+        setTextAnimation(true);
+      }, 200);
+    },
+    customPaging: (i) => (
+      <div className={`custom-dot ${i === currentSlide ? 'active' : ''}`}>
+        <span></span>
+      </div>
+    ),
+    appendDots: dots => (
+      <div className="slider-dots-container">
+        <ul className="slider-dots">{dots}</ul>
+      </div>
+    ),
   };
+
+  const currentSlideData = slidesData[currentSlide];
 
   return (
     <div className="search-posts">
       <div className="home-container-slide-picture">
-        <Slider {...settings}>
-          <div>
-            <img src={slide1} alt="Room 1" />
-          </div>
-          <div>
-            <img src={slide2} alt="Room 2" />
-          </div>
-          <div>
-            <img src={slide3} alt="Room 3" />
-          </div>
+        <Slider {...settings} className="hero-slider">
+          {slidesData.map((slide, index) => (
+            <div key={slide.id} className="slide-item">
+              <div className="slide-background">
+                <img src={slide.image} alt={slide.title} className="slide-image" />
+                <div 
+                  className="slide-overlay"
+                  style={{
+                    background: `linear-gradient(135deg, ${slide.primaryColor}10, ${slide.secondaryColor}15)`
+                  }}
+                ></div>
+              </div>
+            </div>
+          ))}
         </Slider>
-        
+
+        {/* **Animated Text Content** */}
+        <div className="slide-content-wrapper">
+          <div className="container">
+            <div className={`slide-text-content ${textAnimation ? 'animate-in' : 'animate-out'}`}>
+              <div 
+                className="slide-highlight"
+                style={{ backgroundColor: currentSlideData?.primaryColor }}
+              >
+                {currentSlideData?.highlight}
+              </div>
+              <h1 
+                className="slide-title"
+                style={{ color: 'white' }}
+              >
+                {currentSlideData?.title}
+              </h1>
+              <p 
+                className="slide-subtitle"
+                style={{ color: 'rgba(255,255,255,0.95)' }}
+              >
+                {currentSlideData?.subtitle}
+              </p>
+              <button 
+                className="slide-cta-btn"
+                style={{
+                  background: `linear-gradient(45deg, ${currentSlideData?.primaryColor}, ${currentSlideData?.secondaryColor})`
+                }}
+                onClick={() => setFilters(prev => ({ 
+                  ...prev, 
+                  category: currentSlideData?.category === 'apartment' ? 'Căn hộ/chung cư' :
+                           currentSlideData?.category === 'room' ? 'phòng trọ' :
+                           currentSlideData?.category === 'house' ? 'Nhà ở' :
+                           currentSlideData?.category === 'office' ? 'Văn phòng, mặt bằng kinh doanh' :
+                           currentSlideData?.category === 'land' ? 'Đất' : ''
+                }))}
+              >
+                Tìm ngay
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* **Search Form - Back to original positioning** */}
         <input
           className="search-by-category"
           placeholder="Tìm kiếm theo từ khóa..."
