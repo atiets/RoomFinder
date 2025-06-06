@@ -14,6 +14,7 @@ import "./Home.css";
 import Introduction from "./Introduction";
 import Introduction2 from "./Introduction2";
 import ListNewsHome from "./ListNewsHome";
+import RealEstateSection from "./RealEstateSection";
 
 const Home = () => {
   document.title = "Phòng trọ xinh";
@@ -24,11 +25,8 @@ const Home = () => {
 
   const currentUser = useSelector((state) => state.auth.login.currentUser);
   const token = currentUser?.accessToken;
-  const [category1Posts, setCategory1Posts] = useState([]); // phòng trọ
-  const [category2Posts, setCategory2Posts] = useState([]); // căn hộ
-  const [category3Posts, setCategory3Posts] = useState([]); // văn phòng
-  const [category4Posts, setCategory4Posts] = useState([]); // nhà ở
-  const [category5Posts, setCategory5Posts] = useState([]); // đất
+  const [category1Posts, setCategory1Posts] = useState([]);
+  const [category2Posts, setCategory2Posts] = useState([]);
   const [openChat, setOpenChat] = useState(false);
 
   let axiosJWT = axios.create({
@@ -38,14 +36,11 @@ const Home = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const { category1, category2, category3, category4, category5 } =
+        const { category1, category2 } =
           await searchAndCategorizePosts({}, token);
 
         setCategory1Posts(Array.isArray(category1) ? category1.map(formatPost) : []);
         setCategory2Posts(Array.isArray(category2) ? category2.map(formatPost) : []);
-        setCategory3Posts(Array.isArray(category3) ? category3.map(formatPost) : []);
-        setCategory4Posts(Array.isArray(category4) ? category4.map(formatPost) : []);
-        setCategory5Posts(Array.isArray(category5) ? category5.map(formatPost) : []);
       } catch (error) {
         console.error("Lỗi khi lấy bài đăng:", error);
       }
@@ -113,35 +108,21 @@ const Home = () => {
     <div className="home-container">
       <ToastContainer position="top-right" autoClose={5000} />
       <div style={{ width: "100%", height: "auto" }}>
-        <ListPostHome
-          post={category1Posts}
-          title="Nhà trọ, phòng trọ"
-          favorite={favorites}
-        />
-        <ListPostHome
-          post={category2Posts}
-          title="Cho thuê căn hộ, chung cư"
-          favorite={favorites}
-        />
-        <ListPostHome
-          post={category4Posts}
-          title="Nhà ở"
-          favorite={favorites}
-        />
-        <ListPostHome
-          post={category5Posts}
-          title="Đất"
-          favorite={favorites}
-        />
-        <ListPostHome
-          post={category3Posts}
-          title="Văn phòng, mặt bằng kinh doanh"
-          favorite={favorites}
-        />
+        <RealEstateSection />
         <div style={{ width: "100%", height: "auto" }}>
           <div style={{ width: "100%", height: "auto" }}>
             <CompareArea />
           </div>
+          <ListPostHome
+            post={category1Posts}
+            title="Cho thuê bất động sản"
+            favorite={favorites}
+          />
+          <ListPostHome
+            post={category2Posts}
+            title="Mua bán bất động sản"
+            favorite={favorites}
+          />
           <div style={{ width: "100%", height: "auto" }}>
             <Introduction />
           </div>

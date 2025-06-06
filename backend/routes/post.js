@@ -85,4 +85,6 @@ router.post('/moderate-test', async (req, res) => {
 });
 
 router.get('/suggestions/:postId', middlewareControllers.verifyToken, postController.getSuggestedPosts);
+//điếm số bài viết ở 5 tỉnh thành
+router.get("/count-by-city", postController.countPostsByCity);
 module.exports = router;

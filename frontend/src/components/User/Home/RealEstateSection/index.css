@@ -1,0 +1,83 @@
+.realestate-container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background-color: #fff;
+}
+
+.tab-header {
+    display: flex;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.tab {
+    margin-right: 20px;
+    cursor: pointer;
+    color: #000;
+}
+
+.tab.selected {
+    color: #005500;
+    border-bottom: 2px solid #005500;
+}
+
+.category-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.category {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    background-color: #f5f5f5;
+    cursor: pointer;
+}
+
+.category.active {
+    background-color: #005500;
+    color: white;
+    border-color: #005500;
+}
+
+.location-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.location-card {
+    background-size: cover;
+    background-position: center;
+    border-radius: 8px;
+    height: 180px;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    color: white;
+}
+
+.location-card.large {
+    grid-row: span 2;
+    height: 100%;
+}
+
+.overlay {
+    width: 100%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+    padding: 10px;
+}
+
+.location-name {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.listing-count {
+    font-size: 14px;
+    margin-top: 4px;
+}

@@ -128,16 +128,10 @@ const ListPostHome = ({ post = [], title, favorite }) => {
                 <button
                   className="see-more-button"
                   onClick={() => {
-                    if (title === "Nhà trọ, phòng trọ") {
-                      navigate("/posts");
-                    } else if (title === "Cho thuê căn hộ, nhà ở") {
-                      navigate("/CanHoPost");
-                    } else if (title === "Văn phòng, mặt bằng kinh doanh") {
-                      navigate("/VanPhongPost");
-                    } else if (title === "Nhà ở") {
-                      navigate("/NhaO");
-                    } else if (title === "Đất") {
-                      navigate("/Dat");
+                    if (title === "Mua bán bất động sản") {
+                      navigate("/CanBan");
+                    } else if (title === "Cho thuê bất động sản") {
+                      navigate("/ChoThue");
                     }
                   }}
                 >
