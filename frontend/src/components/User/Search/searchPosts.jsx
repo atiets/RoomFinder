@@ -45,7 +45,7 @@ const SearchPosts = () => {
   const slidesData = [
     {
       id: 1,
-      image: "https://gotrangtri.vn/wp-content/uploads/2021/04/thiet-ke-noi-that-chung-cu-bia.jpg",
+      image: "https://luxurydecor.vn/wp-content/uploads/2020/02/noi-that-phong-khach-chung-cu-8.jpg",
       title: "Căn hộ chung cư hiện đại",
       subtitle: "Tìm kiếm căn hộ chung cư với thiết kế hiện đại, đầy đủ tiện nghi và vị trí thuận lợi",
       highlight: "Căn hộ/Chung cư",
@@ -55,7 +55,7 @@ const SearchPosts = () => {
     },
     {
       id: 2,
-      image: "https://luci.vn/wp-content/uploads/2020/12/phong-ngu-hien-dai-duoc-thiet-ke-voi-phong-cach-toi-gian.jpg",
+      image: "https://cdn1.genspark.ai/user-upload-image/5_generated/9951d20a-650b-44c3-82f5-de1f56a8d137",
       title: "Phòng trọ cao cấp",
       subtitle: "Khám phá các phòng trọ được thiết kế hiện đại, thoáng mát với giá cả hợp lý",
       highlight: "Phòng trọ",
@@ -85,7 +85,7 @@ const SearchPosts = () => {
     },
     {
       id: 5,
-      image: "https://i.pinimg.com/736x/88/3e/8f/883e8f1913122b98e55901c398fd3d08.jpg",
+      image: "https://cdn1.genspark.ai/user-upload-image/5_generated/d06d68d8-fc8e-46d4-b798-54cc522b43a0",
       title: "Đất đầu tư sinh lời",
       subtitle: "Cơ hội đầu tư đất nền với tiềm năng sinh lời cao và pháp lý rõ ràng",
       highlight: "Đất đai",
@@ -271,19 +271,12 @@ const SearchPosts = () => {
               >
                 {currentSlideData?.subtitle}
               </p>
+              {/* FIXED: Bỏ onClick, chỉ hiển thị để xem */}
               <button 
                 className="slide-cta-btn"
                 style={{
                   background: `linear-gradient(45deg, ${currentSlideData?.primaryColor}, ${currentSlideData?.secondaryColor})`
                 }}
-                onClick={() => setFilters(prev => ({ 
-                  ...prev, 
-                  category: currentSlideData?.category === 'apartment' ? 'Căn hộ/chung cư' :
-                           currentSlideData?.category === 'room' ? 'phòng trọ' :
-                           currentSlideData?.category === 'house' ? 'Nhà ở' :
-                           currentSlideData?.category === 'office' ? 'Văn phòng, mặt bằng kinh doanh' :
-                           currentSlideData?.category === 'land' ? 'Đất' : ''
-                }))}
               >
                 Tìm ngay
               </button>

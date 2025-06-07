@@ -1,7 +1,7 @@
-/* searchPosts.css - Complete version with fixed font and filled search button */
+/* searchPosts.css - Complete version with Uranus theme font and fixed search button */
 
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap');
+/* Import Google Fonts với font phù hợp cho theme Uranus */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;900&family=Open+Sans:wght@300;400;500;600;700;800&family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
 
 /* CSS Variables */
 :root {
@@ -64,11 +64,11 @@
 /* Container chính */
 .search-posts {
   width: 100%;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
   position: relative;
 }
 
-/* Slider container - Tăng margin để có space cho content bên dưới */
+/* Slider container */
 .home-container-slide-picture {
   position: relative;
   width: 100%;
@@ -162,7 +162,7 @@
   transform: translateY(20px);
 }
 
-/* Fixed highlight badge - Inter font */
+/* FIXED: Highlight badge - Uranus theme font */
 .slide-highlight {
   display: inline-block;
   padding: 12px 28px;
@@ -178,7 +178,7 @@
   overflow: hidden;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
   border: 2px solid rgba(255, 255, 255, 0.3);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Open Sans', sans-serif;
 }
 
 .slide-highlight::before {
@@ -197,12 +197,12 @@
   animation: shimmer 2s infinite;
 }
 
-/* Fixed title - Inter font */
+/* FIXED: Title - Uranus theme font cho "Phòng trọ cao cấp", "Nhà ở gia đình" */
 .slide-title {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Nunito', sans-serif;
   font-size: clamp(2.8rem, 5vw, 4.5rem);
-  font-weight: 700;
-  line-height: 1.2;
+  font-weight: 800;
+  line-height: 1.1;
   margin-bottom: 20px;
   color: white;
   text-shadow: 
@@ -211,9 +211,10 @@
     0 0 20px rgba(0, 0, 0, 0.6);
   animation: slideInUp 0.8s ease-out 0.5s both;
   -webkit-text-stroke: 1px rgba(0, 0, 0, 0.3);
+  letter-spacing: -0.02em;
 }
 
-/* Fixed subtitle - Inter font */
+/* FIXED: Subtitle - Uranus theme font */
 .slide-subtitle {
   font-size: clamp(1.1rem, 2vw, 1.4rem);
   line-height: 1.6;
@@ -226,18 +227,19 @@
     0 0 15px rgba(0, 0, 0, 0.5);
   animation: slideInUp 0.8s ease-out 0.7s both;
   -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.2);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Open Sans', sans-serif;
+  letter-spacing: 0.3px;
 }
 
-/* Fixed CTA button - Inter font */
+/* FIXED: CTA button - Uranus theme font và bỏ tương tác */
 .slide-cta-btn {
   padding: 16px 40px;
   border: none;
   border-radius: 50px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   color: white;
-  cursor: pointer;
+  cursor: default; /* FIXED: Bỏ cursor pointer */
   transition: all 0.3s ease;
   animation: fadeInScale 0.6s ease-out 0.9s both;
   text-transform: uppercase;
@@ -246,14 +248,16 @@
     0 8px 25px rgba(0, 0, 0, 0.4),
     0 4px 12px rgba(0, 0, 0, 0.3);
   border: 2px solid rgba(255, 255, 255, 0.2);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
+  pointer-events: none; /* FIXED: Bỏ tương tác hoàn toàn */
 }
 
+/* FIXED: Bỏ hover effect cho button "Tìm ngay" */
 .slide-cta-btn:hover {
-  transform: translateY(-3px);
+  transform: none;
   box-shadow: 
-    0 12px 35px rgba(0, 0, 0, 0.5),
-    0 6px 20px rgba(0, 0, 0, 0.4);
+    0 8px 25px rgba(0, 0, 0, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Custom Dots */
@@ -323,7 +327,7 @@
   transition: all 0.3s ease;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   z-index: 50;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 .search-by-category:focus {
@@ -377,7 +381,7 @@
   transform: translateY(-1px);
 }
 
-/* FIXED: Search button container - giờ fill màu như hình 2 */
+/* Search button container */
 .search-filter-box.search-btn-container {
   flex: 0.8;
   justify-content: center;
@@ -423,7 +427,7 @@
   margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 /* Dropdown */
@@ -456,7 +460,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-right: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 .dropdown-display.selected {
@@ -505,7 +509,7 @@
   transition: all 0.2s ease;
   font-weight: 500;
   font-size: 13px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 .dropdown-option:hover {
@@ -540,7 +544,7 @@
   margin: 0 8px !important;
 }
 
-/* FIXED: FILLED SEARCH BUTTON - theo yêu cầu hình 2 */
+/* FILLED SEARCH BUTTON */
 .search-btn {
   width: 100%;
   height: 50px;
@@ -556,7 +560,7 @@
   box-shadow: 0 4px 15px rgba(102, 187, 106, 0.3);
   position: relative;
   overflow: hidden;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -591,7 +595,7 @@
   box-shadow: none;
 }
 
-/* FIXED: Icon và text trong button */
+/* Icon và text trong button */
 .style-icon-btn-search {
   width: 18px;
   height: 18px;
@@ -635,7 +639,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 .filter-inputs {
@@ -669,7 +673,7 @@
   width: 100%;
   outline: none;
   color: #333;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 .filter-input::placeholder {
@@ -699,7 +703,7 @@
   color: var(--pastel-green);
   font-weight: 500;
   text-align: center;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 /* Quick filters */
@@ -714,7 +718,7 @@
   color: #666;
   margin-bottom: 10px;
   font-weight: 500;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 .quick-filter-buttons {
@@ -732,7 +736,7 @@
   color: #666;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 .quick-btn:hover {
@@ -758,7 +762,7 @@
   font-size: 13px;
   cursor: pointer;
   transition: background 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 .clear-filters-btn:hover {
@@ -778,7 +782,7 @@
   box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
   z-index: 10000;
   animation: slideInLeft 0.5s ease-out;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 /* Responsive Design */
