@@ -187,7 +187,7 @@ const CompareArea = () => {
       <div className="compare-left">
         <h2 className="compare-title">So sánh giá bất động sản</h2>
         <p className="compare-subtitle">
-          Cập nhật dữ liệu giá mới nhất tháng 05/2025
+          Cập nhật dữ liệu giá mới nhất tháng 06/2025
         </p>
 
         {/* Layout hai cột với ngăn cách */}
