@@ -74,58 +74,75 @@ const SubscriptionCard = ({
         return iconMap[featureName] || <CheckCircle />;
     };
 
-    // Tạo danh sách tính năng chính (chỉ hiển thị những gì có)
-    const getMainFeatures = () => {
-        const allFeatures = [
-            {
-                label: features.maxPosts === -1 ? 'Tin đăng không giới hạn' : `Tối đa ${features.maxPosts} tin đăng`,
-                available: true,
-                show: true
-            },
-            {
-                label: 'Phân tích cơ bản',
-                available: true,
-                show: isFree
-            },
-            {
-                label: 'Hỗ trợ cộng đồng',
-                available: true,
-                show: isFree
-            },
-            {
-                label: features.vipPosts === -1 ? 'Tin VIP không giới hạn' : `${features.vipPosts} tin VIP`,
-                available: features.vipPosts > 0 || features.vipPosts === -1,
-                show: features.vipPosts > 0 || features.vipPosts === -1
-            },
-            {
-                label: 'Phân tích nâng cao',
-                available: isPro || isPlus,
-                show: isPro || isPlus
-            },
-            {
-                label: 'Hỗ trợ ưu tiên 24/7',
-                available: features.prioritySupport,
-                show: features.prioritySupport
-            },
-            {
-                label: 'Xem số điện thoại ẩn',
-                available: features.canViewHiddenPhone,
-                show: features.canViewHiddenPhone
-            },
-            {
-                label: 'Tích hợp tùy chỉnh',
-                available: isPlus,
-                show: isPlus
-            },
-            {
-                label: 'Quản lý tài khoản chuyên dụng',
-                available: isPlus,
-                show: isPlus
-            }
-        ];
 
-        return allFeatures.filter(feature => feature.show && feature.available);
-    };
+const getMainFeatures = () => {
+  const allFeatures = [
+    // Free Plan Features
+    {
+      label: '3 tin đăng thường/tháng',
+      available: true,
+      show: isFree
+    },
+    {
+      label: 'Phân tích cơ bản',
+      available: true,
+      show: isFree
+    },
+    {
+      label: 'Hỗ trợ cộng đồng',
+      available: true,
+      show: isFree
+    },
+    
+    // Pro Plan Features
+    {
+      label: '30 tin đăng thường/tháng', // ⭐ Cập nhật
+      available: true,
+      show: isPro
+    },
+    {
+      label: '5 tin VIP miễn phí/tháng',
+      available: features.vipPosts > 0,
+      show: isPro
+    },
+    {
+      label: 'Xem số điện thoại ẩn',
+      available: features.canViewHiddenPhone,
+      show: isPro
+    },
+    {
+      label: 'Hỗ trợ ưu tiên 24/7',
+      available: features.prioritySupport,
+      show: isPro
+    },
+    
+    // Plus Plan Features  
+    {
+      label: 'Tin đăng không giới hạn',
+      available: features.maxPosts === -1,
+      show: isPlus
+    },
+    {
+      label: 'Tin VIP không giới hạn', 
+      available: features.vipPosts === -1,
+      show: isPlus
+    },
+    {
+      label: 'Logo thương hiệu tùy chỉnh',
+      available: isPlus,
+      show: isPlus
+    }
+  ];
+
+  return allFeatures.filter(feature => feature.show && feature.available);
+};
+
+const getDisplayPrice = () => {
+  if (isFree) return 'Miễn phí';
+  if (isPro) return '299.000 VND';
+  if (isPlus) return '499.000 VND'; 
+  return formatPrice(price);
+};
 
     // Tất cả tính năng cho modal (chỉ cho gói plus)
     const getAllFeatures = () => {
@@ -146,11 +163,6 @@ const SubscriptionCard = ({
                 available: features.canViewHiddenPhone
             },
             {
-                label: 'Giảm phí cọc',
-                value: `${features.depositFeeDiscount}%`,
-                available: features.depositFeeDiscount > 0
-            },
-            {
                 label: 'Thời gian duyệt tin',
                 value: `${features.fastApproval} giờ`,
                 available: true
@@ -161,37 +173,7 @@ const SubscriptionCard = ({
                 available: features.prioritySupport
             },
             {
-                label: 'Phân tích chi tiết và báo cáo',
-                value: 'Có',
-                available: isPlus
-            },
-            {
                 label: 'Logo thương hiệu tùy chỉnh',
-                value: 'Có',
-                available: isPlus
-            },
-            {
-                label: 'Quản lý tài khoản chuyên dụng',
-                value: 'Có',
-                available: isPlus
-            },
-            {
-                label: 'Xác thực SSO',
-                value: 'Có',
-                available: isPlus
-            },
-            {
-                label: 'Bảo mật nâng cao',
-                value: 'Có',
-                available: isPlus
-            },
-            {
-                label: 'Hợp đồng tùy chỉnh',
-                value: 'Có',
-                available: isPlus
-            },
-            {
-                label: 'SLA cam kết',
                 value: 'Có',
                 available: isPlus
             }

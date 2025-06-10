@@ -81,83 +81,69 @@ const ComparisonDialog = ({
     );
   };
 
-  const features = [
-    {
-      name: "Giá/tháng",
-      key: "price",
-      icon: <TrendingUp />,
-      format: (value) => (value === 0 ? "Miễn phí" : formatPrice(value)),
+const features = [
+  {
+    name: "Giá/tháng",
+    key: "price",
+    icon: <TrendingUp />,
+    format: (value, sub) => {
+      if (value === 0) return "Miễn phí";
+      if (sub.name === 'plus') return "499.000 VND"; // ⭐ Cập nhật
+      return formatPrice(value);
     },
-    {
-      name: "Thời hạn sử dụng",
-      key: "duration",
-      icon: <AccessTime />,
-      format: (value, sub) => (sub.name === "free" ? "1 năm" : `${value} ngày`),
-    },
-    {
-      name: "Số tin đăng/tháng",
-      key: "maxPosts",
-      icon: <TrendingUp />,
-      isFeature: true,
-    },
-    {
-      name: "Thời gian hiển thị tin",
-      key: "postDuration",
-      icon: <FlashOn />,
-      isFeature: true,
-      format: (value) => (value === -1 ? "Không giới hạn" : `${value} ngày`),
-    },
-    {
-      name: "Tin VIP miễn phí",
-      key: "vipPosts",
-      icon: <Star />,
-      isFeature: true,
-    },
-    {
-      name: "Xem số điện thoại ẩn",
-      key: "canViewHiddenPhone",
-      icon: <Phone />,
-      isFeature: true,
-    },
-    {
-      name: "Giảm phí đặt cọc",
-      key: "depositFeeDiscount",
-      icon: <TrendingUp />,
-      isFeature: true,
-      format: (value) => (value > 0 ? `${value}%` : "Không"),
-    },
-    {
-      name: "Thời gian duyệt tin",
-      key: "fastApproval",
-      icon: <FlashOn />,
-      isFeature: true,
-      format: (value) => `${value} giờ`,
-    },
-    {
-      name: "Hỗ trợ ưu tiên",
-      key: "prioritySupport",
-      icon: <Support />,
-      isFeature: true,
-    },
-    {
-      name: "Báo cáo & phân tích",
-      key: "analytics",
-      icon: <Analytics />,
-      isFeature: true,
-    },
-    {
-      name: "Logo thương hiệu",
-      key: "customBranding",
-      icon: <Business />,
-      isFeature: true,
-    },
-    {
-      name: "Luôn hiển thị đầu trang",
-      key: "alwaysOnTop",
-      icon: <Star />,
-      isFeature: true,
-    },
-  ];
+  },
+  {
+    name: "Số tin đăng thường/tháng",
+    key: "maxPosts", 
+    icon: <TrendingUp />,
+    isFeature: true,
+    format: (value, sub) => {
+      if (sub.name === 'free') return "3";
+      if (sub.name === 'pro') return "30"; // ⭐ Cập nhật
+      if (value === -1) return "Không giới hạn";
+      return value;
+    }
+  },
+  {
+    name: "Tin VIP miễn phí",
+    key: "vipPosts",
+    icon: <Star />,
+    isFeature: true,
+    format: (value, sub) => {
+      if (sub.name === 'free') return "Không có";
+      if (sub.name === 'pro') return "5/tháng";
+      if (value === -1) return "Không giới hạn";
+      return `${value}/tháng`;
+    }
+  },
+  // Thêm tính năng VIP
+  {
+    name: "Tính năng VIP",
+    key: "vipBenefits",
+    icon: <Star />,
+    isFeature: true,
+    format: (value, sub) => {
+      if (sub.name === 'free') return <Cancel color="disabled" />;
+      return (
+        <Box>
+          <Typography variant="caption" display="block">
+            🔝 Ưu tiên hiển thị
+          </Typography>
+          <Typography variant="caption" display="block">
+            🎨 Giao diện đặc biệt
+          </Typography>
+          <Typography variant="caption" display="block">
+            📈 Tăng 300-500% lượt xem
+          </Typography>
+          <Typography variant="caption" display="block">
+            ⏰ Refresh tự động hàng ngày
+          </Typography>
+        </Box>
+      );
+    }
+  },
+  // ... các features khác
+];
 
   const isCurrentPlan = (subscriptionId) => {
     return currentSubscription?.subscriptionId?._id === subscriptionId;

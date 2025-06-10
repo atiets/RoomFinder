@@ -314,16 +314,22 @@ const PLAN_CONFIGS = {
     name: 'Gói Pro',
     features: {
       posting: {
-        monthlyPostLimit: -1, // unlimited
-        isUnlimitedPosts: true
+        monthlyPostLimit: 30,
+        isUnlimitedPosts: false
       },
       vipFeatures: {
         vipPostsPerMonth: 5,
-        isUnlimitedVipPosts: false
+        isUnlimitedVipPosts: false,
+        vipBenefits: {
+          priorityDisplay: true,
+          specialUI: true,
+          increasedViews: "300-500%",
+          autoRefresh: true
+        }
       },
       contactFeatures: {
         canViewHiddenPhone: true,
-        hiddenPhoneViewsPerMonth: -1 // unlimited
+        hiddenPhoneViewsPerMonth: -1 
       },
       processingFeatures: {
         approvalTimeHours: 24,
@@ -340,16 +346,22 @@ const PLAN_CONFIGS = {
     name: 'Gói Plus',
     features: {
       posting: {
-        monthlyPostLimit: -1, // unlimited
+        monthlyPostLimit: -1,
         isUnlimitedPosts: true
       },
       vipFeatures: {
-        vipPostsPerMonth: -1, // unlimited
-        isUnlimitedVipPosts: true
+        vipPostsPerMonth: -1,
+        isUnlimitedVipPosts: true,
+        vipBenefits: {
+          priorityDisplay: true,
+          specialUI: true,
+          increasedViews: "300-500%",
+          autoRefresh: true
+        }
       },
       contactFeatures: {
         canViewHiddenPhone: true,
-        hiddenPhoneViewsPerMonth: -1 // unlimited
+        hiddenPhoneViewsPerMonth: -1 
       },
       processingFeatures: {
         approvalTimeHours: 2,
@@ -364,7 +376,7 @@ const PLAN_CONFIGS = {
   }
 };
 
-// Update function after successful payment
+// ⭐ SỬA: Update function after successful payment
 exports.updateUserPlan = async (payment) => {
   try {
     const subscription = await Subscription.findById(payment.subscriptionId);
@@ -399,6 +411,14 @@ exports.updateUserPlan = async (payment) => {
       { isActive: false }
     );
 
+    // ⭐ SỬA: Set initial usage với quota đầy đủ
+    const initialUsage = {
+      postsCreated: planConfig.features.posting.monthlyPostLimit === -1 ? 999999 : planConfig.features.posting.monthlyPostLimit,
+      vipPostsUsed: planConfig.features.vipFeatures.vipPostsPerMonth === -1 ? 999999 : planConfig.features.vipFeatures.vipPostsPerMonth,
+      hiddenPhoneViews: planConfig.features.contactFeatures.canViewHiddenPhone ? 
+        (planConfig.features.contactFeatures.hiddenPhoneViewsPerMonth === -1 ? 999999 : planConfig.features.contactFeatures.hiddenPhoneViewsPerMonth) : 0
+    };
+
     const userSubscription = new UserSubscription({
       userId: payment.userId,
       userName: user.username,  
@@ -413,11 +433,7 @@ exports.updateUserPlan = async (payment) => {
       currentUsage: {
         periodStartDate: startDate,
         periodEndDate: new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate()),
-        usage: {
-          postsCreated: 0,
-          vipPostsUsed: 0,
-          hiddenPhoneViews: 0
-        },
+        usage: initialUsage, // ⭐ Set quota đầy đủ
         lastResetDate: startDate
       },
       paymentInfo: {
@@ -431,13 +447,12 @@ exports.updateUserPlan = async (payment) => {
 
     await userSubscription.save();
 
-    // Update user's current plan (simple)
+    // Update user's current plan
     await User.findByIdAndUpdate(
       payment.userId,
       { 
         currentPlan: planType,
-        // Update legacy fields for backward compatibility
-        postQuota: planConfig.features.posting.isUnlimitedPosts ? 999999 : 3,
+        postQuota: initialUsage.postsCreated,
         quotaResetAt: endDate
       }
     );
@@ -448,11 +463,207 @@ exports.updateUserPlan = async (payment) => {
     payment.userSubscriptionId = userSubscription._id;
     await payment.save();
 
-    console.log(`✅ User plan updated successfully: ${user.username} (${user.email}) -> ${planType} until ${endDate}`);
+    console.log(`✅ User plan updated successfully: ${user.username} (${user.email}) -> ${planType} with quota:`, initialUsage);
     return true;
   } catch (error) {
     console.error("Error updating user subscription:", error);
     throw error;
+  }
+};
+
+// ⭐ THÊM: Check usage before action
+exports.checkUsage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { action } = req.query; // 'post', 'vip_post', 'view_phone'
+
+    const userSubscription = await UserSubscription.findOne({
+      userId: userId,
+      isActive: true,
+      endDate: { $gt: new Date() }
+    }).populate('subscriptionId');
+
+    if (!userSubscription) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy gói đăng ký hoạt động"
+      });
+    }
+
+    const { usage } = userSubscription.currentUsage;
+    let canUse = false;
+    let remaining = 0;
+    let message = "";
+
+    switch (action) {
+      case 'post':
+        canUse = usage.postsCreated > 0;
+        remaining = usage.postsCreated;
+        message = canUse ? `Còn ${remaining} tin đăng` : "Đã hết quota tin đăng";
+        break;
+      
+      case 'vip_post':
+        canUse = usage.vipPostsUsed > 0;
+        remaining = usage.vipPostsUsed;
+        message = canUse ? `Còn ${remaining} tin VIP` : "Đã hết quota tin VIP";
+        break;
+      
+      case 'view_phone':
+        canUse = usage.hiddenPhoneViews > 0;
+        remaining = usage.hiddenPhoneViews;
+        message = canUse ? `Còn ${remaining} lượt xem SĐT` : "Đã hết quota xem số điện thoại";
+        break;
+      
+      default:
+        return res.status(400).json({
+          success: false,
+          message: "Action không hợp lệ"
+        });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        canUse,
+        remaining,
+        message,
+        currentUsage: usage,
+        planType: userSubscription.planType,
+        planName: userSubscription.planName
+      }
+    });
+
+  } catch (error) {
+    console.error("Check usage error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi kiểm tra usage",
+      error: error.message
+    });
+  }
+};
+
+// ⭐ THÊM: Update usage after action
+exports.updateUsage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { action } = req.body; // 'post', 'vip_post', 'view_phone'
+
+    const userSubscription = await UserSubscription.findOne({
+      userId: userId,
+      isActive: true,
+      endDate: { $gt: new Date() }
+    });
+
+    if (!userSubscription) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy gói đăng ký hoạt động"
+      });
+    }
+
+    let updateField = "";
+    let currentValue = 0;
+
+    switch (action) {
+      case 'post':
+        updateField = 'currentUsage.usage.postsCreated';
+        currentValue = userSubscription.currentUsage.usage.postsCreated;
+        break;
+      
+      case 'vip_post':
+        updateField = 'currentUsage.usage.vipPostsUsed';
+        currentValue = userSubscription.currentUsage.usage.vipPostsUsed;
+        break;
+      
+      case 'view_phone':
+        updateField = 'currentUsage.usage.hiddenPhoneViews';
+        currentValue = userSubscription.currentUsage.usage.hiddenPhoneViews;
+        break;
+      
+      default:
+        return res.status(400).json({
+          success: false,
+          message: "Action không hợp lệ"
+        });
+    }
+
+    // Check if still has quota
+    if (currentValue <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Đã hết quota cho action này"
+      });
+    }
+
+    // Update usage (trừ đi 1)
+    const updatedSubscription = await UserSubscription.findByIdAndUpdate(
+      userSubscription._id,
+      { 
+        $inc: { [updateField]: -1 },
+        $set: { 'currentUsage.lastResetDate': new Date() }
+      },
+      { new: true }
+    );
+
+    const newValue = currentValue - 1;
+
+    res.status(200).json({
+      success: true,
+      message: `Đã sử dụng 1 ${action}. Còn lại: ${newValue}`,
+      data: {
+        action,
+        remaining: newValue,
+        currentUsage: updatedSubscription.currentUsage.usage
+      }
+    });
+
+  } catch (error) {
+    console.error("Update usage error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật usage",
+      error: error.message
+    });
+  }
+};
+
+// ⭐ THÊM: Get current usage
+exports.getCurrentUsage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const userSubscription = await UserSubscription.findOne({
+      userId: userId,
+      isActive: true,
+      endDate: { $gt: new Date() }
+    }).populate('subscriptionId');
+
+    if (!userSubscription) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy gói đăng ký hoạt động"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        planType: userSubscription.planType,
+        planName: userSubscription.planName,
+        currentUsage: userSubscription.currentUsage.usage,
+        features: userSubscription.features,
+        endDate: userSubscription.endDate
+      }
+    });
+
+  } catch (error) {
+    console.error("Get current usage error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy thông tin usage",
+      error: error.message
+    });
   }
 };
 
