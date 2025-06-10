@@ -19,12 +19,14 @@ import {
   updateReview,
 } from "../../../../redux/reviewSlice";
 import "./ReviewsList.css";
+
 const COMMENT = {
   best_part: "Điều thích nhất về phòng",
   worst_part: "Điều không hài lòng",
   advice: "Lời khuyên cho người thuê sau",
   additional_comment: "Ý kiến bổ sung",
 };
+
 const RATING = {
   quality: "🏠 Chất lượng phòng",
   location: " 📍 Vị trí & Khu vực xung quanh",
@@ -32,6 +34,7 @@ const RATING = {
   security: "👥 Chủ nhà & Dịch vụ",
   service: "🔒 An ninh khu vực",
 };
+
 const REVIEW_CHECKS = {
   is_info_complete: "Bài đăng đầy đủ thông tin không?",
   is_image_accurate: "Hình ảnh có đúng thực tế không?",
@@ -64,20 +67,15 @@ const ReviewsList = ({ postId, userId }) => {
   const [selectedReview, setSelectedReview] = useState(null);
 
   const calculateAverageRating = (ratings) => {
-    // Check if review.rating is available, if not, return 0
-    // console.log("Ratings:", ratings);
     if (!ratings) return 0;
 
-    // Calculate the total rating by summing up the individual category ratings
     const totalRating = Object.values(ratings).reduce(
       (sum, value) => sum + value,
       0
     );
 
-    // Calculate the average rating by dividing the total by the number of categories
     const averageRating = totalRating / Object.keys(ratings).length;
 
-    // Return the average, rounded to 1 decimal place
     return averageRating.toFixed(1);
   };
 
@@ -170,8 +168,6 @@ const ReviewsList = ({ postId, userId }) => {
   };
 
   const handleSubmit = async (reviewId) => {
-    // e.preventDefault();
-
     if (!accessToken) {
       console.error("Access token is missing or invalid");
       return;
@@ -223,13 +219,16 @@ const ReviewsList = ({ postId, userId }) => {
     });
   };
 
+  // Kiểm tra quyền sở hữu review
+  const isReviewOwner = (review) => {
+    return currentUser && review.user_id?._id === currentUser._id;
+  };
+
   return (
     <div className="review-wrapper">
-      {/* Phần mới thêm vào */}
+      {/* Phần overview */}
       <div className="product-rating-overview">
-        {/* <h2>Đánh Giá Sản Phẩm</h2> */}
         <div className="product-rating-overview__briefing">
-          {/* Điểm trung bình */}
           <div className="product-rating-overview__score-wrapper">
             <span className="product-rating-overview__rating-score">
               {averageRating}
@@ -295,11 +294,10 @@ const ReviewsList = ({ postId, userId }) => {
           </div>
         </div>
 
-        {/* Bộ lọc theo sao */}
         <div className="product-rating-overview__filters">
           <div
             className={`product-rating-overview__filter ${selectedRating === null ? "selected" : ""}`}
-            onClick={() => setSelectedRating(null)} // Lọc lại tất cả
+            onClick={() => setSelectedRating(null)}
           >
             Tất cả ({totalReviews.toLocaleString()})
           </div>
@@ -307,28 +305,12 @@ const ReviewsList = ({ postId, userId }) => {
             <div
               key={star}
               className={`product-rating-overview__filter ${selectedRating === star ? "selected" : ""}`}
-              onClick={() => setSelectedRating(star)} // Lọc theo sao
+              onClick={() => setSelectedRating(star)}
             >
               {star} Sao ({ratingsBreakdown[star] || 0})
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Phần cũ */}
-      <div className="filter-buttons">
-        <button
-          className={sortOrder === "desc" ? "active" : ""}
-          onClick={() => handleSortOrderChange("desc")}
-        >
-          Mới tới cũ
-        </button>
-        <button
-          className={sortOrder === "asc" ? "active" : ""}
-          onClick={() => handleSortOrderChange("asc")}
-        >
-          Cũ tới mới
-        </button>
       </div>
 
       {reviews.length === 0 ? (
@@ -364,30 +346,53 @@ const ReviewsList = ({ postId, userId }) => {
         <>
           {currentReviews.map((review) => (
             <div key={review._id} className="review-item">
-              <p>
-                <span className="review-item_name">
-                  {review.user_id?.username}
-                </span>
-                <br />
-                <span className="stars">
-                  {renderStars(calculateAverageRating(review.rating))}{" "}
-                  <span
-                    className="rating_detail"
-                    onClick={() => {
-                      setSelectedReview(review);
-                      setOpenModal(true);
-                    }}
-                    style={{ cursor: "pointer", color: "red" }}
-                  >
-                    Chi tiết
+              {/* Header với thông tin user và actions */}
+              <div className="review-item-header">
+                <div className="review-item-user-info">
+                  <span className="review-item_name">
+                    {review.user_id?.username}
                   </span>
-                </span>
+                  <br />
+                  <span className="stars">
+                    {renderStars(calculateAverageRating(review.rating))}{" "}
+                    <span
+                      className="rating_detail"
+                      onClick={() => {
+                        setSelectedReview(review);
+                        setOpenModal(true);
+                      }}
+                      style={{ cursor: "pointer", color: "red" }}
+                    >
+                      Chi tiết
+                    </span>
+                  </span>
+                  <span className="review-item_time">
+                    {new Date(review.createdAt).toLocaleString()}
+                  </span>
+                </div>
 
-                <span className="review-item_time">
-                  {new Date(review.createdAt).toLocaleString()}
-                </span>
-              </p>
+                {/* Buttons sửa và xóa - chỉ hiển thị cho chủ sở hữu */}
+                {isReviewOwner(review) && (
+                  <div className="review-item-actions">
+                    <button
+                      className="review-action-btn edit-btn"
+                      onClick={() => handleEdit(review)}
+                      title="Sửa đánh giá"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      className="review-action-btn delete-btn"
+                      onClick={() => handleDelete(review._id)}
+                      title="Xóa đánh giá"
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
+                )}
+              </div>
 
+              {/* Nội dung review */}
               <ReviewComments comments={review?.comments} COMMENT={COMMENT} />
               <ReviewChecks
                 reviewChecks={review?.review_checks}

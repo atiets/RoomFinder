@@ -1,126 +1,139 @@
+/* SubscriptionCard.css */
+.subscription-plans-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #fafafa;
+    min-height: 100vh;
+}
+
+.subscription-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    align-items: stretch;
+    justify-items: center;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
 .subscription-card {
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    width: 100%;
+    max-width: 320px;
+    word-wrap: break-word;
+    box-sizing: border-box;
+}
+
+.subscription-card * {
+    box-sizing: border-box;
+}
+
+/* Primary card highlighting */
+.subscription-card--primary {
+    z-index: 2;
     position: relative;
-    overflow: visible !important;
 }
 
-.subscription-card:hover {
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15) !important;
-    transform: translateY(-8px) !important;
-}
-
-/* Free Plan - Clean white with green accents */
-.subscription-card--free {
-    background: #ffffff !important;
-    border: 2px solid #e8f5e8 !important;
-    color: #333 !important;
-}
-
-.subscription-card--free:hover {
-    border-color: #4caf50 !important;
-    box-shadow: 0 16px 48px rgba(76, 175, 80, 0.2) !important;
-}
-
-/* Pro Plan - Clean green */
-.subscription-card--pro {
-    background: #4caf50 !important;
-    color: white !important;
-    position: relative;
-    border: 2px solid #388e3c !important;
-}
-
-.subscription-card--pro:hover {
-    background: #388e3c !important;
-    box-shadow: 0 20px 56px rgba(76, 175, 80, 0.3) !important;
-}
-
-/* Plus Plan - Clean orange */
-.subscription-card--plus {
-    background: #ff9800 !important;
-    color: white !important;
-    position: relative;
-    border: 2px solid #f57c00 !important;
-}
-
-.subscription-card--plus:hover {
-    background: #f57c00 !important;
-    box-shadow: 0 24px 64px rgba(255, 152, 0, 0.3) !important;
-}
-
-/* Remove all complex animations and gradients */
-.subscription-card::before,
-.subscription-card::after {
-    display: none !important;
-}
-
-/* Simple hover effects only */
-.subscription-card .MuiButton-root {
-    transition: all 0.3s ease !important;
-}
-
-.subscription-card .MuiButton-root:hover {
-    transform: scale(1.02) !important;
-}
-
-/* Typography improvements */
-.subscription-card .MuiTypography-h3 {
-    font-weight: 900 !important;
-}
-
-.subscription-card .MuiTypography-h5 {
-    font-weight: 700 !important;
-}
-
-.subscription-card .MuiTypography-h6 {
-    font-weight: 600 !important;
-}
-
-/* Icon improvements */
-.subscription-card .MuiSvgIcon-root {
-    transition: transform 0.2s ease !important;
-}
-
-.subscription-card:hover .MuiSvgIcon-root {
-    transform: scale(1.05) !important;
-}
-
-/* Responsive improvements */
+/* Responsive breakpoints */
 @media (max-width: 768px) {
+    .subscription-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 0 10px;
+    }
+    
+    .subscription-plans-container {
+        padding: 30px 16px;
+    }
+    
     .subscription-card {
-        margin-bottom: 24px;
-        height: auto !important;
-        min-height: 500px;
+        max-width: 100%;
+        max-height: 550px;
+    }
+    
+    /* Reset scale for mobile - tất cả card cùng kích thước */
+    .subscription-card,
+    .subscription-card--primary {
+        transform: scale(1) !important;
+    }
+    
+    .subscription-card:hover,
+    .subscription-card--primary:hover {
+        transform: scale(1.01) translateY(-2px) !important;
     }
 }
 
-/* Clean badge styles */
-.subscription-card .MuiChip-root {
-    font-weight: bold !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+@media (min-width: 769px) and (max-width: 1024px) {
+    .subscription-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+    }
+    
+    .subscription-card {
+        max-width: 300px;
+    }
 }
 
-/* Better divider */
-.subscription-card .MuiDivider-root {
-    margin: 16px 0 !important;
+@media (min-width: 1025px) {
+    .subscription-cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+    }
 }
 
-/* Grid spacing fix */
-.subscription-card .MuiGrid-item {
-    padding: 4px !important;
+/* Animation effects */
+.subscription-card {
+    animation: fadeInUp 0.5s ease-out;
 }
 
-/* List item spacing fix */
-.subscription-card .MuiListItem-root {
-    padding: 2px 0 !important;
-    min-height: auto !important;
+.subscription-card:nth-child(1) {
+    animation-delay: 0.1s;
 }
 
-/* Card content padding optimization */
+.subscription-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.subscription-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Ensure content doesn't overflow */
 .subscription-card .MuiCardContent-root {
-    padding: 16px !important;
+    overflow: hidden;
 }
 
+.subscription-card .MuiList-root {
+    max-height: 200px;
+    overflow: hidden;
+}
+
+.subscription-card .MuiListItem-root {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Button hover effects */
+.subscription-card .MuiButton-root {
+    transition: all 0.2s ease;
+}
+
+/* Clean spacing */
 .subscription-card .MuiCardActions-root {
-    padding: 16px !important;
-    padding-top: 0 !important;
+    padding-top: 8px !important;
+}
+
+.subscription-card .MuiCardContent-root:last-child {
+    padding-bottom: 16px !important;
 }

@@ -1,5 +1,6 @@
 import userpic from "../../../assets/images/user.png";
 import "./Sidebar.css";
+
 const Sidebar = ({ user, setSelectedMenu }) => {
   if (!user) {
     return (
@@ -8,6 +9,7 @@ const Sidebar = ({ user, setSelectedMenu }) => {
       </div>
     );
   }
+  
   return (
     <div className="sidebar-manage-user">
       <div className="user-info">
@@ -31,7 +33,9 @@ const Sidebar = ({ user, setSelectedMenu }) => {
           <li onClick={() => setSelectedMenu("manageAccount")}>
             ✏️ Chỉnh sửa thông tin cá nhân
           </li>
-          <li onClick={() => setSelectedMenu("changePass")}>🔒 Đổi mật khẩu</li>
+          <li onClick={() => setSelectedMenu("changePass")}>
+            🔒 Đổi mật khẩu
+          </li>
           <li onClick={() => setSelectedMenu("favoritePosts")}>
             ❤️ Danh sách yêu thích
           </li>
@@ -42,7 +46,10 @@ const Sidebar = ({ user, setSelectedMenu }) => {
             🕒 Bài đăng đã xem
           </li>
           <li onClick={() => setSelectedMenu("statistics")}>
-          📊 Thống kê bài đăng
+            📊 Thống kê bài đăng
+          </li>
+          <li onClick={() => setSelectedMenu("transactionHistory")}>
+            💳 Lịch sử giao dịch
           </li>
         </ul>
       </nav>

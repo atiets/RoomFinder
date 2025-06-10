@@ -324,16 +324,15 @@ exports.createPost = async (req, res) => {
 
 // Hàm chung để xử lý dữ liệu quận/huyện
 const processDistrictData = async () => {
-  // Sửa vấn đề múi giờ bằng cách chỉ định rõ các thành phần ngày tháng
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
+  // Chỉnh lại để lấy dữ liệu cho tháng 5/2025
+  const currentYear = 2025;
+  const currentMonth = 4; // Tháng 5 (index 4 vì tháng bắt đầu từ 0)
 
   const firstDayCurrentMonth = new Date(currentYear, currentMonth, 1);
   const firstDayPreviousMonth = new Date(currentYear, currentMonth - 1, 1);
 
-  // console.log(`Tháng hiện tại: ${firstDayCurrentMonth.toISOString()}`);
-  // console.log(`Tháng trước: ${firstDayPreviousMonth.toISOString()}`);
+  console.log(`Tháng hiện tại: ${firstDayCurrentMonth.toISOString()} (Tháng 5/2025)`);
+  console.log(`Tháng trước: ${firstDayPreviousMonth.toISOString()} (Tháng 4/2025)`);
 
   // Lấy tất cả bài đăng đã được phê duyệt và hiển thị với các trường cần thiết
   const posts = await Post.find(
@@ -534,12 +533,13 @@ exports.getCompareChartData = async (req, res) => {
       });
     }
 
-    // Lấy thời gian hiện tại
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth();
+    // Chỉnh lại thời gian để lấy dữ liệu từ tháng 5/2025
+    const currentYear = 2025;
+    const currentMonth = 4; // Tháng 5 (index 4)
 
-    // Tạo mảng chứa 12 tháng gần nhất
+    console.log(`Đang lấy dữ liệu cho tháng 5/2025`);
+
+    // Tạo mảng chứa 12 tháng gần nhất tính từ tháng 5/2025
     const last12Months = [];
     for (let i = 0; i < 12; i++) {
       let month = currentMonth - i;
@@ -566,8 +566,12 @@ exports.getCompareChartData = async (req, res) => {
       });
     }
 
+    console.log(`Lấy dữ liệu từ ${last12Months[11].label} đến ${last12Months[0].label}`);
+
     // Lấy tất cả bài đăng trong 12 tháng qua theo điều kiện lọc
     const startDate = new Date(last12Months[11].startDate);
+    const endDate = new Date(currentYear, currentMonth + 1, 0); // Cuối tháng 5/2025
+    
     const posts = await Post.find({
       status: "approved",
       visibility: "visible",
@@ -575,7 +579,10 @@ exports.getCompareChartData = async (req, res) => {
       'address.district': district,
       category: category,
       transactionType: transactionType,
-      createdAt: { $gte: startDate },
+      createdAt: { 
+        $gte: startDate,
+        $lte: endDate
+      },
       price: { $gt: 0 },
       area: { $gt: 0 }
     }, {
@@ -584,6 +591,8 @@ exports.getCompareChartData = async (req, res) => {
       createdAt: 1,
       'address.ward': 1
     });
+
+    console.log(`Tìm thấy ${posts.length} bài đăng phù hợp từ ${startDate.toLocaleDateString()} đến ${endDate.toLocaleDateString()}`);
 
     // Xử lý dữ liệu tổng quan
     let totalPosts = 0;
@@ -631,7 +640,7 @@ exports.getCompareChartData = async (req, res) => {
     });
 
     // Tính giá trung bình và định dạng dữ liệu theo tháng
-    const timelineData = last12Months.map(monthData => {
+    const timelineData = last12Months.reverse().map(monthData => {
       const avgPrice = monthData.data.count > 0
         ? monthData.data.totalPrice / monthData.data.count
         : null;
@@ -658,7 +667,6 @@ exports.getCompareChartData = async (req, res) => {
     }
 
     // Lấy dữ liệu các quận/huyện lân cận
-    // Gọi hàm processDistrictData thay vì getDistrictCoordinatesByCity
     const districtData = await processDistrictData();
     const neighboringDistricts = {};
 
@@ -714,13 +722,17 @@ exports.getCompareChartData = async (req, res) => {
         totalPosts,
         minPrice: minPrice !== Infinity ? parseFloat(minPrice.toFixed(2)) : 0,
         maxPrice: parseFloat(maxPrice.toFixed(2)),
-        wardCount: Object.keys(wardData).length
+        wardCount: Object.keys(wardData).length,
+        analysisMonth: "5/2025", // Thêm thông tin tháng phân tích
+        analysisRange: `${last12Months[0]?.label} - 5/2025` // Thêm thông tin khoảng thời gian
       },
       timelineData,
       neighboringDistricts,
       wardAnalysis: formattedWardData,
       categoryAnalysis
     };
+
+    console.log(`Kết quả phân tích cho ${province} - ${district}, ${category}, ${transactionType} trong tháng 5/2025`);
 
     res.status(200).json(result);
   } catch (error) {
