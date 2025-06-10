@@ -7,7 +7,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
@@ -285,6 +285,12 @@ const ManagePostAdmin = () => {
           <MenuItem onClick={handleFilterChange}>Đã ẩn</MenuItem>
           <MenuItem onClick={handleFilterChange}>Bài đăng chỉnh sửa</MenuItem>
         </Menu>
+        <TextField
+          label="Search by title, author, or phone number"
+          variant="outlined"
+          size="small"
+          sx={{ width: "300px", marginLeft: "20px" }}
+        />
       </div>
       {allPosts.length > 0 ? (
         allPosts.map((post, index) => (

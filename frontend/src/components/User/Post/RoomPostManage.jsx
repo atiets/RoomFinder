@@ -13,24 +13,43 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import "./RoomPostManage.css"; // Import CSS tùy chỉnh
+import { useNavigate } from "react-router-dom";
+import "./RoomPostManage.css";
 
 const RoomPostManage = ({
   post,
   onTitleClick,
-  onEditPost,
   onHidePost,
   onDeletePost,
   onVisiblePost,
   type,
+  editPost
 }) => {
+  const navigate = useNavigate();
   const [menuVisible, setMenuVisible] = useState(null);
 
   const toggleMenu = (event) => {
     setMenuVisible(menuVisible ? null : event.currentTarget);
   };
 
-  console.log("Post data in room manage.:", post);
+  const handleEditPost = (postId) => {
+    if (!editPost || !Array.isArray(editPost)) {
+      console.error("editPost không tồn tại hoặc không phải mảng");
+      return;
+    }
+
+    const postToEdit = editPost.find((post) => post._id === postId);
+    if (postToEdit) {
+      navigate("/AddPost", {
+        state: {
+          type: "edit",
+          editPost: postToEdit,
+        },
+      });
+    } else {
+      console.error("Không tìm thấy bài viết cần chỉnh sửa");
+    }
+  };
 
   return (
     <Card className="room-post-card">
@@ -96,7 +115,7 @@ const RoomPostManage = ({
               <>
                 <MenuItem
                   className="custom-menu-item"
-                  onClick={() => onEditPost(post.id)}
+                  onClick={() => handleEditPost(post.id)}
                 >
                   <ModeEditIcon /> Chỉnh sửa bài viết
                 </MenuItem>

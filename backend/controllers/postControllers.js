@@ -206,10 +206,26 @@ exports.createPost = async (req, res) => {
         .json({ message: "Thiếu ảnh, vui lòng tải lên ít nhất một ảnh." });
     }
 
-    // Xử lý hình ảnh
-    const imageUrls = (req.files?.images || []).map((file) => file.path);
-    const videoUrls = (req.files?.videoUrl || []).map((file) => file.path);
-    const videoUrl = videoUrls[0] || null;
+    // Xử lý images
+    let bodyImages = req.body.images;
+    if (!Array.isArray(bodyImages)) {
+      bodyImages = bodyImages ? [bodyImages] : [];
+    }
+
+    const imageFiles = req.files?.images || [];
+
+    const imageUrls = [...bodyImages]; // các URL ảnh cũ
+    imageFiles.forEach((file) => {
+      imageUrls.push(file.path); // ảnh mới (file) đã upload lên Cloudinary
+    });
+
+    // Xử lý videoUrl
+    let videoUrl = null;
+    if (req.files?.videoUrl?.[0]) {
+      videoUrl = req.files.videoUrl[0].path;
+    } else if (typeof req.body.videoUrl === 'string' && req.body.videoUrl.startsWith('http')) {
+      videoUrl = req.body.videoUrl;
+    }
 
     const newPost = new Post({
       title,

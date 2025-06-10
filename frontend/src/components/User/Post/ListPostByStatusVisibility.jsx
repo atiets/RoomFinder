@@ -3,18 +3,16 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom"; // Import useNavigate hook
 import { viewPost } from "../../../redux/chatApi";
-import { setSelectedMenu } from "../../../redux/menuSlice";
 import {
   deletePost,
   getUserPostsByStateAndVisibility,
   togglePostVisibility,
 } from "../../../redux/postAPI"; // Hàm API mới
-import { setPosts, setSelectedPost } from "../../../redux/postSlice";
+import { setPosts } from "../../../redux/postSlice";
 import "./RoomPost.css";
 import RoomPostManage from "./RoomPostManage";
 
 const ListPostByStatusVisibility = ({ status, visibility, token }) => {
-  const [userPosts, setUserPosts] = useState([]);
   const posts = useSelector((state) => state.posts.posts);
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
@@ -24,7 +22,9 @@ const ListPostByStatusVisibility = ({ status, visibility, token }) => {
   const currentUser = useSelector((state) => state.auth.login.currentUser);
   const userId = currentUser?._id;
 
-const handleTitleClick = async (id) => {
+  const [editPost, setEditPost] = useState([]);
+
+  const handleTitleClick = async (id) => {
     if (!id) {
       console.error("ID bài đăng không hợp lệ");
       return;
@@ -44,11 +44,6 @@ const handleTitleClick = async (id) => {
     } else {
       navigate("/AddPost");
     }
-  };
-  
-  const handleEditPost = (postId) => {
-    dispatch(setSelectedPost(postId));
-    dispatch(setSelectedMenu("updatePost"));
   };
 
   const handleHidePost = async (postId) => {
@@ -85,7 +80,6 @@ const handleTitleClick = async (id) => {
     try {
       setLoading(true);
       const result = await deletePost(postId, token);
-      console.log("Post deleted:", result);
     } catch (error) {
       console.error(error);
     } finally {
@@ -103,6 +97,7 @@ const handleTitleClick = async (id) => {
           token,
         );
         const data = response.data;
+        setEditPost(data);
         console.log("User posts:", data);
         const formattedPosts = data.map((post) => ({
           id: post._id,
@@ -159,10 +154,10 @@ const handleTitleClick = async (id) => {
             key={index}
             post={post}
             onTitleClick={handleTitleClick}
-            onEditPost={handleEditPost}
             onHidePost={handleHidePost}
             onDeletePost={handleDeletePost}
             onVisiblePost={handleVisiblePost}
+            editPost={editPost}
           />
         ))
       ) : (
