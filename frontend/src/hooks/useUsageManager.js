@@ -141,12 +141,71 @@ export const useUsageManager = () => {
     fetchCurrentUsage();
   }, [accessToken]);
 
+   const shouldShowQuotaWarning = (action) => {
+    if (!currentUsage) return false;
+    
+    const { usage } = currentUsage.currentUsage;
+    let remaining = 0;
+    
+    switch (action) {
+      case 'post':
+        remaining = usage.postsCreated;
+        break;
+      case 'vip_post':
+        remaining = usage.vipPostsUsed;
+        break;
+      case 'view_phone':
+        remaining = usage.hiddenPhoneViews;
+        break;
+      default:
+        return false;
+    }
+    
+    // Hiển thị warning nếu quota <= 5 và > 0
+    return remaining <= 5 && remaining > 0;
+  };
+
+  // ⭐ THÊM: Function show warning alert
+  const showQuotaWarning = (action, remaining) => {
+    const actionNames = {
+      'post': 'đăng tin thường',
+      'vip_post': 'đăng tin VIP',
+      'view_phone': 'xem số điện thoại'
+    };
+
+    Swal.fire({
+      icon: 'warning',
+      title: '⚠️ Quota sắp hết!',
+      html: `
+        <div style="text-align: center;">
+          <p style="font-size: 16px; margin-bottom: 15px;">
+            Bạn chỉ còn <strong style="color: #ff9800;">${remaining} lượt</strong> ${actionNames[action]}
+          </p>
+          <p style="color: #666;">Nâng cấp gói để có thêm quota và không bị gián đoạn.</p>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: '🚀 Nâng cấp ngay',
+      cancelButtonText: 'Để sau',
+      confirmButtonColor: '#4caf50',
+      cancelButtonColor: '#757575',
+      timer: 5000,
+      timerProgressBar: true
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = '/subscription';
+      }
+    });
+  };
+
   return {
     currentUsage,
     loading,
     checkUsage,
     updateUsage,
     fetchCurrentUsage,
-    showQuotaExhaustedAlert
+    showQuotaExhaustedAlert,
+    shouldShowQuotaWarning, 
+    showQuotaWarning,
   };
 };
