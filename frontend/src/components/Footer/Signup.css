@@ -72,20 +72,20 @@
 }
 
 /* Input Field Styling */
-.MuiTextField-root .MuiOutlinedInput-root {
+/* .MuiTextField-root .MuiOutlinedInput-root {
     height: 56px;
 }
 
 .MuiTextField-root .MuiOutlinedInput-input {
     padding: 16px 14px;
-}
+} */
 
 /* Button Styling */
-.MuiButton-root {
+/* .MuiButton-root {
     height: 56px;
     position: relative;
     overflow: hidden;
-}
+} */
 
 .MuiButton-root::before {
     content: '';

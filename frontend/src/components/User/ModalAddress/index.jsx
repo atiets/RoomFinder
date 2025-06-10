@@ -11,7 +11,7 @@ import {
     TextField,
 } from "@mui/material";
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./index.css";
 
 const SelectWithLabel = ({ label, options, value, onChange }) => (

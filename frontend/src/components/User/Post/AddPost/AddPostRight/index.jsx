@@ -27,7 +27,7 @@ const bathroomOptions = [
     ...Array(10).fill().map((_, index) => (index + 1).toString()),
     'Nhiều hơn 10'
 ];
-const AddPostRight = ({ onContentChange, isSubmitting }) => {
+const AddPostRight = ({ onContentChange, isSubmitting, type, editPost }) => {
     const [open, setOpen] = useState(false);
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [openAddress, setOpenAddress] = useState(false);
@@ -51,7 +51,7 @@ const AddPostRight = ({ onContentChange, isSubmitting }) => {
     const [subArea, setSubArea] = useState('');
     const [block, setBlock] = useState('');
     const [floor, setFloor] = useState('');
-    const [typeArea, setTypeArea] = useState('');
+    const [typeArea, setTypeArea] = useState('m²');
     const [areaUse, setAreaUse] = useState('');
     const [width, setWidth] = useState('');
     const [length, setLength] = useState('');
@@ -200,8 +200,57 @@ const AddPostRight = ({ onContentChange, isSubmitting }) => {
     };
 
     useEffect(() => {
-        
     }, [isSubmitting]);
+
+    console.log("Edit post in add post", editPost);
+
+    useEffect(() => {
+        // Nếu đang ở chế độ chỉnh sửa và có dữ liệu bài đăng
+        if (type === 'edit' && editPost) {
+            const address = editPost.address;
+
+            setAddressData({
+                province: address.province || null,
+                district: address.district || null,
+                ward: address.ward || null,
+                exactaddress: address.exactaddress || "",
+            });
+
+            const fullAddress = `${address.exactaddress}, ${address.ward}, ${address.district}, ${address.province}`;
+            setSelectedAddress(fullAddress);
+            setSelectedCategory(editPost.category || '');
+            setApartmentType(editPost.propertyDetails?.apartmentType || '');
+            setBedroomCount(editPost.bedroomCount || 0);
+            setBathroomCount(editPost.bathroomCount || 0);
+            setBalconyDirection(editPost.balconyDirection || '');
+            setMainDoorDirection(editPost.mainDoorDirection || '');
+            setLegalContract(editPost.legalContract || '');
+            setFurnitureStatus(editPost.furnitureStatus || '');
+            setTransactionType(editPost.transactionType || '');
+            setPropertyCategory(editPost.propertyDetails?.propertyCategory || '');
+            setFloorCount(editPost.propertyDetails?.floorCount || 0);
+            setSelectedFeaturesOfHouse(editPost.features || []);
+            setSelectedFeaturesOfLand(editPost.features || []);
+            setLandDirection(editPost.propertyDetails?.landDirection || '');
+            setArea(editPost.area || '');
+            setProjectName(editPost.projectName || '');
+            setApartmentCode(editPost.locationDetails?.apartmentCode || '');
+            setSubArea(editPost.locationDetails?.subArea || '');
+            setBlock(editPost.locationDetails?.block || '');
+            setFloor(editPost.locationDetails?.floor || '');
+            setTypeArea(editPost.typeArea || '');
+            setAreaUse(editPost.areaUse || '');
+            setWidth(editPost.width || '');
+            setLength(editPost.length || '');
+            setPrice(editPost.price || '');
+            setDeposit(editPost.deposit || '');
+            setTitle(editPost.title || '');
+            setContent(editPost.content || '');
+            setUserType(editPost.userType || '');
+            setAddressData(editPost.addressData || {});
+            setPhone(editPost.contactInfo?.phoneNumber || '');
+        }
+    }, [type, editPost]);
 
     return (
         <div className="container-add-post-right">
@@ -290,7 +339,6 @@ const AddPostRight = ({ onContentChange, isSubmitting }) => {
                                     ward: data.ward,
                                     exactaddress: data.addressDetail
                                 });
-
                                 setSelectedAddress(data.fullAddress);
                             }}
                         />

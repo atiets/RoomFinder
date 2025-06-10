@@ -1,10 +1,10 @@
 import { DeleteOutline, PhotoCameraOutlined, VideocamOutlined } from '@mui/icons-material';
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FaInfoCircle } from 'react-icons/fa';
 import './index.css';
 
-const AddPostLeft = ({ onMediaChange }) => {
-    const [videoPreview, setVideoPreview] = useState([]);
+const AddPostLeft = ({ onMediaChange, type, editPost }) => {
+    const [videoPreview, setVideoPreview] = useState([null]);
     const [selectedImages, setSelectedImages] = useState([]);
 
     const updateParentMedia = (images, video) => {
@@ -56,13 +56,36 @@ const AddPostLeft = ({ onMediaChange }) => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 const preview = reader.result;
-                const videoData = { file, preview }; // Lưu cả file gốc
+                const videoData = { file, preview };
                 setVideoPreview(videoData);
-                updateParentMedia(selectedImages, videoData); // Truyền cả file và preview
+                updateParentMedia(selectedImages, videoData);
             };
             reader.readAsDataURL(file);
         }
     };
+
+    useEffect(() => {
+        if (type !== "edit") {
+            setVideoPreview(null); // Reset video khi không phải chỉnh sửa
+        }
+
+        if (type === "edit" && editPost) {
+            const formattedImages = (editPost.images || []).map((url) => ({
+                preview: url,
+            }));
+            setSelectedImages(formattedImages);
+
+            if (editPost.video && editPost.videoUrl) {
+                setVideoPreview({
+                    preview: editPost.videoUrl
+                });
+            } else {
+                setVideoPreview(null);
+            }
+
+            updateParentMedia(formattedImages, editPost.video || null);
+        }
+    }, [type, editPost]);
 
     return (
         <div className="container-add-post-left">
@@ -154,9 +177,12 @@ const AddPostLeft = ({ onMediaChange }) => {
                     <div className="video-preview-container">
                         <div className="preview-grid">
                             <div className="preview-item-video">
-                                <video className="preview-video" controls>
-                                    <source src={videoPreview} type="video/mp4" />
-                                </video>
+                                {videoPreview?.preview && (
+                                    <video controls width="100%">
+                                        <source src={videoPreview.preview} type="video/mp4" />
+                                        Trình duyệt của bạn không hỗ trợ video.
+                                    </video>
+                                )}
                                 <button
                                     className="remove-btn"
                                     onClick={() => {
