@@ -1,12 +1,17 @@
+// components/AddPost/index.js
 import { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
+import Swal from 'sweetalert2'; // ⭐ Import SweetAlert2
+import { FormControlLabel, Checkbox, Box, Alert, Typography } from '@mui/material'; // ⭐ Import Material-UI
 import useSocket from '../../../../../hooks/useSocket';
+import { useUsageManager } from '../../../../../hooks/useUsageManager'; // ⭐ Import hook
 import { createPost } from '../../../../../redux/postAPI';
 import AddPostLeft from '../AddPostLeft/index';
 import AddPostRight from '../AddPostRight';
 import FooterAddPost from '../Footer';
+import QuotaDisplay from '../../../FeaturesPayment/QuotaDisplay';
 import './index.css';
 
 const AddPost = () => {
@@ -19,11 +24,15 @@ const AddPost = () => {
     const socket = useSocket(user);
     const location = useLocation();
 
+    // ⭐ THÊM: Usage management
+    const { currentUsage, checkUsage, loading: usageLoading } = useUsageManager();
+
     const [mediaData, setMediaData] = useState(null);
     const [contentData, setContentData] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [notifications, setNotifications] = useState("");
     const [loading, setLoading] = useState(false);
+    const [isVip, setIsVip] = useState(false); 
     const { type = "add", editPost } = location.state || {};
 
     useEffect(() => {
@@ -41,9 +50,6 @@ const AddPost = () => {
         };
     }, [socket]);
 
-
-    console.log("Notifications:", notifications);
-
     const handleMediaChange = (data) => {
         setMediaData(data);
     };
@@ -51,6 +57,21 @@ const AddPost = () => {
     const handleContentChange = useCallback((data) => {
         setContentData(data);
     }, []);
+
+    const handleVipChange = async (event) => {
+        const newIsVip = event.target.checked;
+        
+        if (newIsVip) {
+            // Check VIP quota khi user muốn chọn VIP
+            const vipCheck = await checkUsage('vip_post');
+            if (!vipCheck || !vipCheck.canUse) {
+                // checkUsage đã hiển thị alert, không set VIP
+                return;
+            }
+        }
+        
+        setIsVip(newIsVip);
+    };
 
     const submitPost = async () => {
         const errors = [];
@@ -87,6 +108,7 @@ const AddPost = () => {
         } else if (content.length > 500) {
             errors.push("Nội dung mô tả không được vượt quá 500 ký tự.");
         }
+
         if (
             selectedCategory !== "Căn hộ/chung cư" &&
             selectedCategory !== "phòng trọ" &&
@@ -121,6 +143,12 @@ const AddPost = () => {
             return;
         }
 
+        const postAction = isVip ? 'vip_post' : 'post';
+        const quotaCheck = await checkUsage(postAction);
+        if (!quotaCheck || !quotaCheck.canUse) {
+            return; // Alert đã được hiển thị trong checkUsage
+        }
+
         setIsSubmitting(true);
         setLoading(true);
         try {
@@ -131,6 +159,7 @@ const AddPost = () => {
             finalData.append('content', contentData?.content || '');
             finalData.append('category', contentData?.selectedCategory || '');
             finalData.append('transactionType', contentData?.transactionType || '');
+            finalData.append('isVip', isVip); 
 
             finalData.append('address', JSON.stringify({
                 exactaddress: contentData?.addressData?.exactaddress || '',
@@ -200,6 +229,7 @@ const AddPost = () => {
                     oldVideo = mediaData.video.preview;
                 }
             }
+            
             oldImages.forEach((url) => {
                 finalData.append('images', url);
             });
@@ -220,16 +250,18 @@ const AddPost = () => {
                 username: userName,
                 phoneNumber: contentData?.phone,
             }));
-            for (let pair of finalData.entries()) {
-                console.log(pair[0] + ':', pair[1]);
-            }
 
             const response = await createPost(finalData, accessToken);
-            toast.success("Đăng bài thành công, vui lòng chờ admin duyệt");
+            
+            const successMessage = isVip 
+                ? "Đăng tin VIP thành công! Tin của bạn sẽ được ưu tiên hiển thị."
+                : "Đăng tin thành công! Vui lòng chờ admin duyệt.";
+            
+            toast.success(successMessage);
             navigate("/");
         } catch (error) {
             const errorMessage =
-                error?.response?.data?.message || "Đăng bài thất bại. Vui lòng thử lại sau.";
+                error?.response?.data?.message || "Đăng tin thất bại. Vui lòng thử lại sau.";
             toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
@@ -241,34 +273,87 @@ const AddPost = () => {
         const previewData = {
             ...mediaData,
             ...contentData,
+            isVip, 
         };
         console.log('Preview Data:', previewData);
     };
 
-    if (loading)
+    if (loading || usageLoading) {
         return (
             <div className="loading-container">
                 <div className="spinner"></div>
             </div>
         );
+    }
 
-    console.log("Edit Post:", editPost);
-    console.log("Media Data:", mediaData);
-    console.log("Content Data:", contentData);
+    const renderVipOption = () => {
+        if (!currentUsage) return null;
+
+        const { currentUsage: usage, planName } = currentUsage;
+        const hasVipQuota = usage.vipPostsUsed > 0;
+
+        return (
+            <Box sx={{ p: 2, bgcolor: '#f8f9fa', borderRadius: 2, mb: 2 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={isVip}
+                                onChange={handleVipChange}
+                                disabled={!hasVipQuota}
+                            />
+                        }
+                        label={
+                            <Box>
+                                <Typography variant="body1" fontWeight="bold">
+                                    🌟 Đăng tin VIP
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    Ưu tiên hiển thị, giao diện đặc biệt, tăng 300-500% lượt xem
+                                </Typography>
+                            </Box>
+                        }
+                    />
+                    
+                    <Box textAlign="right">
+                        <Typography variant="body2" color={hasVipQuota ? "success.main" : "error.main"}>
+                            Còn lại: {usage.vipPostsUsed === 999999 ? '∞' : usage.vipPostsUsed}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            {planName}
+                        </Typography>
+                    </Box>
+                </Box>
+                
+                {!hasVipQuota && (
+                    <Alert severity="warning" sx={{ mt: 1 }}>
+                        Bạn đã hết quota tin VIP. Nâng cấp gói để sử dụng tính năng này.
+                    </Alert>
+                )}
+            </Box>
+        );
+    };
+
     return (
         <div className="container-add-post">
             <ToastContainer />
+            <QuotaDisplay />
             <div className="container-add-post-content">
                 <AddPostLeft onMediaChange={handleMediaChange} type={type} editPost={editPost} />
-                <AddPostRight onContentChange={handleContentChange} isSubmitting={isSubmitting} type={type} editPost={editPost} />
+                <div>
+                    <AddPostRight onContentChange={handleContentChange} isSubmitting={isSubmitting} type={type} editPost={editPost} />
+                    {renderVipOption()}
+                </div>
             </div>
             <div className="container-add-post-footer">
                 <FooterAddPost
                     onSubmit={submitPost}
                     onPreview={previewPost}
-                    type={type} editPost={editPost}
+                    type={type} 
+                    editPost={editPost}
                     mediaData={mediaData}
-                    contentData={contentData}/>
+                    contentData={contentData}
+                />
             </div>
         </div>
     );
