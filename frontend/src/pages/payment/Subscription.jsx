@@ -20,6 +20,7 @@ import {
   CheckCircle,
   CompareArrows,
 } from "@mui/icons-material";
+import Swal from "sweetalert2"; // ⭐ Import SweetAlert2
 import SubscriptionCard from "../../components/User/Payment/SubscriptionCard";
 import ComparisonDialog from "../../components/User/Payment/ComparisonDialog";
 import {
@@ -42,22 +43,10 @@ const SubscriptionPage = () => {
   // Redux selectors - đã sửa theo cấu trúc thực tế
   const authState = useSelector((state) => state.auth);
   const currentUser = useSelector((state) => state.auth?.login?.currentUser);
-  const accessToken = useSelector(
-    (state) => state.auth?.login?.currentUser?.accessToken
-  );
+  const accessToken = currentUser?.accessToken;
 
-  // Debug console
-  useEffect(() => {
-    console.log("🔍 === DEBUG AUTH STATE ===");
-    console.log("Full Redux State Auth:", authState);
-    console.log("currentUser found:", currentUser);
-    console.log("accessToken found:", accessToken);
-    console.log("currentUser type:", typeof currentUser);
-    console.log("accessToken type:", typeof accessToken);
-    console.log("currentUser truthy:", !!currentUser);
-    console.log("accessToken truthy:", !!accessToken);
-    console.log("============================");
-  }, [authState, currentUser, accessToken]);
+  console.log("🔍 Current User:", currentUser)
+  console.log("🔑 Access Token:", accessToken);
 
   // Logic check đăng nhập
   const isLoggedIn = useMemo(() => {
@@ -77,13 +66,6 @@ const SubscriptionPage = () => {
       hasUser: !!hasUser,
       hasToken: !!hasToken,
       isLoggedIn: result,
-      userDetails: hasUser
-        ? {
-            id: currentUser.id || currentUser._id,
-            email: currentUser.email,
-            username: currentUser.username,
-          }
-        : null,
     });
 
     return result;
@@ -98,16 +80,8 @@ const SubscriptionPage = () => {
       setLoading(true);
       setError("");
 
-      console.log("🔍 Loading subscriptions...", {
-        isLoggedIn,
-        hasCurrentUser: !!currentUser,
-        hasAccessToken: !!accessToken,
-      });
-
       const subscriptionsRes = await getAllSubscriptions();
-      console.log("subscriptionsRes", subscriptionsRes);
-      console.log("📦 Subscriptions response:", subscriptionsRes.data);
-
+      
       if (subscriptionsRes.data.success) {
         setSubscriptions(subscriptionsRes.data.data);
       } else {
@@ -117,20 +91,14 @@ const SubscriptionPage = () => {
       // Chỉ gọi getCurrentSubscription nếu có token
       if (accessToken && typeof accessToken === "string") {
         try {
-          console.log("🔄 Fetching current subscription with token...");
           const currentRes = await getCurrentSubscription(accessToken);
-          console.log("📋 Current subscription response:", currentRes.data);
-
+          
           if (currentRes.data.success) {
             setCurrentSubscription(currentRes.data.data);
           }
         } catch (err) {
           console.log("ℹ️ User chưa có gói đăng ký:", err.message);
         }
-      } else {
-        console.log(
-          "⚠️ No valid access token, skipping getCurrentSubscription"
-        );
       }
     } catch (err) {
       console.error("💥 Load data error:", err);
@@ -140,29 +108,29 @@ const SubscriptionPage = () => {
     }
   };
 
+  // ⭐ SỬA: handleSelectPlan với SweetAlert2
   const handleSelectPlan = (subscription) => {
     console.log("🎯 Handle Select Plan called:", {
       isLoggedIn,
-      hasCurrentUser: !!currentUser,
-      hasAccessToken: !!accessToken,
       subscription: subscription.name,
-      userInfo: currentUser
-        ? {
-            username: currentUser.username,
-            email: currentUser.email,
-          }
-        : null,
     });
 
+    // ⭐ HIỂN THỊ SWAL NẾU CHƯA LOGIN
     if (!isLoggedIn) {
-      console.error("❌ Login check failed:", {
-        currentUser: !!currentUser,
-        accessToken: !!accessToken,
-        isLoggedIn,
+      Swal.fire({
+        icon: "warning",
+        title: "Chưa đăng nhập",
+        text: "Vui lòng đăng nhập để đăng ký gói dịch vụ.",
+        confirmButtonText: "Đăng nhập",
+        showCancelButton: true,
+        cancelButtonText: "Hủy",
+        confirmButtonColor: "#4caf50",
+        cancelButtonColor: "#757575",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/login"); // ⭐ SỬA: dùng navigate (hook) thay vì Navigate (component)
+        }
       });
-      setError(
-        "Bạn cần đăng nhập để sử dụng tính năng này. Vui lòng đăng nhập lại."
-      );
       return;
     }
 
@@ -376,46 +344,9 @@ const SubscriptionPage = () => {
     </Grid>
   );
 
-  // Debug info để hiển thị trạng thái đăng nhập
-  const renderUserInfo = () => {
-    if (!isLoggedIn) return null;
-
-    return (
-      <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
-        <Typography variant="body2">
-          👋 Chào <strong>{currentUser?.username || currentUser?.email}</strong>
-          ! Bạn đã đăng nhập thành công và có thể chọn gói dịch vụ.
-        </Typography>
-      </Alert>
-    );
-  };
-
-  const renderLoginPrompt = () => {
-    if (isLoggedIn) return null;
-
-    return (
-      <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
-        <Typography variant="body2">
-          🔐 Bạn cần <strong>đăng nhập</strong> để có thể đăng ký và sử dụng các
-          gói dịch vụ.
-        </Typography>
-        <Button
-          variant="contained"
-          size="small"
-          sx={{ mt: 1 }}
-          onClick={() => navigate("/login")}
-        >
-          Đăng nhập ngay
-        </Button>
-      </Alert>
-    );
-  };
-
   return (
     <Container maxWidth="lg" sx={{ py: 4, mt: 4 }}>
-      {/* User Info hoặc Login Prompt */}
-      {renderUserInfo()}
-      {renderLoginPrompt()}
+      {/* ⭐ BỎ: renderUserInfo() và renderLoginPrompt() */}
 
       {/* Header với design mới */}
       <Box textAlign="center" mb={6}>
@@ -494,10 +425,10 @@ const SubscriptionPage = () => {
             >
               <SubscriptionCard
                 key={subscription._id}
-                        subscription={subscription}
-                        currentSubscription={currentSubscription}
-                        onSelectPlan={handleSelectPlan}
-                        loading={loading}
+                subscription={subscription}
+                currentSubscription={currentSubscription}
+                onSelectPlan={handleSelectPlan}
+                loading={loading}
               />
             </Grid>
           ))}
