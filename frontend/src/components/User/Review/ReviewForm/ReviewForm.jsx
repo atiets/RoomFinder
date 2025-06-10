@@ -77,7 +77,6 @@ const ReviewForm = () => {
     });
   }, []);
 
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -96,9 +95,9 @@ const ReviewForm = () => {
       });
       return;
     }
-  
+
     const averageRating = calculateAverageRating();
-  
+
     const reviewData = {
       rating: {
         quality: quality,
@@ -106,46 +105,46 @@ const ReviewForm = () => {
         price: price,
         service: service,
         security: security,
-        averageRating: averageRating
+        averageRating: averageRating,
       },
       comments: {
         best_part: bestPart || "",
         worst_part: worstPart || "",
         advice: advice || "",
-        additional_comment: additionalComment || ""
+        additional_comment: additionalComment || "",
       },
       review_checks: {
         is_info_complete: isInfoComplete,
         is_image_accurate: isImageAccurate,
         is_host_responsive: isHostResponsive,
-        is_introduce: isIntroduce
+        is_introduce: isIntroduce,
       },
       media: {
-        images: media?.images || [], 
-        video: media?.video || "" 
-      }
-    };    
-  
+        images: media?.images || [],
+        video: media?.video || "",
+      },
+    };
+
     // // Ảnh và video (media)
     // if (media?.images?.length > 0) {
     //   media.images.forEach((image) => {
     //     formData.append("media", image); // Nếu là File
     //   });
     // }
-  
+
     // if (media?.video) {
     //   formData.append("media", media.video); // Nếu là File
     // }
-  
+
     try {
       setLoading(true);
-  
+
       // Gửi dữ liệu tới API
       await createReview(postId, reviewData, token);
-  
+
       toast.success("Đánh giá thành công! Cảm ơn bạn.", {
         position: "top-right",
-        autoClose: 2000, 
+        autoClose: 2000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
@@ -154,7 +153,7 @@ const ReviewForm = () => {
           window.location.reload();
         },
       });
-  
+
       // Reset form
       setRating({
         quality: 0,
@@ -185,7 +184,7 @@ const ReviewForm = () => {
     } finally {
       setLoading(false);
     }
-  };  
+  };
 
   // const handleStarClick = (index) => {
   //   setRating(index + 1);
@@ -196,7 +195,7 @@ const ReviewForm = () => {
       ...prevRatings,
       [category]: value,
     }));
-  
+
     if (category === "🏠 Chất lượng phòng") {
       setQuality(value);
     } else if (category === " 📍 Vị trí & Khu vực xung quanh") {
@@ -208,7 +207,7 @@ const ReviewForm = () => {
     } else if (category === "🔒 An ninh khu vực") {
       setSecurity(value);
     }
-  };  
+  };
 
   const handleStarMouseEnter = (category, value) => {
     setHoveredRating((prevHovered) => ({
@@ -319,13 +318,13 @@ const ReviewForm = () => {
       {showForm && (
         <div className="addreview-overlay">
           <div className="addreview-form-container">
-          <button
-    className="addreview-close-top"
-    onClick={() => setShowForm(false)}
-    aria-label="Close"
-  >
-    ❌
-  </button>
+            <button
+              className="addreview-close-top"
+              onClick={() => setShowForm(false)}
+              aria-label="Close"
+            >
+              ❌
+            </button>
             <h3>Thêm Đánh Giá</h3>
             <form onSubmit={handleSubmit}>
               <div className="addreview-form-group">
@@ -376,7 +375,9 @@ const ReviewForm = () => {
                 </div>
                 <div className="addreview-average">
                   <div className="addreview-average-text">
-                    <p>Đánh giá trung bình: {Number(averageRating).toFixed(1)}</p>
+                    <p>
+                      Đánh giá trung bình: {Number(averageRating).toFixed(1)}
+                    </p>
                   </div>
                   <div className="addreview-average-stars">
                     {Array.from({ length: 5 }, (_, index) => {
@@ -514,7 +515,9 @@ const ReviewForm = () => {
                         control={
                           <Checkbox
                             checked={isImageAccurate}
-                            onChange={() => setIsImageAccurate(!isImageAccurate)}
+                            onChange={() =>
+                              setIsImageAccurate(!isImageAccurate)
+                            }
                             sx={{
                               color: "#f44336",
                               "&.Mui-checked": {
@@ -534,7 +537,9 @@ const ReviewForm = () => {
                         control={
                           <Checkbox
                             checked={isHostResponsive}
-                            onChange={() => setIsHostResponsive(!isHostResponsive)}
+                            onChange={() =>
+                              setIsHostResponsive(!isHostResponsive)
+                            }
                             sx={{
                               color: "#f44336",
                               "&.Mui-checked": {
@@ -566,9 +571,12 @@ const ReviewForm = () => {
                       />
                     ) : (
                       <video controls className="preview-video">
-  <source src={URL.createObjectURL(file)} type={file.type} />
-  Trình duyệt không hỗ trợ video.
-</video>
+                        <source
+                          src={URL.createObjectURL(file)}
+                          type={file.type}
+                        />
+                        Trình duyệt không hỗ trợ video.
+                      </video>
                     )}
                     <button
                       className="remove-btn"

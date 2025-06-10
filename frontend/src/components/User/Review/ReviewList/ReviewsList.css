@@ -270,3 +270,104 @@
     transform: rotate(360deg);
   }
 }
+
+/* CSS cho header của review item */
+.review-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.review-item-user-info {
+  flex: 1;
+}
+
+/* CSS cho các button actions */
+.review-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 15px;
+}
+
+.review-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.edit-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #45a049;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.delete-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #da190b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+}
+
+.review-action-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .review-item-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .review-item-actions {
+    align-self: flex-end;
+    margin-left: 0;
+  }
+  
+  .review-action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+}
+
+/* Animation khi hover */
+.review-action-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.review-action-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+}
+
+.review-action-btn:hover::before {
+  width: 100%;
+  height: 100%;
+}

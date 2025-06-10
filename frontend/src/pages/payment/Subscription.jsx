@@ -493,10 +493,11 @@ const SubscriptionPage = () => {
               }}
             >
               <SubscriptionCard
-                subscription={subscription}
-                currentSubscription={currentSubscription}
-                onSelectPlan={handleSelectPlan}
-                loading={false}
+                key={subscription._id}
+                        subscription={subscription}
+                        currentSubscription={currentSubscription}
+                        onSelectPlan={handleSelectPlan}
+                        loading={loading}
               />
             </Grid>
           ))}

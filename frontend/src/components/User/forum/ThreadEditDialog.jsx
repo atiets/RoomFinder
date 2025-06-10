@@ -1,4 +1,4 @@
-// src/components/User/forum/ThreadEditDialog.jsx - Thêm import và update component
+// src/components/User/forum/ThreadEditDialog.jsx - Updated với ImageUploader
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import {
@@ -21,13 +21,16 @@ import IconButton from '@mui/material/IconButton';
 import Swal from 'sweetalert2';
 import { updateThread } from '../../../redux/threadApi';
 import ThreadEditor from './CreateThread/ThreadEditor';
-import TagInput from './CreateThread/TagInput'; // Import TagInput
+import TagInput from './CreateThread/TagInput';
+import ImageUploader from './CreateThread/ImageUploader'; // Import ImageUploader
 
-const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
+const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated, showSnackbar }) => {
   const currentUser = useSelector((state) => state.auth?.login?.currentUser);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
-  const [editTags, setEditTags] = useState([]); // Thêm state cho tags
+  const [editTags, setEditTags] = useState([]);
+  const [image, setImage] = useState(null); // Thêm state cho image
+  const [imagePreview, setImagePreview] = useState(null); // Thêm state cho imagePreview
   const [updating, setUpdating] = useState(false);
   const [quillInstance, setQuillInstance] = useState(null);
   const [error, setError] = useState(null);
@@ -37,7 +40,17 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
     if (open && thread) {
       setEditTitle(thread.title || '');
       setEditContent(thread.content || '');
-      setEditTags(thread.tags || []); // Set tags từ thread
+      setEditTags(thread.tags || []);
+      
+      // Set existing image if available
+      if (thread.image) {
+        setImagePreview(thread.image);
+        setImage(null); // Reset new image file
+      } else {
+        setImagePreview(null);
+        setImage(null);
+      }
+      
       setError(null);
       
       // Set content to Quill editor after a short delay to ensure Quill is initialized
@@ -58,7 +71,17 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
     onClose();
     setEditTitle(thread?.title || '');
     setEditContent(thread?.content || '');
-    setEditTags(thread?.tags || []); // Reset tags
+    setEditTags(thread?.tags || []);
+    
+    // Reset image states
+    if (thread?.image) {
+      setImagePreview(thread.image);
+      setImage(null);
+    } else {
+      setImagePreview(null);
+      setImage(null);
+    }
+    
     setError(null);
     
     // Reset Quill content
@@ -107,10 +130,15 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
       return;
     }
 
-    // Check if anything has changed
+    // Check if anything has changed (including image)
+    const hasImageChanged = image !== null || 
+                           (thread.image && !imagePreview) ||
+                           (thread.image !== imagePreview && !image);
+    
     if (trimmedTitle === thread.title && 
         trimmedContent === thread.content && 
-        JSON.stringify(editTags) === JSON.stringify(thread.tags)) {
+        JSON.stringify(editTags) === JSON.stringify(thread.tags) &&
+        !hasImageChanged) {
       onClose();
       return;
     }
@@ -134,13 +162,25 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
       setUpdating(true);
       setError(null);
       
+      // Prepare update data
+      const updateData = { 
+        title: trimmedTitle,
+        content: trimmedContent,
+        tags: editTags
+      };
+
+      // Handle image update
+      if (image) {
+        // New image file selected
+        updateData.image = image;
+      } else if (!imagePreview && thread.image) {
+        // Image was removed
+        updateData.removeImage = true;
+      }
+      
       const response = await updateThread(
         thread.id || thread._id,
-        { 
-          title: trimmedTitle,
-          content: trimmedContent,
-          tags: editTags // Thêm tags vào update data
-        },
+        updateData,
         currentUser.accessToken
       );
 
@@ -152,7 +192,8 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
           ...thread,
           title: trimmedTitle,
           content: trimmedContent,
-          tags: editTags, // Include updated tags
+          tags: editTags,
+          image: image ? URL.createObjectURL(image) : (imagePreview || null), // Update image preview
           updated_at: new Date().toISOString(),
           ...response.data
         };
@@ -169,6 +210,9 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
             popup: 'custom-swal-popup'
           }
         });
+
+        // Show success snackbar if available
+        showSnackbar && showSnackbar('Đã cập nhật bài viết thành công!', 'success');
       }
     } catch (error) {
       console.error('Update thread error:', error);
@@ -183,6 +227,9 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
           confirmButton: 'custom-swal-confirm'
         }
       });
+
+      // Show error snackbar if available
+      showSnackbar && showSnackbar(error.message || 'Có lỗi xảy ra khi cập nhật bài viết', 'error');
     } finally {
       setUpdating(false);
     }
@@ -275,6 +322,15 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated }) => {
           setTags={setEditTags}
           disabled={updating}
           error={null}
+        />
+
+        {/* Image Uploader - Thêm component ImageUploader */}
+        <ImageUploader
+          imagePreview={imagePreview}
+          setImagePreview={setImagePreview}
+          setImage={setImage}
+          showSnackbar={showSnackbar}
+          disabled={updating}
         />
       </DialogContent>
       

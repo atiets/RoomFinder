@@ -11,6 +11,7 @@ import ManageThread from "./ManageThread";
 import Sidebar from "./Sidebar";
 import UpdatePost from "./UpdatePost";
 import UserStatistics from "./UserStatistics";
+import TransactionHistory from "../TransactionHistory/TransactionHistory";
 
 const ManageAcount = () => {
   document.title = "Quản lý tài khoản";
@@ -40,8 +41,10 @@ const ManageAcount = () => {
         return <ViewedPost />;
       case "statistics":
         return <UserStatistics />;
-        case "forumPosts":
+      case "forumPosts":
         return <ManageThread />;
+      case "transactionHistory":
+        return <TransactionHistory />;
       default:
         return <EditProfile user={currentUser || null} />;
     }

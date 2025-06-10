@@ -374,7 +374,7 @@ const CreateThreadDialog = ({ open, onClose, onSuccess, showSnackbar }) => {
                   htmlFor="thread-title" 
                   sx={{ mb: 1, fontWeight: 500 }}
                 >
-                  Tiêu đề (không bắt buộc)
+                  Tiêu đề
                 </FormLabel>
                 <input
                   id="thread-title"
