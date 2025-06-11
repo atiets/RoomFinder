@@ -38,8 +38,22 @@ const ManagePostAdmin = () => {
   const [filterText, setFilterText] = useState("Lọc bài viết");
   const [days, setDays] = useState();
   const [loading, setLoading] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(searchKeyword);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchKeyword);
+      setCurrentPage(1);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchKeyword]);
+
 
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
@@ -94,7 +108,8 @@ const ManagePostAdmin = () => {
     const { status, visibility } = statusVisibilityMap[filter] || {};
     try {
       setLoading(true);
-      const data = await getAllPosts(token, currentPage, 5, status, visibility);
+      const data = await getAllPosts(token, currentPage, 5, status, visibility, debouncedSearch);
+
       if (Array.isArray(data.posts)) {
         const formattedPosts = data.posts.map((post) => ({
           id: post._id,
@@ -108,9 +123,9 @@ const ManagePostAdmin = () => {
             username: post.contactInfo?.username || "",
             phoneNumber: post.contactInfo?.phoneNumber || "",
           },
-          rentalPrice: post.rentalPrice,
-          typePrice: post.typePrice,
+          price: post.price,
           area: post.area,
+          typeArea: post.typeArea,
           status: post.status,
           visibility: post.visibility,
           images: post.images ? post.images.slice(0, 2) : [],
@@ -129,13 +144,15 @@ const ManagePostAdmin = () => {
     }
   };
 
+
   useEffect(() => {
     fetchFilteredPosts();
-  }, [filter, currentPage]);
+  }, [filter, currentPage, debouncedSearch]);
 
   const handleFilterChange = (event) => {
     setFilter(event.target.innerText);
     setFilterText(event.target.innerText);
+    setCurrentPage(1);
     handleClose();
   };
 
@@ -290,6 +307,8 @@ const ManagePostAdmin = () => {
           variant="outlined"
           size="small"
           sx={{ width: "300px", marginLeft: "20px" }}
+          value={searchKeyword}
+          onChange={(e) => setSearchKeyword(e.target.value)}
         />
       </div>
       {allPosts.length > 0 ? (

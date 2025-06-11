@@ -6,21 +6,8 @@ const userController = require('./userControllers');
 
 // Tạo đánh giá mới
 exports.createReview = async (req, res) => {
-    const { rating, comments, review_checks } = req.body;
+    const { rating, comments, review_checks, media } = req.body;
     const { postId } = req.params;
-
-    const imageUrls = [];
-    let videoUrls = '';
-    if (req.files && req.files.length > 0) {
-        req.files.forEach(file => {
-            if (file.mimetype.startsWith('image/') && imageUrls.length < 5) {
-                imageUrls.push(file.path);
-            } else if (file.mimetype.startsWith('video/') && !videoUrls) {
-                videoUrls = file.path;
-            }
-        });
-    }
-
     try {
         // Tìm bài đăng
         const post = await Post.findById(postId);
@@ -56,6 +43,9 @@ exports.createReview = async (req, res) => {
             await userController.detectSuspiciousActivity(userId, "Spam review");
         }
 
+        const imageUrls = Array.isArray(media?.images) ? media.images.slice(0, 5) : [];
+        const videoUrl = media?.video ? [media.video] : [];
+
         // Tạo review mới
         const review = new Review({
             post_id: postId,
@@ -65,7 +55,7 @@ exports.createReview = async (req, res) => {
             review_checks,
             media: {
                 images: imageUrls,
-                videos: videoUrls ? [videoUrls] : []
+                videos: videoUrl
             }
         });
 

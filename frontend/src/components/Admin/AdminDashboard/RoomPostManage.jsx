@@ -6,7 +6,6 @@ import {
   CardMedia,
   Typography,
 } from "@mui/material";
-import React from "react";
 import "./RoomPostManage.css";
 
 const RoomPostManage = ({
@@ -17,6 +16,27 @@ const RoomPostManage = ({
   onHide,
   onVisible,
 }) => {
+  const formatPriceToText = (price) => {
+    if (typeof price !== "number" || isNaN(price)) {
+      return "Giá không hợp lệ";
+    }
+
+    if (price >= 1_000_000_000) {
+      const billions = Math.floor(price / 1_000_000_000);
+      return `${billions} Tỷ VNĐ`;
+    }
+
+    if (price >= 1_000_000) {
+      const millions = Math.floor(price / 1_000_000);
+      const rest = Math.floor((price % 1_000_000) / 1_000);
+      return rest > 0
+        ? `${millions} triệu ${rest} nghìn VND`
+        : `${millions} triệu VND`;
+    }
+
+    return `${price.toLocaleString()} VND`;
+  };
+
   return (
     <Card className="room-post-card">
       <Box className="room-post-images">
@@ -29,12 +49,9 @@ const RoomPostManage = ({
           />
         )}
         <button className="room-post-price">
-          {post.rentalPrice}
-          {post.typePrice === "1"
-            ? " Triệu/Tháng"
-            : post.typePrice === "2"
-              ? " Triệu/m²/tháng"
-              : ""}
+          {post.price !== undefined
+            ? formatPriceToText(post.price)
+            : "Không có giá"}
         </button>
       </Box>
       <CardContent className="room-post-content">
@@ -50,7 +67,9 @@ const RoomPostManage = ({
           </Typography>
         </Box>
         <Box>
-          <Button className="post-area">{post.area}m²</Button>
+          <Button className="post-area">
+            {post.area}{post.typeArea}
+          </Button>
         </Box>
         {post.status === "pending" && (
           <Box className="manage-post-admin-btn-container">

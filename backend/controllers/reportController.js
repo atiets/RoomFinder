@@ -1,8 +1,7 @@
 const Report = require("../models/Report");
 const Post = require("../models/Post");
 const User = require("../models/User");
-const { getIO } = require('../congfig/websocket');
-
+const { io } = require('../congfig/websocket');
 
 const reportPost = async (req, res) => {
     try {
@@ -170,11 +169,11 @@ const handleReports = async (req, res) => {
             path: "post",
             populate: {
                 path: "contactInfo.user",
-                select: "_id full_name email",
+                select: "_id full_name email notifications",
             }
         });
 
-        const io = getIO();
+        const socket = io();
 
         for (const report of reports) {
             const post = report.post;
@@ -182,41 +181,49 @@ const handleReports = async (req, res) => {
 
             if (!post || !author?._id) continue;
 
-            let message = "";
+            let notificationMessage = "";
 
             switch (action) {
                 case "hide":
                     post.visibility = "hidden";
                     await post.save();
-                    message = "Bài viết của bạn đã bị ẩn do vi phạm chính sách.";
+                    notificationMessage = `Bài viết "${post.title}" của bạn đã bị ẩn do vi phạm chính sách.`;
                     break;
 
                 case "delete":
                     await Post.deleteOne({ _id: post._id });
-                    message = "Bài viết của bạn đã bị xóa do vi phạm nghiêm trọng.";
+                    notificationMessage = `Bài viết "${post.title}" của bạn đã bị xóa do vi phạm nghiêm trọng.`;
                     break;
 
                 case "keep":
-                    message = "Báo cáo đã được xem xét và bài viết của bạn được giữ nguyên.";
+                    notificationMessage = `Báo cáo về bài viết "${post.title}" đã được xem xét. Bài viết của bạn được giữ nguyên.`;
                     break;
             }
 
+            // Đánh dấu báo cáo đã xử lý
             report.status = "Resolved";
             await report.save();
 
-            // Gửi thông báo socket nếu có message
-            if (message) {
+            // Gửi thông báo nếu có message
+            if (notificationMessage) {
+                const notification = {
+                    message: notificationMessage,
+                    type: "post",
+                    post_id: post._id,
+                    status: "unread",
+                    createdAt: new Date(),
+                };
+
+                // Đẩy thông báo vào notifications của user
+                author.notifications.push(notification);
+                await author.save();
+
+                // Gửi qua socket nếu có
                 const socketRoom = author._id.toString();
+                socket.to(socketRoom).emit("notification", notification);
 
-                console.log(`>> Gửi socket đến user ${socketRoom} với action "${action}":`, message);
-
-                io.to(socketRoom).emit("repostModeration", {
-                    postId: post._id,
-                    action,
-                    message,
-                });
+                console.log(`>>> Gửi notification đến user ${socketRoom}:`, notificationMessage);
             }
-
         }
 
         return res.json({ message: "Xử lý báo cáo thành công." });
@@ -225,6 +232,7 @@ const handleReports = async (req, res) => {
         return res.status(500).json({ message: "Lỗi server." });
     }
 };
+
 
 //Đánh dấu đã đọc báo cáo mà chưa xử lý
 const markReportAsViewed = async (req, res) => {

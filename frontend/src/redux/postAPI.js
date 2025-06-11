@@ -23,10 +23,11 @@ export const getAllPosts = async (
   limit = 10,
   status = "",
   visibility = "",
+  search
 ) => {
   try {
     const response = await axios.get(`${API_URL}posts`, {
-      params: { page, limit, status, visibility },
+      params: { page, limit, status, visibility, search },
       headers: {
         Authorization: `Bearer ${token}`,
       },
