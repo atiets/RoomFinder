@@ -21,6 +21,7 @@ require('./congfig/cronJobs');
 const subscriptionRoutes = require("./routes/subscription");
 const paymentRoutes = require("./routes/payment");
 const SubscriptionService = require('./services/subscriptionService');
+const userSubscription = require("./routes/userSubscription");
 
 SubscriptionService.initCronJobs();
 
@@ -79,6 +80,7 @@ app.use('/v1/forum', forumRoutes);
 app.use('/v1/alertSubscription', alertSubscription);
 app.use("/v1/subscriptions", subscriptionRoutes);
 app.use("/v1/payments", paymentRoutes);
+app.use('/v1/subscriptions', userSubscription);
 
 const server = http.createServer(app);
 initializeSocket(server);
