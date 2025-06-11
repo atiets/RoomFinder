@@ -795,7 +795,17 @@ exports.getAllPosts = async (req, res) => {
     if (visibility) query.visibility = visibility;
 
     const total = await Post.countDocuments(query);
-    const posts = await Post.find(query).skip(startIndex).limit(limit);
+    
+    // ⭐ VIP Posts lên đầu
+    const posts = await Post.find(query)
+      .populate('contactInfo.user', 'username phoneNumber email')
+      .sort({
+        isVip: -1,        // VIP posts lên đầu
+        priorityLevel: -1, // Priority level cao hơn
+        createdAt: -1     // Mới nhất
+      })
+      .skip(startIndex)
+      .limit(limit);
 
     res.status(200).json({
       currentPage: page,
@@ -804,6 +814,7 @@ exports.getAllPosts = async (req, res) => {
       posts,
     });
   } catch (error) {
+    console.error("Error in getAllPosts:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -814,18 +825,36 @@ exports.getPostById = async (req, res) => {
       return res.status(400).json({ message: "ID không hợp lệ" });
     }
 
-    let post = await Post.findById(req.params.id);
+    let post = await Post.findById(req.params.id)
+      .populate('contactInfo.user', 'username phoneNumber email');
 
     if (!post) {
       return res.status(404).json({ message: "Bài đăng không tồn tại." });
     }
+
+    // ⭐ Tăng view với boost cho tin VIP
+    let viewIncrement = 1;
+    if (post.isVip) {
+      // VIP posts có boost view 3-5x
+      viewIncrement = Math.floor(Math.random() * 3) + 3; // Random 3-5
+    }
+
+    // Update view count
+    await Post.findByIdAndUpdate(req.params.id, {
+      $inc: { views: viewIncrement }
+    });
+
+    // Update post object để return đúng số view
+    post.views += viewIncrement;
+
+    console.log(`📈 Post view updated: ${post.title}, VIP: ${post.isVip}, View boost: ${viewIncrement}`);
+
     res.status(200).json(post);
   } catch (error) {
     console.error("Lỗi khi lấy chi tiết bài đăng:", error);
     res.status(500).json({ message: error.message });
   }
 };
-
 
 // Cập nhật bài đăng
 exports.updatePost = async (req, res) => {
@@ -863,16 +892,24 @@ exports.getPostsByStatus = async (req, res) => {
     if (!status || !visibility) {
       return res
         .status(400)
-        .json({ message: "State and visibility are required" });
+        .json({ message: "Status and visibility are required" });
     }
 
+    // ⭐ VIP posts lên đầu
     const posts = await Post.find({
       status,
       visibility,
+    })
+    .populate('contactInfo.user', 'username phoneNumber email')
+    .sort({
+      isVip: -1,        // VIP lên đầu
+      priorityLevel: -1,
+      createdAt: -1
     });
 
     res.status(200).json(posts);
   } catch (error) {
+    console.error("Error in getPostsByStatus:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -885,13 +922,19 @@ exports.getUserPostsByStateAndVisibility = async (req, res) => {
     if (!status || !visibility) {
       return res
         .status(400)
-        .json({ message: "State and visibility are required" });
+        .json({ message: "Status and visibility are required" });
     }
 
+    // ⭐ VIP posts của user lên đầu
     const posts = await Post.find({
       "contactInfo.user": req.user.id,
       status,
       visibility,
+    })
+    .populate('contactInfo.user', 'username phoneNumber email')
+    .sort({
+      isVip: -1,        // VIP posts lên đầu
+      createdAt: -1     // Mới nhất
     });
 
     res.status(200).json(posts);
@@ -970,14 +1013,12 @@ exports.searchPosts = async (req, res) => {
       status: "approved",
     };
 
-    const filtersExpr = [];
-
     // **Lọc theo địa điểm phân cấp**
     if (province) filter["address.province"] = province;
     if (district) filter["address.district"] = district;
     if (ward) filter["address.ward"] = ward;
 
-    // **Lọc theo category (model mới)**
+    // **Lọc theo category**
     if (category) filter.category = category;
 
     // **Lọc theo transactionType**
@@ -1000,7 +1041,7 @@ exports.searchPosts = async (req, res) => {
       ];
     }
 
-    // **Lọc theo price (sử dụng field price trong model mới)**
+    // **Lọc theo price**
     if (minPrice || maxPrice) {
       const numericMinPrice = convertToNumber(minPrice);
       const numericMaxPrice = convertToNumber(maxPrice);
@@ -1013,7 +1054,7 @@ exports.searchPosts = async (req, res) => {
       }
     }
 
-    // **Lọc theo area (sử dụng field area trong model mới)**
+    // **Lọc theo area**
     if (minArea || maxArea) {
       const numericMinArea = convertToNumber(minArea);
       const numericMaxArea = convertToNumber(maxArea);
@@ -1028,14 +1069,22 @@ exports.searchPosts = async (req, res) => {
 
     console.log("🎯 Final filter:", JSON.stringify(filter, null, 2));
 
+    // ⭐ VIP posts luôn lên đầu trong tìm kiếm
     const posts = await Post.find(filter)
       .populate('contactInfo.user', 'username phoneNumber email')
       .sort({
-        is_priority: -1,  // Ưu tiên bài VIP
-        createdAt: -1     // Mới nhất
+        isVip: -1,           // ⭐ VIP posts lên đầu tuyệt đối
+        priorityLevel: -1,   // Priority level
+        views: -1,           // Posts có nhiều view hơn
+        createdAt: -1        // Mới nhất
       });
 
-    console.log(`✅ Found ${posts.length} posts`);
+    console.log(`✅ Found ${posts.length} posts (VIP first)`);
+    
+    // ⭐ Log số tin VIP
+    const vipCount = posts.filter(post => post.isVip).length;
+    console.log(`🌟 VIP posts: ${vipCount}/${posts.length}`);
+
     res.status(200).json(posts);
   } catch (error) {
     console.error("❌ Search error:", error);
@@ -1051,8 +1100,9 @@ exports.getUserPostAd = async (req, res) => {
     if (!status || !visibility) {
       return res
         .status(400)
-        .json({ message: "State and visibility are required" });
+        .json({ message: "Status and visibility are required" });
     }
+    
     const startIndex = (page - 1) * limit;
     const total = await Post.countDocuments({
       "contactInfo.user": req.user.id,
@@ -1060,11 +1110,17 @@ exports.getUserPostAd = async (req, res) => {
       visibility,
     });
 
+    // ⭐ VIP posts của user lên đầu
     const posts = await Post.find({
       "contactInfo.user": req.user.id,
       status,
       visibility,
     })
+      .populate('contactInfo.user', 'username phoneNumber email')
+      .sort({
+        isVip: -1,        // VIP lên đầu
+        createdAt: -1     // Mới nhất
+      })
       .skip(startIndex)
       .limit(parseInt(limit))
       .exec();
@@ -1516,13 +1572,19 @@ exports.getSuggestedPosts = async (req, res) => {
 
     const nearbyPosts = [...previousPosts.reverse(), ...nextPosts];
 
-    // Tính điểm tương đồng
-    const scoredPosts = nearbyPosts.map(post => ({
-      post,
-      score: calculateSimilarityScore(currentPost, post),
-    }));
+    // Tính điểm tương đồng với boost cho VIP
+    const scoredPosts = nearbyPosts.map(post => {
+      let score = calculateSimilarityScore(currentPost, post);
+      
+      // ⭐ VIP posts có điểm bonus cao
+      if (post.isVip) {
+        score += 1000; // Bonus lớn cho VIP posts
+      }
+      
+      return { post, score };
+    });
 
-    // Sắp xếp giảm dần theo điểm
+    // Sắp xếp giảm dần theo điểm (VIP sẽ lên đầu)
     const sortedPosts = scoredPosts.sort((a, b) => b.score - a.score);
 
     // Tổng số trang

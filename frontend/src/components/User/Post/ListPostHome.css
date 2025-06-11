@@ -163,3 +163,29 @@
   color: #555 !important; 
   margin-bottom: 12px !important;
 }
+
+/* ⭐ VIP indicator trong title */
+.vip-indicator {
+  background: linear-gradient(45deg, #ff9800, #ffc107);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 10px;
+  animation: sparkle 2s infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* ⭐ Enhanced title container */
+.approved-post-in-home-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 10px 0;
+}

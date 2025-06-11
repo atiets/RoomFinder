@@ -16,10 +16,14 @@ import MonetizationOnOutlinedIcon from '@mui/icons-material/MonetizationOnOutlin
 import OutlinedFlagOutlinedIcon from "@mui/icons-material/OutlinedFlagOutlined";
 import PeopleOutlineOutlinedIcon from "@mui/icons-material/PeopleOutlineOutlined";
 import RoomOutlinedIcon from "@mui/icons-material/RoomOutlined";
+import StarIcon from "@mui/icons-material/Star";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import VerifiedIcon from "@mui/icons-material/Verified";
 import WcOutlinedIcon from '@mui/icons-material/WcOutlined';
 import {
   Box,
   Button,
+  Chip,
   Paper,
   Table,
   TableBody,
@@ -83,6 +87,9 @@ const PostDetail = ({ onToggleFavorite }) => {
   const GAP = 8;
   const STEP = THUMBNAIL_WIDTH + GAP;
 
+  // ⭐ Check if post is VIP
+  const isVip = post?.isVip === true;
+
   useEffect(() => {
     const wrapper = thumbnailWrapperRef.current;
     if (wrapper) {
@@ -144,7 +151,6 @@ const PostDetail = ({ onToggleFavorite }) => {
       fetchPostDetail();
     }
   }, [id]);
-
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -241,6 +247,7 @@ const PostDetail = ({ onToggleFavorite }) => {
 
     return `${price.toLocaleString()} VND`;
   };
+
   const tableRows = [];
 
   if (post.category) {
@@ -462,23 +469,36 @@ const PostDetail = ({ onToggleFavorite }) => {
   };
 
   return (
-    <div className="post-detail-container">
+    <div className={`post-detail-container ${isVip ? 'vip-post-detail' : 'normal-post-detail'}`}>
       <ToastContainer position="top-right" autoClose={5000} />
       {user && (user.admin === "true" || user.admin === true) ? (
         <AdminHeader />
       ) : (
         <Header />
       )}
+
       <div className="post-detail-container-post">
         <div className="post-detail-container-left">
           {post.images && post.images.length > 0 && (
-            <div className="image-gallery">
-              <div className="main-image-wrapper">
+            <div className={`image-gallery ${isVip ? 'vip-image-gallery' : ''}`}>
+              <div className={`main-image-wrapper ${isVip ? 'vip-main-image' : ''}`}>
                 <img
                   src={post.images[currentIndex]}
                   alt={`Post image ${currentIndex + 1}`}
                   className="post-detail-image"
                 />
+                
+                {/* ⭐ VIP Badge on Image */}
+                {isVip && (
+                  <div className="vip-image-badge">
+                    <Chip 
+                      icon={<StarIcon />}
+                      label="TIN UY TÍN" 
+                      className="vip-chip-image"
+                    />
+                  </div>
+                )}
+
                 <div className="top-right-buttons">
                   <Box className="favorite-container">
                     <div className="circle-button" onClick={handleToggleFavorite}>
@@ -499,12 +519,12 @@ const PostDetail = ({ onToggleFavorite }) => {
                     <OutlinedFlagOutlinedIcon style={{ color: "#000" }} />
                   </div>
                 </div>
-                <button className="prev-btn" onClick={prevImage}>←</button>
-                <button className="next-btn" onClick={nextImage}>→</button>
+                <button className={`prev-btn ${isVip ? 'vip-nav-btn' : ''}`} onClick={prevImage}>←</button>
+                <button className={`next-btn ${isVip ? 'vip-nav-btn' : ''}`} onClick={nextImage}>→</button>
               </div>
               <div className="thumbnail-carousel-container">
                 {showLeftArrow && (
-                  <button className="arrow-button left" onClick={scrollThumbnailsLeft}>←</button>
+                  <button className={`arrow-button left ${isVip ? 'vip-arrow' : ''}`} onClick={scrollThumbnailsLeft}>←</button>
                 )}
                 <div className="thumbnail-wrapper" ref={thumbnailWrapperRef}>
                   {post?.images.map((img, index) => (
@@ -512,14 +532,13 @@ const PostDetail = ({ onToggleFavorite }) => {
                       key={index}
                       src={img}
                       alt={`Thumbnail ${index + 1}`}
-                      className={`thumbnail-image ${index === currentIndex ? "active" : ""}`}
+                      className={`thumbnail-image ${index === currentIndex ? "active" : ""} ${isVip ? 'vip-thumbnail' : ''}`}
                       onClick={() => setCurrentIndex(index)}
                     />
                   ))}
                 </div>
-
                 {showRightArrow && (
-                  <button className="arrow-button right" onClick={scrollThumbnailsRight}>→</button>
+                  <button className={`arrow-button right ${isVip ? 'vip-arrow' : ''}`} onClick={scrollThumbnailsRight}>→</button>
                 )}
               </div>
             </div>
@@ -528,33 +547,51 @@ const PostDetail = ({ onToggleFavorite }) => {
             <Box className="container-left">
               <div className="content-detail-title">
                 <Box className="container-cost">
-                  <Typography className="post-title">{post.title}</Typography>
-                  <Typography className="post-detail-price">
+                  <Typography className={`post-title ${isVip ? 'vip-title' : ''}`}>
+                    {isVip && <VerifiedIcon className="title-vip-icon" />}
+                    {post.title}
+                  </Typography>
+                  <Typography className={`post-detail-price ${isVip ? 'vip-price' : ''}`}>
                     {post.price !== undefined
                       ? formatPriceToText(post.price)
                       : "Không có giá"}
                   </Typography>
                 </Box>
                 <Box className="view-count-container">
-                  <Typography className="view-count">
+                  <Typography className={`view-count ${isVip ? 'vip-view-count' : ''}`}>
                     👀 {post.views} lượt xem
                   </Typography>
                 </Box>
               </div>
-              <Button startIcon={<RoomOutlinedIcon />} className="address-detail">
+              <Button startIcon={<RoomOutlinedIcon />} className={`address-detail ${isVip ? 'vip-address' : ''}`}>
                 {post.address?.exactaddress || "Địa chỉ chưa có"}{" "}
                 {post.address?.ward} {post.address?.district}{" "}
                 {post.address?.province}
               </Button><br />
-              <text className="post-content-title">Mô tả chi tiết</text>
+              
+              {/* ⭐ VIP Features */}
+              {isVip && (
+                <div className="vip-features-detail">
+                  <div className="vip-feature-item">
+                    <TrendingUpIcon className="vip-feature-icon" />
+                    <span>Tin được xác thực</span>
+                  </div>
+                  <div className="vip-feature-item">
+                    <VerifiedIcon className="vip-feature-icon" />
+                    <span>Độ tin cậy cao</span>
+                  </div>
+                </div>
+              )}
+
+              <text className={`post-content-title ${isVip ? 'vip-content-title' : ''}`}>Mô tả chi tiết</text>
               <div
-                className="post-content"
+                className={`post-content ${isVip ? 'vip-content' : ''}`}
                 dangerouslySetInnerHTML={{
                   __html: post?.content?.replace(/\n/g, '<br />')
                 }}
               />
 
-              <TableContainer component={Paper} className="container-table">
+              <TableContainer component={Paper} className={`container-table ${isVip ? 'vip-table' : ''}`}>
                 <Table className="table-category">
                   <TableBody>
                     {visibleRows}
@@ -563,7 +600,7 @@ const PostDetail = ({ onToggleFavorite }) => {
 
                 {tableRows.length > 4 && (
                   <div style={{ textAlign: 'center', marginTop: '10px' }}>
-                    <Button variant="outlined" className="post-detail-btn-table" onClick={() => setShowAll(!showAll)}>
+                    <Button variant="outlined" className={`post-detail-btn-table ${isVip ? 'vip-btn-table' : ''}`} onClick={() => setShowAll(!showAll)}>
                       {showAll ? 'Ẩn bớt' : 'Xem thêm'}
                     </Button>
                   </div>
@@ -572,14 +609,15 @@ const PostDetail = ({ onToggleFavorite }) => {
             </Box>
           </Box>
         </div>
-        <div className="post-detail-container-right">
+        <div className={`post-detail-container-right ${isVip ? 'vip-container-right' : ''}`}>
           <ContactInfoCard
             post={post}
             getHiddenPhoneNumber={getHiddenPhoneNumber}
             handleChat={handleChat}
+            isVip={isVip}
           />
           <div className="post-detail-container-right-btn">
-            <AlertSubscription post = {post}/>
+            <AlertSubscription post={post}/>
           </div>
         </div>
       </div>

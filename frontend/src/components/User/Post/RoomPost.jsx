@@ -1,12 +1,15 @@
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import VerifiedIcon from "@mui/icons-material/Verified";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import StarIcon from "@mui/icons-material/Star";
 import {
   Box,
-  Button,
   Card,
   CardContent,
   CardMedia,
   Typography,
+  Chip,
 } from "@mui/material";
 import "./RoomPost.css";
 
@@ -23,27 +26,35 @@ const RoomPost = ({ post, onTitleClick, onToggleFavorite, isFavorite }) => {
 
   const formatPriceToText = (price) => {
     if (typeof price !== "number" || isNaN(price)) {
-      return "Giá không hợp lệ";
+      return "Liên hệ";
     }
 
     if (price >= 1_000_000_000) {
-      const billions = Math.floor(price / 1_000_000_000);
-      return `${billions} Tỷ VNĐ`;
+      const billions = (price / 1_000_000_000).toFixed(1);
+      return `${billions} tỷ`;
     }
 
     if (price >= 1_000_000) {
-      const millions = Math.floor(price / 1_000_000);
-      const rest = Math.floor((price % 1_000_000) / 1_000);
-      return rest > 0
-        ? `${millions} triệu ${rest} nghìn VND`
-        : `${millions} triệu VND`;
+      const millions = (price / 1_000_000).toFixed(1);
+      return `${millions} triệu`;
     }
 
-    return `${price.toLocaleString()} VND`;
+    if (price >= 1_000) {
+      const thousands = Math.floor(price / 1_000);
+      return `${thousands}k`;
+    }
+
+    return `${price.toLocaleString()}`;
   };
 
+  // ⭐ Check if post is VIP
+  const isVip = post.isVip === true;
+
+  // ⭐ Debug log để kiểm tra data
+  console.log("Post data:", post);
+
   return (
-    <Card className="room-post-card">
+    <Card className={`room-post-card ${isVip ? 'verified-post-card' : 'normal-post-card'}`}>
       <Box className="room-post-images">
         {post.images && post.images.length > 0 && (
           <CardMedia
@@ -53,38 +64,87 @@ const RoomPost = ({ post, onTitleClick, onToggleFavorite, isFavorite }) => {
             className="room-post-image"
           />
         )}
-        <Button className="room-post-price" variant="contained" color="primary">
+        
+        {/* ⭐ Price Badge - Top Right Corner */}
+        <div className={`price-badge ${isVip ? 'verified-price-badge' : 'normal-price-badge'}`}>
           {post.price !== undefined
             ? formatPriceToText(post.price)
-            : "Không có giá"}
-        </Button>
+            : "Liên hệ"}
+          <span className="price-unit">VNĐ</span>
+        </div>
+
+        {/* ⭐ VIP Badge - Top Left */}
+        {isVip && (
+          <div className="verified-badge-container">
+            <Chip 
+              icon={<StarIcon />}
+              label="Tin uy tín" 
+              size="small"
+              className="verified-chip-enhanced"
+            />
+          </div>
+        )}
+
+        {/* ⭐ Favorite Icon - Top right of image */}
+        <Box className="favorite-icon" onClick={handleFavoriteClick}>
+          {isFavorite ? (
+            <FavoriteIcon color="error" className="favorite-icon-filled" />
+          ) : (
+            <FavoriteBorderIcon className="favorite-icon-border" />
+          )}
+        </Box>
       </Box>
+      
       <CardContent className="room-post-content">
-        <Box>
+        {/* ⭐ Row 1: Title + Area */}
+        <div className="title-area-row">
           <Typography
             variant="h6"
-            className="room-post-title"
+            className={`room-post-title ${isVip ? 'verified-title' : 'normal-title'}`}
             onClick={() => onTitleClick(post._id)}
           >
-            {post.title}
+            {isVip && <VerifiedIcon className="title-verified-icon" />}
+            {post.title || "Không có tiêu đề"}
           </Typography>
+          
+          <Typography variant="body2" className={`room-post-area ${isVip ? 'verified-area-text' : 'normal-area-text'}`}>
+            {post.area 
+              ? `${post.area}${post.typeArea || 'm²'}`
+              : "Chưa có diện tích"
+            }
+          </Typography>
+        </div>
+        
+        {/* ⭐ Row 2: Location */}
+        <div className="location-row">
           <Typography variant="body2" className="room-post-location">
-            {post.address.district}, {post.address.province}
+            {post.address?.district && post.address?.province 
+              ? `${post.address.district}, ${post.address.province}`
+              : "Chưa có địa chỉ"
+            }
           </Typography>
-        </Box>
-        <Box>
-          <Button className="post-area" variant="outlined">
-            {post.area}{post.typeArea}
-          </Button>
-        </Box>
-      </CardContent>
-      <Box className="favorite-icon" onClick={handleFavoriteClick}>
-        {isFavorite ? (
-          <FavoriteIcon color="error" className="favorite-icon-filled" />
-        ) : (
-          <FavoriteBorderIcon className="favorite-icon-border" />
+        </div>
+        
+        {/* ⭐ Row 3: VIP Features (only if VIP) */}
+        {isVip && (
+          <div className="features-row">
+            <Box className="verified-features-compact">
+              <div className="verified-feature-item">
+                <TrendingUpIcon className="verified-icon-small" />
+                <Typography variant="caption" className="verified-feature-text">
+                  Tin được xác thực
+                </Typography>
+              </div>
+              <div className="verified-feature-item">
+                <VerifiedIcon className="verified-icon-small" />
+                <Typography variant="caption" className="verified-feature-text">
+                  Độ tin cậy cao
+                </Typography>
+              </div>
+            </Box>
+          </div>
         )}
-      </Box>
+      </CardContent>
     </Card>
   );
 };

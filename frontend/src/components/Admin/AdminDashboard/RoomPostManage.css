@@ -133,3 +133,381 @@
   justify-content: space-between;
   gap: 10px;
 }
+
+/* ⭐ VIP styling cho admin - CHỈ THÊM MỚI */
+
+/* VIP Post styling */
+.admin-vip-post {
+  border: 2px solid #FF9800 !important;
+  background: #FFF8F0 !important;
+}
+
+.admin-vip-post:hover {
+  box-shadow: 0 8px 20px rgba(255, 152, 0, 0.2) !important;
+}
+
+.admin-normal-post {
+  border: 2px solid #E8F5E8 !important;
+}
+
+.admin-normal-post:hover {
+  border-color: #4CAF50 !important;
+}
+
+/* VIP Badge cho admin */
+.admin-vip-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+}
+
+.admin-vip-chip {
+  background: #FF9800 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+}
+
+.admin-vip-chip .MuiChip-icon {
+  color: white !important;
+  font-size: 14px !important;
+}
+
+/* Layout mới cho admin */
+.admin-post-layout {
+  display: flex;
+  gap: 16px;
+}
+
+.admin-post-image-section {
+  position: relative;
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.admin-post-image {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Price tag cho admin */
+.admin-price-tag {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.admin-vip-price {
+  background: rgba(255, 152, 0, 0.95);
+  color: white;
+}
+
+.admin-normal-price {
+  background: rgba(76, 175, 80, 0.95);
+  color: white;
+}
+
+/* Title VIP styling */
+.admin-vip-title {
+  color: #E65100 !important;
+}
+
+.admin-vip-title:hover {
+  color: #FF9800 !important;
+}
+
+.admin-normal-title {
+  color: #2E7D32 !important;
+}
+
+.admin-normal-title:hover {
+  color: #4CAF50 !important;
+}
+
+/* Meta info mới */
+.admin-post-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.admin-area-info {
+  background: #F0F0F0;
+  color: #2E7D32;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.admin-status-chip, .admin-visibility-chip {
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.admin-status-chip.pending {
+  background: #FFF3E0;
+  color: #F57C00;
+}
+
+.admin-status-chip.approved {
+  background: #E8F5E8;
+  color: #2E7D32;
+}
+
+.admin-status-chip.rejected {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+.admin-status-chip.update {
+  background: #E3F2FD;
+  color: #1976D2;
+}
+
+.admin-visibility-chip.visible {
+  background: #E8F5E8;
+  color: #2E7D32;
+}
+
+.admin-visibility-chip.hidden {
+  background: #F5F5F5;
+  color: #666;
+}
+
+/* Contact info mới */
+.admin-contact-info {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-contact-item {
+  font-size: 11px;
+  color: #666;
+  background: #F8F9FA;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* VIP Features cho admin */
+.admin-vip-features {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 152, 0, 0.1);
+  color: #E65100;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  width: fit-content;
+}
+
+.admin-vip-icon {
+  font-size: 14px !important;
+}
+
+/* Action buttons mới */
+.admin-action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.admin-btn-approve, .admin-btn-reject, .admin-btn-hide, .admin-btn-show {
+  padding: 4px 12px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  min-width: auto !important;
+  text-transform: none !important;
+}
+
+.admin-btn-approve {
+  background: #4CAF50 !important;
+  color: white !important;
+}
+
+.admin-btn-reject {
+  background: #F44336 !important;
+  color: white !important;
+}
+
+.admin-btn-hide {
+  background: #FF9800 !important;
+  color: white !important;
+}
+
+.admin-btn-show {
+  background: #2196F3 !important;
+  color: white !important;
+}
+
+/* ⭐ Enhanced VIP Badge CSS - CHỈ THÊM MỚI */
+
+/* Enhanced VIP Badge Container */
+.admin-vip-badge-container {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+}
+
+.admin-vip-chip-enhanced {
+  background: linear-gradient(45deg, #FF9800, #FFB74D) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  padding: 6px 12px !important;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4) !important;
+  animation: vip-pulse 2s infinite;
+}
+
+.admin-vip-chip-enhanced .MuiChip-icon {
+  color: white !important;
+  font-size: 16px !important;
+}
+
+/* VIP Glow Effect */
+.admin-vip-glow {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #FF9800, #FFB74D);
+  border-radius: 12px;
+  z-index: -1;
+  opacity: 0.3;
+  animation: glow-pulse 3s infinite;
+}
+
+/* VIP Overlay trên image */
+.admin-vip-overlay {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(255, 152, 0, 0.9);
+  color: white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.admin-vip-overlay-icon {
+  font-size: 18px !important;
+}
+
+/* VIP Title Icon */
+.admin-title-vip-icon {
+  color: #FF9800 !important;
+  font-size: 18px !important;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* VIP Status Badge */
+.admin-vip-status-badge {
+  background: #FF9800;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.admin-vip-status-icon {
+  font-size: 12px !important;
+}
+
+/* Enhanced VIP Features */
+.admin-vip-features-enhanced {
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-vip-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #E65100;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Views info styling */
+.admin-views-info {
+  background: #E3F2FD !important;
+  color: #1976D2 !important;
+}
+
+/* VIP Button styling */
+.admin-btn-vip {
+  background: linear-gradient(45deg, #FF9800, #FFB74D) !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3) !important;
+}
+
+.admin-btn-vip:hover {
+  background: linear-gradient(45deg, #F57C00, #FF9800) !important;
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4) !important;
+}
+
+/* Animations */
+@keyframes vip-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* Post card enhanced styling */
+.admin-vip-post {
+  box-shadow: 0 4px 16px rgba(255, 152, 0, 0.2) !important;
+  position: relative;
+}
+
+.admin-vip-post::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #FF9800, #FFB74D, #FF9800);
+  border-radius: 12px 12px 0 0;
+  z-index: 1;
+}

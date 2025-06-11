@@ -1,153 +1,427 @@
-.approved-posts-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-  padding: 0 20px;
-  width: 100%;
-  height: auto;
-  margin-bottom: 30px;
-  grid-auto-rows: 1fr;
-}
-
+/* ===== BASE CARD STYLES ===== */
 .room-post-card {
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  width: 100%;
-  height: 290px;
-  border: 1px solid #ddd;
-  border-radius: 20px !important;
+  position: relative;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.3s ease;
   overflow: hidden;
-  padding: 0 !important;
+  background: #ffffff;
+  cursor: pointer;
+  min-height: 320px; /* Đảm bảo chiều cao tối thiểu */
 }
 
+.room-post-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* ===== VIP CARD STYLING - UPDATED ===== */
+.verified-post-card {
+  border: 3px solid #ff8c42 !important; /* Tăng độ dày từ 2px lên 3px */
+  background: linear-gradient(135deg, #fff9f5 0%, #ffffff 100%);
+}
+
+.verified-post-card:hover {
+  border-color: #ff7426 !important; /* Vẫn giữ hover effect nhưng border luôn hiển thị */
+  box-shadow: 0 4px 16px rgba(255, 140, 66, 0.15);
+}
+
+/* ===== NORMAL CARD - GIỮ NGUYÊN ===== */
+.normal-post-card {
+  border: 2px solid #a8e6a3;
+  background: linear-gradient(135deg, #f8fff8 0%, #ffffff 100%);
+}
+
+.normal-post-card:hover {
+  border-color: #8fd687;
+  box-shadow: 0 4px 16px rgba(168, 230, 163, 0.15);
+}
+
+/* ===== THÊM GLOW EFFECT CHO VIP CARD ===== */
+.verified-post-card {
+  border: 3px solid #ff8c42 !important;
+  background: linear-gradient(135deg, #fff9f5 0%, #ffffff 100%);
+  box-shadow: 0 0 0 1px rgba(255, 140, 66, 0.2); /* Thêm outer glow nhẹ */
+}
+
+.verified-post-card:hover {
+  border-color: #ff7426 !important;
+  box-shadow: 0 4px 16px rgba(255, 140, 66, 0.15), 0 0 0 1px rgba(255, 140, 66, 0.3);
+}
+
+/* ===== IMAGE CONTAINER ===== */
 .room-post-images {
-  display: flex;
+  position: relative;
+  height: 180px; /* Giảm chiều cao ảnh để có thêm space cho content */
+  overflow: hidden;
+}
+
+.room-post-image {
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  margin: 0 !important;
-  padding: 0 !important;
+  object-fit: cover;
 }
 
-.room-post-card .room-post-price {
+/* ===== PRICE BADGES ===== */
+.price-badge {
   position: absolute;
-  background-color: #7ecc5d;
-  font-family: Helvetica;
-  font-weight: 200;
-  color: #2a261a;
-  margin: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  pointer-events: none;
-  text-transform: none;
+  top: 12px;
+  right: 12px;
+  padding: 6px 10px; /* Giảm padding */
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 0.8rem; /* Giảm font size */
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  z-index: 2;
+  max-width: 120px; /* Giới hạn chiều rộng */
+  text-align: center;
 }
 
+.verified-price-badge {
+  background: linear-gradient(135deg, #ff8c42 0%, #ff7426 100%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 140, 66, 0.3);
+}
+
+.normal-price-badge {
+  background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(129, 199, 132, 0.3);
+}
+
+.price-unit {
+  font-size: 0.7rem;
+  opacity: 0.9;
+  margin-left: 2px;
+}
+
+/* ===== VIP BADGE ===== */
+.verified-badge-container {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+}
+
+.verified-chip-enhanced {
+  background: linear-gradient(135deg, #ff8c42 0%, #ff7426 100%) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(255, 140, 66, 0.3);
+  backdrop-filter: blur(10px);
+  font-size: 0.75rem !important; /* Giảm font size */
+}
+
+.verified-chip-enhanced .MuiChip-icon {
+  color: #fff3e0 !important;
+  font-size: 0.9rem !important; /* Giảm icon size */
+}
+
+/* ===== FAVORITE ICON - ON IMAGE ===== */
+.favorite-icon {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  cursor: pointer;
+  padding: 6px; /* Giảm padding */
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+  z-index: 3;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.favorite-icon:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+}
+
+.favorite-icon-filled {
+  font-size: 1.1rem !important; /* Giảm size */
+}
+
+.favorite-icon-border {
+  font-size: 1.1rem !important; /* Giảm size */
+  color: #666666 !important;
+  transition: color 0.2s ease;
+}
+
+.favorite-icon:hover .favorite-icon-border {
+  color: #f44336 !important;
+}
+
+/* ===== CONTENT AREA ===== */
 .room-post-content {
+  padding: 14px !important; /* Giảm padding */
+  position: relative;
+  min-height: 120px; /* Đảm bảo chiều cao tối thiểu cho content */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* ===== ROW 1: TITLE + AREA ===== */
+.title-area-row {
   display: flex;
   justify-content: space-between;
-  margin: 0;
-  padding: 0;
+  align-items: flex-start;
+  gap: 8px; /* Giảm gap */
+  margin-bottom: 6px; /* Giảm margin */
 }
 
 .room-post-title {
-  font-family: Helvetica !important;
-  font-weight: bold !important;
-  font-size: 1rem !important;
-  color: #333333 !important;
-  width: 19rem;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.post-area {
-  font-family: Inter !important;
-  font-weight: 300 !important;
-  font-size: 12px !important;
-  color: #333333 !important;
-  pointer-events: none;
-  border: 1px solid #cccccc !important;
-  border-radius: 10px !important;
-  text-transform: lowercase !important;
-}
-
-.room-post-info,
-.room-post-location {
-  font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.container-nocontent {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  height: 300px;
-  width: 100%;
-}
-
-.sort-options {
-  margin-bottom: 20px;
-  margin-left: 20px;
-  display: flex;
-}
-
-.sort-options select {
-  padding: 8px 12px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: #fff;
-  cursor: pointer;
-}
-
-.manage-post-add-post {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  background-color: #7ecc5d !important;
-  color: #2a261a !important;
-  font-size: 1rem !important;
   font-weight: 600 !important;
-  padding: 0.5rem 1rem !important;
-  border-radius: 8px !important;
-  cursor: pointer !important;
-  text-transform: none !important;
-  text-decoration: none !important;
-  margin: 0.5rem !important;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start; /* Thay đổi từ center sang flex-start */
+  gap: 4px; /* Giảm gap */
+  line-height: 1.2 !important; /* Giảm line-height */
+  transition: color 0.2s ease;
+  flex: 1;
+  margin: 0 !important;
+  font-size: 0.875rem !important; /* Giảm font size title */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
+  -webkit-box-orient: vertical;
+  max-height: 2.4em; /* Giới hạn chiều cao = 2 dòng */
+}
+
+.verified-title {
+  color: #e65100 !important;
+}
+
+.verified-title:hover {
+  color: #bf360c !important;
+}
+
+.normal-title {
+  color: #2e7d32 !important;
+}
+
+.normal-title:hover {
+  color: #1b5e20 !important;
+}
+
+.title-verified-icon {
+  color: #ff8c42 !important;
+  font-size: 1rem !important; /* Giảm icon size */
+  flex-shrink: 0; /* Không cho icon bị co lại */
+  margin-top: 1px; /* Điều chỉnh vị trí icon */
+}
+
+/* ===== AREA DISPLAY ===== */
+.room-post-area {
+  font-weight: 500 !important;
+  padding: 3px 8px; /* Giảm padding */
+  border-radius: 10px;
+  font-size: 0.8rem !important; /* Giảm font size */
+  white-space: nowrap;
+  margin: 0 !important;
+  flex-shrink: 0;
+  align-self: flex-start; /* Đảm bảo area luôn ở đầu */
+}
+
+.verified-area-text {
+  background: rgba(255, 140, 66, 0.1) !important;
+  color: #e65100 !important;
+  border: 1px solid rgba(255, 140, 66, 0.2);
+}
+
+.normal-area-text {
+  background: rgba(129, 199, 132, 0.1) !important;
+  color: #2e7d32 !important;
+  border: 1px solid rgba(129, 199, 132, 0.2);
+}
+
+/* ===== ROW 2: LOCATION ===== */
+.location-row {
+  margin-bottom: 8px; /* Giảm margin */
+}
+
+.room-post-location {
+  color: #666666 !important;
+  font-size: 0.8rem !important; /* Giảm font size */
+  display: flex;
+  align-items: center;
+  line-height: 1.3;
+  margin: 0 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* Giới hạn 1 dòng */
+}
+
+.room-post-location::before {
+  content: "📍";
+  margin-right: 4px; /* Giảm margin */
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* ===== ROW 3: VIP FEATURES ===== */
+.features-row {
+  margin-bottom: 0;
+  margin-top: auto; /* Đẩy features xuống dưới */
+}
+
+.verified-features-compact {
+  display: flex;
+  gap: 6px; /* Giảm gap */
+  flex-wrap: wrap;
+}
+
+.verified-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 3px; /* Giảm gap */
+  padding: 3px 6px; /* Giảm padding */
+  background: rgba(255, 140, 66, 0.08);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 140, 66, 0.15);
+}
+
+.verified-icon-small {
+  font-size: 0.8rem !important; /* Giảm icon size */
+  color: #ff8c42 !important;
+}
+
+.verified-feature-text {
+  color: #e65100 !important;
+  font-weight: 500 !important;
+  font-size: 0.7rem !important; /* Giảm font size */
+}
+
+/* ===== HIDE VIP VIEWS ===== */
+.verified-views-compact {
+  display: none !important;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+  .room-post-card {
+    border-radius: 12px;
+    min-height: 280px;
+  }
+  
+  .room-post-images {
+    height: 140px;
+  }
+  
+  .price-badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    top: 8px;
+    right: 8px;
+  }
+  
+  .verified-badge-container {
+    top: 8px;
+    left: 8px;
+  }
+  
+  .room-post-content {
+    padding: 10px !important;
+    min-height: 100px;
+  }
+  
+  .title-area-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  
+  .room-post-title {
+    font-size: 0.8rem !important;
+    -webkit-line-clamp: 2;
+    max-height: 2.2em;
+  }
+  
+  .room-post-area {
+    font-size: 0.75rem !important;
+    align-self: flex-start;
+  }
+  
+  .location-row {
+    margin-bottom: 6px;
+  }
+  
+  .room-post-location {
+    font-size: 0.75rem !important;
+  }
+  
+  .verified-features-compact {
+    gap: 4px;
+  }
+  
+  .verified-feature-text {
+    font-size: 0.65rem !important;
+  }
+  
+  .favorite-icon {
+    bottom: 8px;
+    right: 8px;
+    padding: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .room-post-card {
+    min-height: 260px;
+  }
+  
+  .room-post-images {
+    height: 120px;
+  }
+  
+  .room-post-content {
+    padding: 8px !important;
+    min-height: 90px;
+  }
+  
+  .room-post-title {
+    font-size: 0.75rem !important;
+    line-height: 1.1 !important;
+    max-height: 2em;
+  }
+  
+  .room-post-area {
+    font-size: 0.7rem !important;
+    padding: 2px 6px;
+  }
+  
+  .room-post-location {
+    font-size: 0.7rem !important;
+  }
+  
+  .title-verified-icon {
+    font-size: 0.9rem !important;
+  }
 }
 
 .approved-post-list-container-pagination {
   display: flex;
   justify-content: center;
-  margin-bottom: 20px;
-  margin-top: 8px;
+  margin-top: 40px;
+  margin-bottom: 30px;
+  padding: 20px 0;
 }
 
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-
-.spinner {
-  border: 5px solid #f3f3f3; /* Màu nền của spinner */
-  border-top: 5px solid #1cb533; /* Màu của vòng tròn */
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  animation: spin 2s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
+@media (max-width: 768px) {
+  .approved-post-list-container-pagination {
+    margin-top: 30px;
+    margin-bottom: 25px;
+    padding: 15px 0;
   }
-  100% {
-    transform: rotate(360deg);
+}
+
+@media (max-width: 480px) {
+  .approved-post-list-container-pagination {
+    margin-top: 25px;
+    margin-bottom: 20px;
+    padding: 10px 0;
   }
 }

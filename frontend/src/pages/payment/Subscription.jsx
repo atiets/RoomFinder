@@ -281,7 +281,9 @@ const SubscriptionPage = () => {
                       📝 Tin thường
                     </Typography>
                     <Typography variant="h6" color="#2e7d32">
-                      {currentUsage.usage.postsCreated}
+                      {currentUsage.usage.postsCreated === 999999
+                        ? "∞"
+                        : currentUsage.usage.postsCreated}
                       {subscriptionId.features.maxPosts !== -1 &&
                         `/${subscriptionId.features.maxPosts}`}
                     </Typography>
