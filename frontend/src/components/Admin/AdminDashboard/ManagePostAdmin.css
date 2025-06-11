@@ -80,3 +80,116 @@
   text-decoration: none !important;
   margin: 0.5rem !important;
 }
+
+/* ⭐ CHỈ CSS MỚI cho admin VIP management */
+
+.admin-manage-header {
+  background: #F8F9FA;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid #E8F5E8;
+}
+
+.admin-manage-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-manage-title h2 {
+  color: #2E7D32;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.admin-manage-stats {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-vip-chip-header {
+  background: #FF9800 !important;
+  color: white !important;
+}
+
+.admin-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E8F5E8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.admin-filters {
+  display: flex;
+  gap: 12px;
+}
+
+.admin-search-field {
+  min-width: 300px;
+}
+
+.admin-search-field .MuiOutlinedInput-root {
+  border-radius: 8px;
+}
+
+.admin-search-field .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #4CAF50;
+}
+
+.vip-filter-item {
+  background: rgba(255, 152, 0, 0.1) !important;
+  color: #E65100 !important;
+  font-weight: 500 !important;
+}
+
+.admin-manage-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.admin-confirm-btn {
+  background: #4CAF50 !important;
+  color: white !important;
+  border-radius: 6px !important;
+  text-transform: none !important;
+}
+
+.admin-confirm-btn:hover {
+  background: #45a049 !important;
+}
+
+/* Mobile responsive cho các phần mới */
+@media (max-width: 768px) {
+  .admin-posts-title, .admin-manage-title {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .admin-action-bar {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .admin-search-field {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .admin-post-layout {
+    flex-direction: column;
+  }
+  
+  .admin-post-image-section {
+    width: 100%;
+  }
+}

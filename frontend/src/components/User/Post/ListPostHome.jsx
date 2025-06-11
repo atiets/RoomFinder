@@ -15,11 +15,11 @@ import RoomPost from "./RoomPost";
 const ListPostHome = ({ post = [], title, favorite }) => {
   const navigate = useNavigate();
   const [favorites, setFavorites] = React.useState([]);
-  const [change, setChange] = React.useState(false);
   const user = useSelector((state) => state.auth.login.currentUser);
   const { toggleFavorite } = useFavoriteToggle(user);
   const userId = user?._id;
   const token = user?.accessToken;
+  
   let axiosJWT = axios.create({
     baseURL: process.env.REACT_APP_BASE_URL_API,
   });
@@ -32,11 +32,9 @@ const ListPostHome = ({ post = [], title, favorite }) => {
             Authorization: `Bearer ${user?.accessToken}`,
           },
         });
-        await setFavorites(response.data.favorites);
-        console.log("Favorites:", response.data.favorites);
+        setFavorites(response.data.favorites);
       } catch (error) {
         console.error("Lỗi khi tải danh sách yêu thích:", error);
-      } finally {
       }
     };
 
@@ -61,7 +59,6 @@ const ListPostHome = ({ post = [], title, favorite }) => {
 
   const handleToggleFavorite = (postId, isFavorite) => {
     if (!user) {
-      console.log("Swal được gọi");
       Swal.fire({
         icon: "warning",
         title: "Chưa đăng nhập",
@@ -69,14 +66,8 @@ const ListPostHome = ({ post = [], title, favorite }) => {
         confirmButtonText: "Đăng nhập",
         showCancelButton: true,
       }).then((result) => {
-        console.log("Swal result:", result);
         if (result.isConfirmed) {
-          Swal.close();
-          console.log("Chuyển hướng đến trang đăng nhập");
           navigate("/login");
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-          console.log("Đã hủy");
-          setTimeout(() => Swal.close(), 0);
         }
       });
       return;
@@ -89,10 +80,23 @@ const ListPostHome = ({ post = [], title, favorite }) => {
             ? favorites.filter((fav) => fav._id !== postId)
             : [...favorites, { _id: postId }],
         );
-        Swal.close();
       })
       .catch((error) => console.error("Lỗi khi bật/tắt yêu thích:", error));
   };
+
+  // ⭐ Sort posts với VIP lên đầu
+  const sortedPosts = React.useMemo(() => {
+    if (!Array.isArray(post)) return [];
+    
+    return [...post].sort((a, b) => {
+      // VIP posts lên đầu
+      if (a.isVip && !b.isVip) return -1;
+      if (!a.isVip && b.isVip) return 1;
+      
+      // Cùng loại thì sort theo thời gian
+      return new Date(b.createdAt || b.updatedAt || 0) - new Date(a.createdAt || a.updatedAt || 0);
+    });
+  }, [post]);
 
   const sliderSettings = {
     infinite: false,
@@ -105,26 +109,38 @@ const ListPostHome = ({ post = [], title, favorite }) => {
   };
 
   const isPostArray = Array.isArray(post);
+  
+  // ⭐ Count VIP posts for display
+  const vipCount = sortedPosts.filter(p => p.isVip).length;
 
   return (
     <div className="approved-posts-slider">
-      <div className="approved-post-in-home-title">{title}</div>
+      <div className="approved-post-in-home-title">
+        {title}
+        {/* ⭐ VIP indicator */}
+        {vipCount > 0 && (
+          <span className="vip-indicator">
+            🌟 {vipCount} tin VIP
+          </span>
+        )}
+      </div>
+      
       {isPostArray ? (
         <Slider {...sliderSettings}>
-          {post.slice(0, 5).map((postItem, index) => (
-            <div key={index} className="approved-posts-item">
+          {sortedPosts.slice(0, 5).map((postItem, index) => (
+            <div key={postItem._id || index} className="approved-posts-item">
               <RoomPost
                 post={postItem}
-                onTitleClick={() => handleTitleClick(postItem.id)}
-                isFavorite={favorites.some((fav) => fav._id === postItem.id)}
+                onTitleClick={() => handleTitleClick(postItem._id)}
+                isFavorite={favorites.some((fav) => fav._id === postItem._id)}
                 onToggleFavorite={() =>
                   handleToggleFavorite(
-                    postItem.id,
-                    favorites.some((fav) => fav._id === postItem.id),
+                    postItem._id,
+                    favorites.some((fav) => fav._id === postItem._id),
                   )
                 }
               />
-              {index === Math.min(post.length, 5) - 1 && (
+              {index === Math.min(sortedPosts.length, 5) - 1 && (
                 <button
                   className="see-more-button"
                   onClick={() => {

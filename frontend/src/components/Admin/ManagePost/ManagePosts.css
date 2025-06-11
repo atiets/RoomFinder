@@ -2,3 +2,71 @@
   margin-left: 30px;
   margin-top: 0 !important;
 }
+
+/* ⭐ CHỈ CSS MỚI cho VIP features */
+
+.admin-posts-header {
+  background: #F8F9FA;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid #E8F5E8;
+}
+
+.admin-posts-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-posts-title h2 {
+  color: #2E7D32;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.admin-posts-stats {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-stat-chip {
+  border-color: #4CAF50 !important;
+  color: #2E7D32 !important;
+}
+
+.admin-vip-stat-chip {
+  background: #FF9800 !important;
+  color: white !important;
+}
+
+.admin-normal-stat-chip {
+  border-color: #E0E0E0 !important;
+  color: #666 !important;
+}
+
+.admin-posts-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.admin-posts-list {
+  margin-bottom: 32px;
+}
+
+.admin-no-content {
+  text-align: center;
+  padding: 40px;
+  background: #F8F9FA;
+  border-radius: 12px;
+  color: #666;
+}
+
+.admin-pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}

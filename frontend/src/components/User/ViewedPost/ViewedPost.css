@@ -13,3 +13,80 @@
     justify-content: center;
     margin-top: 16px;
 }
+
+/* ViewedPost.css */
+.viewed-post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.viewed-post-title {
+    margin: 0;
+    color: #2e7d32;
+    font-weight: bold;
+}
+
+.viewed-post-stats {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.total-count {
+    color: #666;
+    font-size: 14px;
+}
+
+.vip-count {
+    color: #ff9800;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.vip-notice {
+    padding: 12px;
+    background: linear-gradient(135deg, #fff8f0 0%, #fffbf5 100%);
+    border: 1px solid #ffcc80;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #e65100;
+    font-weight: 500;
+}
+
+.viewed-posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.no-viewed-posts {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    .viewed-post-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .viewed-post-stats {
+        justify-content: center;
+    }
+}
