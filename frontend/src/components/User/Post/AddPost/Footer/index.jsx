@@ -1,9 +1,21 @@
+// Footer component của bạn đã ổn, chỉ cần đảm bảo hiển thị quota đúng
 import { useState } from 'react';
+import { Checkbox, FormControlLabel, Box, Typography } from '@mui/material';
+import { useUsageManager } from '../../../../../hooks/useUsageManager';
 import RoomPostPreviewModal from '../../RoomPostPreviewModal/RoomPostPreviewModal';
 import './index.css';
 
-const FooterAddPost = ({ onSubmit, type, editPost, mediaData, contentData }) => {
+const FooterAddPost = ({ 
+    onSubmit, 
+    type, 
+    editPost, 
+    mediaData, 
+    contentData, 
+    isVip, 
+    onVipChange 
+}) => {
     const [openPreview, setOpenPreview] = useState(false);
+    const { currentUsage, loading } = useUsageManager();
 
     const handlePreview = () => {
         setOpenPreview(true);
@@ -11,6 +23,15 @@ const FooterAddPost = ({ onSubmit, type, editPost, mediaData, contentData }) => 
 
     const handleClose = () => {
         setOpenPreview(false);
+    };
+
+    const handleVipToggle = async (event) => {
+        const newIsVip = event.target.checked;
+        const success = await onVipChange(newIsVip);
+        if (!success && newIsVip) {
+            // Reset checkbox nếu không thể set VIP
+            event.target.checked = false;
+        }
     };
 
     const formatPostData = () => {
@@ -30,7 +51,7 @@ const FooterAddPost = ({ onSubmit, type, editPost, mediaData, contentData }) => 
         } else {
             const imagePreviews = Array.isArray(mediaData?.images)
                 ? mediaData.images
-                    .filter(img => img.preview) // chỉ lấy những ảnh có preview
+                    .filter(img => img.preview)
                     .map(img => img.preview)
                 : [];
 
@@ -49,11 +70,62 @@ const FooterAddPost = ({ onSubmit, type, editPost, mediaData, contentData }) => 
         }
     };
 
+    const renderPostTypeInfo = () => {
+        if (loading || !currentUsage) {
+            return <span>Đang tải...</span>;
+        }
+
+        const { currentUsage: usage, planName } = currentUsage;
+        const normalQuota = usage?.postsCreated === 999999 ? '∞' : (usage?.postsCreated || 0);
+        const vipQuota = usage?.vipPostsUsed === 999999 ? '∞' : (usage?.vipPostsUsed || 0);
+        const hasVipQuota = (usage?.vipPostsUsed || 0) > 0;
+
+        return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={isVip}
+                            onChange={handleVipToggle}
+                            disabled={!hasVipQuota}
+                            sx={{
+                                color: '#ff9800',
+                                '&.Mui-checked': {
+                                    color: '#ff9800',
+                                },
+                            }}
+                        />
+                    }
+                    label=""
+                    sx={{ margin: 0 }}
+                />
+                
+                <Box>
+                    {isVip ? (
+                        <span>
+                            Đã chọn <strong style={{ color: '#ff9800' }}>🌟 Đăng tin VIP</strong>
+                            <span style={{ color: '#666', fontSize: '0.9em', marginLeft: '8px' }}>
+                                (Còn lại: {vipQuota} tin)
+                            </span>
+                        </span>
+                    ) : (
+                        <span>
+                            Đã chọn <strong>📄 Đăng tin thường</strong>
+                            <span style={{ color: '#666', fontSize: '0.9em', marginLeft: '8px' }}>
+                                (Còn lại: {normalQuota} tin)
+                            </span>
+                        </span>
+                    )}
+                </Box>
+            </Box>
+        );
+    };
+
     return (
         <>
             <div className="footer-add-post">
                 <div className="footer-left">
-                    <span>Đã chọn <strong>Đăng tin thường (Miễn phí)</strong></span>
+                    {renderPostTypeInfo()}
                 </div>
                 <div className="footer-right">
                     <button className="btn-preview" onClick={handlePreview}>Xem trước</button>

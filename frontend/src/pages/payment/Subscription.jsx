@@ -45,7 +45,7 @@ const SubscriptionPage = () => {
   const currentUser = useSelector((state) => state.auth?.login?.currentUser);
   const accessToken = currentUser?.accessToken;
 
-  console.log("🔍 Current User:", currentUser)
+  console.log("🔍 Current User:", currentUser);
   console.log("🔑 Access Token:", accessToken);
 
   // Logic check đăng nhập
@@ -81,7 +81,7 @@ const SubscriptionPage = () => {
       setError("");
 
       const subscriptionsRes = await getAllSubscriptions();
-      
+
       if (subscriptionsRes.data.success) {
         setSubscriptions(subscriptionsRes.data.data);
       } else {
@@ -92,7 +92,7 @@ const SubscriptionPage = () => {
       if (accessToken && typeof accessToken === "string") {
         try {
           const currentRes = await getCurrentSubscription(accessToken);
-          
+
           if (currentRes.data.success) {
             setCurrentSubscription(currentRes.data.data);
           }
@@ -267,45 +267,99 @@ const SubscriptionPage = () => {
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Mức độ sử dụng trong tháng
               </Typography>
-              <Box mb={1}>
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Typography variant="caption" color="#2e7d32">
-                    Tin đã đăng: {currentUsage.postsCreated}
-                    {subscriptionId.features.maxPosts > 0 &&
-                      `/${subscriptionId.features.maxPosts}`}
-                  </Typography>
-                  <Typography variant="caption" color="#2e7d32">
-                    {subscriptionId.features.maxPosts === -1
-                      ? "∞"
-                      : `${Math.round((currentUsage.postsCreated / subscriptionId.features.maxPosts) * 100)}%`}
-                  </Typography>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={
-                    subscriptionId.features.maxPosts === -1
-                      ? 0
-                      : Math.min(
-                          (currentUsage.postsCreated /
+
+              {/* ⭐ SỬA: Hiển thị usage chính xác */}
+              <Grid container spacing={2}>
+                {/* Tin thường */}
+                <Grid item xs={4}>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="#2e7d32"
+                      display="block"
+                    >
+                      📝 Tin thường
+                    </Typography>
+                    <Typography variant="h6" color="#2e7d32">
+                      {currentUsage.usage.postsCreated}
+                      {subscriptionId.features.maxPosts !== -1 &&
+                        `/${subscriptionId.features.maxPosts}`}
+                    </Typography>
+                    {subscriptionId.features.maxPosts !== -1 && (
+                      <LinearProgress
+                        variant="determinate"
+                        value={Math.min(
+                          (currentUsage.usage.postsCreated /
                             subscriptionId.features.maxPosts) *
                             100,
                           100
-                        )
-                  }
-                  sx={{
-                    borderRadius: 2,
-                    height: 8,
-                    bgcolor: "#e8f5e8",
-                    "& .MuiLinearProgress-bar": {
-                      bgcolor: "#4caf50",
-                    },
-                  }}
-                />
-              </Box>
+                        )}
+                        sx={{
+                          height: 6,
+                          borderRadius: 3,
+                          bgcolor: "#e8f5e8",
+                          "& .MuiLinearProgress-bar": { bgcolor: "#4caf50" },
+                        }}
+                      />
+                    )}
+                  </Box>
+                </Grid>
+
+                {/* Tin VIP */}
+                <Grid item xs={4}>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="#ff9800"
+                      display="block"
+                    >
+                      ⭐ Tin VIP
+                    </Typography>
+                    <Typography variant="h6" color="#ff9800">
+                      {currentUsage.usage.vipPostsUsed === 999999
+                        ? "∞"
+                        : currentUsage.usage.vipPostsUsed}
+                      {subscriptionId.features.vipPosts !== -1 &&
+                        `/${subscriptionId.features.vipPosts}`}
+                    </Typography>
+                    {subscriptionId.features.vipPosts !== -1 && (
+                      <LinearProgress
+                        variant="determinate"
+                        value={Math.min(
+                          (currentUsage.usage.vipPostsUsed /
+                            subscriptionId.features.vipPosts) *
+                            100,
+                          100
+                        )}
+                        sx={{
+                          height: 6,
+                          borderRadius: 3,
+                          bgcolor: "#fff3e0",
+                          "& .MuiLinearProgress-bar": { bgcolor: "#ff9800" },
+                        }}
+                      />
+                    )}
+                  </Box>
+                </Grid>
+
+                {/* Xem SĐT */}
+                <Grid item xs={4}>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="#2196f3"
+                      display="block"
+                    >
+                      📱 Xem SĐT
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {subscriptionId.features.canViewHiddenPhone
+                        ? "Không giới hạn"
+                        : "Không hỗ trợ"}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
             </Grid>
           </Grid>
 

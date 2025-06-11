@@ -39,3 +39,50 @@
     background-color: #ff8a00;
     color: #fff;
 }
+
+.footer-add-post {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 15px 20px;
+    border-top: 1px solid #e0e0e0;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+}
+
+.footer-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.footer-right {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-preview, .btn-submit {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-preview {
+    background: #f0f2f5;
+    color: #333;
+}
+
+.btn-preview:hover {
+    background: #e4e6ea;
+}
+
+.btn-submit {
+    background: #ff6b35;
+    color: white;
+}
+
+.btn-submit:hover {
+    background: #e55a2b;
+}

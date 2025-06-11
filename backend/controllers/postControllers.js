@@ -139,6 +139,15 @@ exports.createPost = async (req, res) => {
       isVip = false,
     } = req.body;
 
+    // Parse isVip từ string thành boolean nếu cần
+    const isVipPost = isVip === 'true' || isVip === true;
+
+    console.log("🔍 CreatePost Debug:", {
+      isVip,
+      isVipPost,
+      userId: req.user.id
+    });
+
     // Kiểm tra các trường bắt buộc
     if (
       !title ||
@@ -164,16 +173,12 @@ exports.createPost = async (req, res) => {
 
     const parsedAddress = safeParse(address);
     const fullAddress = `${parsedAddress.exactaddress}, ${parsedAddress.ward}, ${parsedAddress.district}, ${parsedAddress.province}`;
-    console.log("📌 Địa chỉ đầy đủ gửi tới getCoordinates:", fullAddress);
-
-    console.log("🏃‍♂️ Gọi hàm getCoordinates với địa chỉ:", fullAddress);
+    
     const coordinates = await getCoordinates(fullAddress);
     const parsedLocationDetails = safeParse(locationDetails);
     const parsedPropertyDetails = safeParse(propertyDetails);
     const parsedDimensions = safeParse(dimensions);
-    const parsedFeatures = Array.isArray(features)
-      ? features
-      : safeParse(features, []);
+    const parsedFeatures = Array.isArray(features) ? features : safeParse(features, []);
     const parsedContactInfo = safeParse(contactInfo);
 
     // Lấy user từ token
@@ -184,26 +189,43 @@ exports.createPost = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
-    const canCreatePost = await SubscriptionService.canUserPerformAction(userId, 'create_post');
-    if (!canCreatePost) {
-      return res.status(403).json({
-        message: "Bạn đã hết lượt đăng bài trong tháng này. Vui lòng đợi tới tháng sau hoặc nâng cấp tài khoản.",
+    try {
+      if (isVipPost) {
+        const vipQuotaResponse = await axios.get(
+          `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/check?action=vip_post`,
+          {
+            headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
+          }
+        );
+
+        if (!vipQuotaResponse.data.success || !vipQuotaResponse.data.data.canUse) {
+          return res.status(403).json({
+            message: "Bạn đã hết lượt đăng tin VIP trong tháng này hoặc gói của bạn không hỗ trợ tin VIP.",
+          });
+        }
+      } else {
+        const postQuotaResponse = await axios.get(
+          `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/check?action=post`,
+          {
+            headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
+          }
+        );
+
+        if (!postQuotaResponse.data.success || !postQuotaResponse.data.data.canUse) {
+          return res.status(403).json({
+            message: "Bạn đã hết lượt đăng tin trong tháng này. Vui lòng nâng cấp gói để đăng thêm.",
+          });
+        }
+      }
+    } catch (quotaError) {
+      console.error("Error checking quota:", quotaError);
+      return res.status(500).json({
+        message: "Lỗi khi kiểm tra quota đăng tin",
       });
     }
 
-    if (isVip) {
-      const canCreateVipPost = await SubscriptionService.canUserPerformAction(userId, 'create_vip_post');
-      if (!canCreateVipPost) {
-        return res.status(403).json({
-          message: "Bạn đã hết lượt đăng tin VIP trong tháng này hoặc gói của bạn không hỗ trợ tin VIP.",
-        });
-      }
-    }
-
     if (!req.files?.images || req.files.images.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Thiếu ảnh, vui lòng tải lên ít nhất một ảnh." });
+      return res.status(400).json({ message: "Thiếu ảnh, vui lòng tải lên ít nhất một ảnh." });
     }
 
     // Xử lý images
@@ -213,10 +235,9 @@ exports.createPost = async (req, res) => {
     }
 
     const imageFiles = req.files?.images || [];
-
-    const imageUrls = [...bodyImages]; // các URL ảnh cũ
+    const imageUrls = [...bodyImages];
     imageFiles.forEach((file) => {
-      imageUrls.push(file.path); // ảnh mới (file) đã upload lên Cloudinary
+      imageUrls.push(file.path);
     });
 
     // Xử lý videoUrl
@@ -259,28 +280,32 @@ exports.createPost = async (req, res) => {
       expiryDate: null,
       latitude: coordinates?.latitude || null,
       longitude: coordinates?.longitude || null,
-      isVip: isVip, // Thêm field VIP
-      userId: userId, // Đảm bảo có userId
+      isVip: isVipPost, 
+      userId: userId,
     });
 
     // Lưu bài đăng
     const savedPost = await newPost.save();
 
     try {
-      const subscription = await SubscriptionService.getUserSubscription(userId);
-      if (subscription) {
-        // Cập nhật usage cho subscription hiện tại
-        subscription.currentUsage.usage.postsCreated += 1;
-        if (isVip) {
-          subscription.currentUsage.usage.vipPostsUsed += 1;
-        }
-        await subscription.save();
-        console.log(`✅ Updated usage for user ${userId}: posts=${subscription.currentUsage.usage.postsCreated}, vip=${subscription.currentUsage.usage.vipPostsUsed}`);
+      if (isVipPost) {
+        await axios.post(
+          `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/update`,
+          { action: 'vip_post' },
+          {
+            headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
+          }
+        );
+        console.log(`✅ Updated VIP usage for user ${userId}`);
       } else {
-        // User đang dùng free plan, update User model legacy fields
-        user.postQuota = Math.max(0, user.postQuota - 1);
-        await user.save();
-        console.log(`✅ Updated free plan quota for user ${userId}: remaining=${user.postQuota}`);
+        await axios.post(
+          `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/update`,
+          { action: 'post' },
+          {
+            headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
+          }
+        );
+        console.log(`✅ Updated post usage for user ${userId}`);
       }
     } catch (usageError) {
       console.error("Error updating usage tracking:", usageError);
@@ -292,7 +317,7 @@ exports.createPost = async (req, res) => {
       post: savedPost,
     });
 
-    // Background processing for moderation (không thay đổi)
+    // Background processing for moderation
     (async () => {
       try {
         const moderationResult = await checkPostModeration(savedPost);
@@ -307,17 +332,19 @@ exports.createPost = async (req, res) => {
 
         await savedPost.save();
 
+        const postTypeText = isVipPost ? 'VIP ' : '';
+        
         if (moderationResult.status === "approved") {
           sendSocketNotification(userId, {
-            message: `Bài đăng của bạn với tiêu đề "${savedPost.title}" đã được duyệt và sẽ hiển thị công khai.`,
+            message: `Bài đăng ${postTypeText}của bạn với tiêu đề "${savedPost.title}" đã được duyệt và sẽ hiển thị công khai.`,
           });
         } else if (moderationResult.status === "rejected") {
           sendSocketNotification(userId, {
-            message: `Bài đăng của bạn với tiêu đề "${savedPost.title}" bị từ chối. Lý do: ${moderationResult.reason}`,
+            message: `Bài đăng ${postTypeText}của bạn với tiêu đề "${savedPost.title}" bị từ chối. Lý do: ${moderationResult.reason}`,
           });
         } else if (moderationResult.status === "pending") {
           sendSocketNotification(userId, {
-            message: `Bài đăng của bạn với tiêu đề "${savedPost.title}" đang đợi admin duyệt.`,
+            message: `Bài đăng ${postTypeText}của bạn với tiêu đề "${savedPost.title}" đang đợi admin duyệt.`,
           });
         }
       } catch (err) {
@@ -327,9 +354,7 @@ exports.createPost = async (req, res) => {
   } catch (error) {
     console.error("Lỗi khi tạo bài đăng:", error);
     if (error.name === "ValidationError") {
-      return res
-        .status(400)
-        .json({ message: "Lỗi xác thực dữ liệu", error: error.message });
+      return res.status(400).json({ message: "Lỗi xác thực dữ liệu", error: error.message });
     }
     res.status(500).json({
       message: "Lỗi máy chủ",

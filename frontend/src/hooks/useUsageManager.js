@@ -1,4 +1,3 @@
-// hooks/useUsageManager.js
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
@@ -34,11 +33,16 @@ export const useUsageManager = () => {
     }
   };
 
+  const refreshUsage = async () => {
+    console.log('🔄 Refreshing usage data...');
+    await fetchCurrentUsage();
+  };
+
   // Check if can perform action
   const checkUsage = async (action) => {
     if (!accessToken) {
       showLoginAlert();
-      return false;
+      return { canUse: false };
     }
 
     try {
@@ -52,15 +56,15 @@ export const useUsageManager = () => {
         
         if (!canUse) {
           showQuotaExhaustedAlert(action, message);
-          return false;
+          return { canUse: false };
         }
         
         return { canUse: true, remaining, message };
       }
-      return false;
+      return { canUse: false };
     } catch (error) {
       console.error('Error checking usage:', error);
-      return false;
+      return { canUse: false };
     }
   };
 
@@ -69,14 +73,18 @@ export const useUsageManager = () => {
     if (!accessToken) return false;
 
     try {
+      console.log(`🔄 Updating usage for action: ${action}`);
+      
       const response = await axios.post(`${API_BASE}/v1/payments/usage/update`, 
         { action },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
       if (response.data.success) {
-        // Refresh current usage
+        console.log(`Usage updated successfully:`, response.data.data);
+        
         await fetchCurrentUsage();
+        
         return response.data.data;
       }
       return false;
@@ -141,7 +149,7 @@ export const useUsageManager = () => {
     fetchCurrentUsage();
   }, [accessToken]);
 
-   const shouldShowQuotaWarning = (action) => {
+  const shouldShowQuotaWarning = (action) => {
     if (!currentUsage) return false;
     
     const { usage } = currentUsage.currentUsage;
@@ -165,7 +173,7 @@ export const useUsageManager = () => {
     return remaining <= 5 && remaining > 0;
   };
 
-  // ⭐ THÊM: Function show warning alert
+  // Show warning alert
   const showQuotaWarning = (action, remaining) => {
     const actionNames = {
       'post': 'đăng tin thường',
@@ -204,6 +212,7 @@ export const useUsageManager = () => {
     checkUsage,
     updateUsage,
     fetchCurrentUsage,
+    refreshUsage,
     showQuotaExhaustedAlert,
     shouldShowQuotaWarning, 
     showQuotaWarning,
