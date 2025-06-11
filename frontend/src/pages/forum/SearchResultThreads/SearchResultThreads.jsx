@@ -44,7 +44,7 @@ const SearchResultThreads = () => {
 
 
     useEffect(() => {
-        if (!searchParams.keyword.trim()) return;
+        if (!searchParams.keyword.trim() && !searchParams.tags.trim()) return;
 
         const fetchSearchResults = async () => {
             setLoading(true);
@@ -66,6 +66,7 @@ const SearchResultThreads = () => {
 
         fetchSearchResults();
     }, [searchParams, page]);
+
 
     const handlePageChange = (event, value) => {
         setPage(value);

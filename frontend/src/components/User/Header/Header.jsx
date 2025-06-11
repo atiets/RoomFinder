@@ -11,15 +11,15 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import { createAxios } from "../../../createInstance";
 import useSocketForum from '../../../hooks/useSocketForum';
 import { logout } from "../../../redux/apiRequest";
 import { logoutSuccess } from "../../../redux/authSlice";
 import Notification from "../Notification/Notification";
-import Swal from "sweetalert2";
 import "./Header.css";
 
 const Header = () => {
@@ -368,13 +368,6 @@ const Header = () => {
                   badgeContent={unreadCount} 
                   color="error"
                   invisible={unreadCount === 0}
-                  sx={{
-                    '& .MuiBadge-badge': {
-                      fontSize: '0.75rem',
-                      height: '20px',
-                      minWidth: '20px'
-                    }
-                  }}
                 >
                   <NotificationsIcon />
                 </Badge>

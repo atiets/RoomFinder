@@ -29,12 +29,12 @@ import RoomPostManage from "./RoomPostManage";
 const ManagePostAdmin = () => {
   document.title = "Quản lý bài đăng";
   const [filter, setFilter] = useState("Tất cả");
-  
+
   const [anchorEl, setAnchorEl] = useState(null);
   const [anchorElUpdateDate, setAnchorElUpdateDate] = useState(null);
   const [open, setOpen] = useState(false);
   const [openUpdateDate, setOpenUpdateDate] = useState(false);
-  
+
   const [allPosts, setAllPosts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -44,8 +44,21 @@ const ManagePostAdmin = () => {
   const [days, setDays] = useState();
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(searchKeyword);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchKeyword);
+      setCurrentPage(1);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchKeyword]);
 
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
@@ -99,18 +112,24 @@ const ManagePostAdmin = () => {
 
   const fetchFilteredPosts = async () => {
     const { status, visibility, onlyVip } = statusVisibilityMap[filter] || {};
-    
+
     console.log(`🔍 Filter selected: "${filter}"`);
     console.log(`📋 Filter config:`, { status, visibility, onlyVip });
-    
+
     try {
       setLoading(true);
-      
-      const postsPerPage = onlyVip ? 100 : 5; 
-      const pageToFetch = onlyVip ? 1 : currentPage; 
-      
-      const data = await getAllPosts(token, pageToFetch, postsPerPage, status, visibility);
-      
+      const postsPerPage = onlyVip ? 100 : 5;
+      const pageToFetch = onlyVip ? 1 : currentPage;
+
+      const data = await getAllPosts(
+        token,
+        pageToFetch,
+        postsPerPage,
+        status,
+        visibility
+      );
+
+      // const data = await getAllPosts(token, currentPage, 5, status, visibility, debouncedSearch);
       if (Array.isArray(data.posts)) {
         let formattedPosts = data.posts.map((post) => ({
           id: post._id,
@@ -130,7 +149,7 @@ const ManagePostAdmin = () => {
           area: post.area || 0,
           status: post.status || "pending",
           visibility: post.visibility || "hidden",
-          isVip: post.isVip || false, 
+          isVip: post.isVip || false,
           views: post.views || 0,
           createdAt: post.createdAt,
           images: post.images ? post.images.slice(0, 2) : [],
@@ -138,15 +157,20 @@ const ManagePostAdmin = () => {
 
         if (onlyVip) {
           const beforeFilter = formattedPosts.length;
-          formattedPosts = formattedPosts.filter(post => post.isVip === true);
-          console.log(`🌟 VIP Filter: ${beforeFilter} posts -> ${formattedPosts.length} VIP posts`);
+          formattedPosts = formattedPosts.filter((post) => post.isVip === true);
+          console.log(
+            `🌟 VIP Filter: ${beforeFilter} posts -> ${formattedPosts.length} VIP posts`
+          );
         }
 
         if (searchTerm) {
-          formattedPosts = formattedPosts.filter(post => 
-            post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            post.contactInfo.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            post.contactInfo.phoneNumber.includes(searchTerm)
+          formattedPosts = formattedPosts.filter(
+            (post) =>
+              post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              post.contactInfo.username
+                .toLowerCase()
+                .includes(searchTerm.toLowerCase()) ||
+              post.contactInfo.phoneNumber.includes(searchTerm)
           );
         }
 
@@ -160,20 +184,22 @@ const ManagePostAdmin = () => {
           const postsPerPageVip = 5;
           const totalVipPosts = sortedPosts.length;
           const newTotalPages = Math.ceil(totalVipPosts / postsPerPageVip) || 1;
-          
+
           const startIndex = (currentPage - 1) * postsPerPageVip;
           const endIndex = startIndex + postsPerPageVip;
           const paginatedVipPosts = sortedPosts.slice(startIndex, endIndex);
-          
+
           setAllPosts(paginatedVipPosts);
           setTotalPages(newTotalPages);
-          
+
           if (currentPage > newTotalPages && newTotalPages > 0) {
             setCurrentPage(1);
-            return; 
+            return;
           }
-          
-          console.log(`📊 VIP Pagination: ${totalVipPosts} total VIP posts, ${newTotalPages} pages, showing page ${currentPage}`);
+
+          console.log(
+            `📊 VIP Pagination: ${totalVipPosts} total VIP posts, ${newTotalPages} pages, showing page ${currentPage}`
+          );
           console.log(`📋 Current page posts:`, paginatedVipPosts.length);
         } else {
           setAllPosts(sortedPosts);
@@ -181,8 +207,10 @@ const ManagePostAdmin = () => {
           setTotalPages(data.totalPages || 1);
         }
 
-        const vipCount = sortedPosts.filter(p => p.isVip).length;
-        console.log(`📊 Final result - Filter "${filter}": ${sortedPosts.length} posts, ${vipCount} VIP`);
+        const vipCount = sortedPosts.filter((p) => p.isVip).length;
+        console.log(
+          `📊 Final result - Filter "${filter}": ${sortedPosts.length} posts, ${vipCount} VIP`
+        );
       } else {
         console.error("Dữ liệu trả về không phải là mảng.");
         setAllPosts([]);
@@ -266,7 +294,7 @@ const ManagePostAdmin = () => {
     }
   };
 
-  const vipCount = allPosts.filter(post => post.isVip).length;
+  const vipCount = allPosts.filter((post) => post.isVip).length;
 
   if (loading)
     return (
@@ -278,27 +306,27 @@ const ManagePostAdmin = () => {
   return (
     <div className="all-posts-list">
       <ToastContainer position="top-right" autoClose={5000} />
-      
+
       <Box className="admin-manage-header" sx={{ marginBottom: 2 }}>
         <div className="admin-manage-title">
           <h2>Quản lý bài đăng</h2>
           <div className="admin-manage-stats">
-            <Chip 
+            <Chip
               label={`📊 ${allPosts.length} bài`}
               size="small"
               variant="outlined"
             />
             {vipCount > 0 && (
-              <Chip 
+              <Chip
                 icon={<TrendingUpIcon />}
                 label={`${vipCount} VIP`}
                 size="small"
                 className="admin-vip-chip-header"
-                sx={{ 
-                  background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  marginLeft: 1
+                sx={{
+                  background: "linear-gradient(45deg, #FFD700, #FFA500)",
+                  color: "white",
+                  fontWeight: "bold",
+                  marginLeft: 1,
                 }}
               />
             )}
@@ -308,25 +336,25 @@ const ManagePostAdmin = () => {
 
       <div className="manage-post-admin-actions">
         <div className="manage-post-admin-container-filter"></div>
-        
+
         <Button
           startIcon={<FilterAltOutlinedIcon />}
           className="manage-post-admin-btn-filter"
-          onClick={handleClick} 
+          onClick={handleClick}
         >
           {filterText}
         </Button>
-        
+
         <Button
           className="manage-post-admin-btn-update-date"
-          onClick={handleOpenUpdateDate} 
+          onClick={handleOpenUpdateDate}
         >
           Cập nhật số ngày hiển thị bài đăng
         </Button>
 
         <Menu
           className="manage-post-admin-menu-update-date"
-          anchorEl={anchorElUpdateDate} 
+          anchorEl={anchorElUpdateDate}
           open={openUpdateDate}
           onClose={handleCloseUpdateDate}
           MenuListProps={{
@@ -383,7 +411,7 @@ const ManagePostAdmin = () => {
         </Menu>
 
         <Menu
-          anchorEl={anchorEl} 
+          anchorEl={anchorEl}
           open={open}
           onClose={handleClose}
           MenuListProps={{
@@ -396,19 +424,19 @@ const ManagePostAdmin = () => {
           <MenuItem onClick={handleFilterChange}>Đã từ chối</MenuItem>
           <MenuItem onClick={handleFilterChange}>Đã ẩn</MenuItem>
           <MenuItem onClick={handleFilterChange}>Bài đăng chỉnh sửa</MenuItem>
-          <MenuItem 
-            onClick={handleFilterChange} 
+          <MenuItem
+            onClick={handleFilterChange}
             className="vip-filter-item"
             sx={{
-              backgroundColor: '#333333 !important',
-              color: '#FFD700 !important',
-              fontWeight: 'bold !important',
-              borderRadius: '4px',
-              margin: '2px 4px',
-              '&:hover': {
-                backgroundColor: '#444444 !important',
-                color: '#FFA500 !important',
-              }
+              backgroundColor: "#333333 !important",
+              color: "#FFD700 !important",
+              fontWeight: "bold !important",
+              borderRadius: "4px",
+              margin: "2px 4px",
+              "&:hover": {
+                backgroundColor: "#444444 !important",
+                color: "#FFA500 !important",
+              },
             }}
           >
             🌟 Chỉ tin VIP
@@ -419,27 +447,29 @@ const ManagePostAdmin = () => {
           label="Tìm kiếm theo tên, tác giả, SĐT..."
           variant="outlined"
           size="small"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={searchKeyword}
+          onChange={(e) => setSearchKeyword(e.target.value)}
           sx={{ width: "300px", marginLeft: "20px" }}
         />
       </div>
 
       {filter !== "Tất cả" && (
-        <Box sx={{ 
-          padding: 1, 
-          marginBottom: 1, 
-          backgroundColor: '#f5f5f5', 
-          borderRadius: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
+        <Box
+          sx={{
+            padding: 1,
+            marginBottom: 1,
+            backgroundColor: "#f5f5f5",
+            borderRadius: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <Typography variant="body2" color="textSecondary">
             Đang hiển thị: <strong>{filter}</strong>
             {filter === "🌟 Chỉ tin VIP" && ` (${vipCount} tin VIP)`}
           </Typography>
-          
+
           {totalPages > 1 && (
             <Typography variant="body2" color="textSecondary">
               Trang {currentPage}/{totalPages}
@@ -452,7 +482,7 @@ const ManagePostAdmin = () => {
       {allPosts.length > 0 ? (
         allPosts.map((post, index) => (
           <RoomPostManage
-            key={post.id} 
+            key={post.id}
             post={post}
             onTitleClick={handleTitleClick}
             onApprove={handleApprove}
@@ -463,25 +493,29 @@ const ManagePostAdmin = () => {
         ))
       ) : (
         <div className="container-nocontent">
-          <Typography variant="h6" sx={{ textAlign: 'center', padding: 4, color: '#666' }}>
-            {filter === "🌟 Chỉ tin VIP" 
-              ? "🌟 Không có tin VIP nào" 
-              : searchTerm 
-                ? `🔍 Không tìm thấy kết quả cho "${searchTerm}"` 
-                : "📝 Chưa có tin đăng nào"
-            }
+          <Typography
+            variant="h6"
+            sx={{ textAlign: "center", padding: 4, color: "#666" }}
+          >
+            {filter === "🌟 Chỉ tin VIP"
+              ? "🌟 Không có tin VIP nào"
+              : searchTerm
+                ? `🔍 Không tìm thấy kết quả cho "${searchTerm}"`
+                : "📝 Chưa có tin đăng nào"}
           </Typography>
         </div>
       )}
 
       {totalPages > 1 && (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          padding: 2,
-          gap: 2
-        }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 2,
+            gap: 2,
+          }}
+        >
           <Pagination
             className="manage-post-admin-pagination"
             count={totalPages}
@@ -494,8 +528,12 @@ const ManagePostAdmin = () => {
             showFirstButton
             showLastButton
           />
-          
-          <Typography variant="body2" color="textSecondary" sx={{ whiteSpace: 'nowrap' }}>
+
+          <Typography
+            variant="body2"
+            color="textSecondary"
+            sx={{ whiteSpace: "nowrap" }}
+          >
             Hiển thị {allPosts.length} tin trên trang {currentPage}
           </Typography>
         </Box>

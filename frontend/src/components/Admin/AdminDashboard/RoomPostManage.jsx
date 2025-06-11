@@ -1,5 +1,3 @@
-// Sửa RoomPostManage.jsx để hiển thị VIP badge rõ ràng hơn
-
 import {
   Box,
   Button,
@@ -36,6 +34,27 @@ const RoomPostManage = ({
   };
 
   const isVip = post.isVip === true;
+
+  // const formatPriceToText = (price) => {
+  //   if (typeof price !== "number" || isNaN(price)) {
+  //     return "Giá không hợp lệ";
+  //   }
+
+  //   if (price >= 1_000_000_000) {
+  //     const billions = Math.floor(price / 1_000_000_000);
+  //     return `${billions} Tỷ VNĐ`;
+  //   }
+
+  //   if (price >= 1_000_000) {
+  //     const millions = Math.floor(price / 1_000_000);
+  //     const rest = Math.floor((price % 1_000_000) / 1_000);
+  //     return rest > 0
+  //       ? `${millions} triệu ${rest} nghìn VND`
+  //       : `${millions} triệu VND`;
+  //   }
+
+  //   return `${price.toLocaleString()} VND`;
+  // };
 
   return (
     <Card className={`admin-post-card ${isVip ? 'admin-vip-post' : 'admin-normal-post'}`}>

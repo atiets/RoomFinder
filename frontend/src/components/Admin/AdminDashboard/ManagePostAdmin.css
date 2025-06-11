@@ -1,5 +1,7 @@
 .all-posts-list {
+  width: 80%;
   padding: 0 50px;
+  margin: 0 auto;
 }
 
 .manage-post-admin-actions {
