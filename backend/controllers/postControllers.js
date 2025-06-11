@@ -111,7 +111,6 @@ async function getCoordinates(addressString) {
   }
 }
 
-// controllers/postController.js
 exports.createPost = async (req, res) => {
   try {
     const {
@@ -139,6 +138,15 @@ exports.createPost = async (req, res) => {
       longitude,
       isVip = false,
     } = req.body;
+
+    // Parse isVip từ string thành boolean nếu cần
+    const isVipPost = isVip === 'true' || isVip === true;
+
+    console.log("🔍 CreatePost Debug:", {
+      isVip,
+      isVipPost,
+      userId: req.user.id
+    });
 
     // Kiểm tra các trường bắt buộc
     if (
@@ -182,22 +190,7 @@ exports.createPost = async (req, res) => {
     }
 
     try {
-      // Check quota tin thường
-      const postQuotaResponse = await axios.get(
-        `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/check?action=post`,
-        {
-          headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
-        }
-      );
-
-      if (!postQuotaResponse.data.success || !postQuotaResponse.data.data.canUse) {
-        return res.status(403).json({
-          message: "Bạn đã hết lượt đăng tin trong tháng này. Vui lòng nâng cấp gói để đăng thêm.",
-        });
-      }
-
-      // Check quota tin VIP nếu cần
-      if (isVip) {
+      if (isVipPost) {
         const vipQuotaResponse = await axios.get(
           `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/check?action=vip_post`,
           {
@@ -208,6 +201,19 @@ exports.createPost = async (req, res) => {
         if (!vipQuotaResponse.data.success || !vipQuotaResponse.data.data.canUse) {
           return res.status(403).json({
             message: "Bạn đã hết lượt đăng tin VIP trong tháng này hoặc gói của bạn không hỗ trợ tin VIP.",
+          });
+        }
+      } else {
+        const postQuotaResponse = await axios.get(
+          `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/check?action=post`,
+          {
+            headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
+          }
+        );
+
+        if (!postQuotaResponse.data.success || !postQuotaResponse.data.data.canUse) {
+          return res.status(403).json({
+            message: "Bạn đã hết lượt đăng tin trong tháng này. Vui lòng nâng cấp gói để đăng thêm.",
           });
         }
       }
@@ -274,7 +280,7 @@ exports.createPost = async (req, res) => {
       expiryDate: null,
       latitude: coordinates?.latitude || null,
       longitude: coordinates?.longitude || null,
-      isVip: isVip,
+      isVip: isVipPost, 
       userId: userId,
     });
 
@@ -282,17 +288,7 @@ exports.createPost = async (req, res) => {
     const savedPost = await newPost.save();
 
     try {
-      // Update quota tin thường
-      await axios.post(
-        `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/update`,
-        { action: 'post' },
-        {
-          headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
-        }
-      );
-
-      // Update quota tin VIP nếu cần
-      if (isVip) {
+      if (isVipPost) {
         await axios.post(
           `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/update`,
           { action: 'vip_post' },
@@ -300,9 +296,17 @@ exports.createPost = async (req, res) => {
             headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
           }
         );
+        console.log(`✅ Updated VIP usage for user ${userId}`);
+      } else {
+        await axios.post(
+          `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/update`,
+          { action: 'post' },
+          {
+            headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
+          }
+        );
+        console.log(`✅ Updated post usage for user ${userId}`);
       }
-
-      console.log(`Updated usage for user ${userId}: post created, isVip: ${isVip}`);
     } catch (usageError) {
       console.error("Error updating usage tracking:", usageError);
       // Không throw error để không ảnh hưởng đến việc tạo post
@@ -313,7 +317,7 @@ exports.createPost = async (req, res) => {
       post: savedPost,
     });
 
-    // Background processing for moderation (không thay đổi)
+    // Background processing for moderation
     (async () => {
       try {
         const moderationResult = await checkPostModeration(savedPost);
@@ -328,17 +332,19 @@ exports.createPost = async (req, res) => {
 
         await savedPost.save();
 
+        const postTypeText = isVipPost ? 'VIP ' : '';
+        
         if (moderationResult.status === "approved") {
           sendSocketNotification(userId, {
-            message: `Bài đăng ${isVip ? 'VIP ' : ''}của bạn với tiêu đề "${savedPost.title}" đã được duyệt và sẽ hiển thị công khai.`,
+            message: `Bài đăng ${postTypeText}của bạn với tiêu đề "${savedPost.title}" đã được duyệt và sẽ hiển thị công khai.`,
           });
         } else if (moderationResult.status === "rejected") {
           sendSocketNotification(userId, {
-            message: `Bài đăng ${isVip ? 'VIP ' : ''}của bạn với tiêu đề "${savedPost.title}" bị từ chối. Lý do: ${moderationResult.reason}`,
+            message: `Bài đăng ${postTypeText}của bạn với tiêu đề "${savedPost.title}" bị từ chối. Lý do: ${moderationResult.reason}`,
           });
         } else if (moderationResult.status === "pending") {
           sendSocketNotification(userId, {
-            message: `Bài đăng ${isVip ? 'VIP ' : ''}của bạn với tiêu đề "${savedPost.title}" đang đợi admin duyệt.`,
+            message: `Bài đăng ${postTypeText}của bạn với tiêu đề "${savedPost.title}" đang đợi admin duyệt.`,
           });
         }
       } catch (err) {

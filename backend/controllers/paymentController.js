@@ -308,7 +308,6 @@ exports.createVNPayPayment = async (payment, subscription) => {
   }
 };
 
-// Định nghĩa plan configuration
 const PLAN_CONFIGS = {
   pro: {
     name: 'Gói Pro',
@@ -376,7 +375,7 @@ const PLAN_CONFIGS = {
   }
 };
 
-// ⭐ SỬA: Update function after successful payment
+// ⭐ Update function after successful payment (Fixed)
 exports.updateUserPlan = async (payment) => {
   try {
     const subscription = await Subscription.findById(payment.subscriptionId);
@@ -411,13 +410,16 @@ exports.updateUserPlan = async (payment) => {
       { isActive: false }
     );
 
-    // ⭐ SỬA: Set initial usage với quota đầy đủ
+    // ⭐ Set initial usage với quota đầy đủ
     const initialUsage = {
       postsCreated: planConfig.features.posting.monthlyPostLimit === -1 ? 999999 : planConfig.features.posting.monthlyPostLimit,
       vipPostsUsed: planConfig.features.vipFeatures.vipPostsPerMonth === -1 ? 999999 : planConfig.features.vipFeatures.vipPostsPerMonth,
       hiddenPhoneViews: planConfig.features.contactFeatures.canViewHiddenPhone ? 
         (planConfig.features.contactFeatures.hiddenPhoneViewsPerMonth === -1 ? 999999 : planConfig.features.contactFeatures.hiddenPhoneViewsPerMonth) : 0
     };
+
+    // ⭐ DEBUG: Log để kiểm tra
+    console.log(`📊 Setting initial usage for ${planType}:`, initialUsage);
 
     const userSubscription = new UserSubscription({
       userId: payment.userId,
@@ -433,7 +435,7 @@ exports.updateUserPlan = async (payment) => {
       currentUsage: {
         periodStartDate: startDate,
         periodEndDate: new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate()),
-        usage: initialUsage, // ⭐ Set quota đầy đủ
+        usage: initialUsage, // ⭐ Quota đầy đủ
         lastResetDate: startDate
       },
       paymentInfo: {
@@ -471,11 +473,10 @@ exports.updateUserPlan = async (payment) => {
   }
 };
 
-// ⭐ THÊM: Check usage before action
 exports.checkUsage = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { action } = req.query; // 'post', 'vip_post', 'view_phone'
+    const { action } = req.query;
 
     const userSubscription = await UserSubscription.findOne({
       userId: userId,
@@ -543,11 +544,12 @@ exports.checkUsage = async (req, res) => {
   }
 };
 
-// ⭐ THÊM: Update usage after action
 exports.updateUsage = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { action } = req.body; // 'post', 'vip_post', 'view_phone'
+    const { action } = req.body;
+
+    console.log(`🔄 Updating usage for user ${userId}, action: ${action}`);
 
     const userSubscription = await UserSubscription.findOne({
       userId: userId,
@@ -588,6 +590,19 @@ exports.updateUsage = async (req, res) => {
         });
     }
 
+    // ⭐ Check nếu là unlimited (999999) thì không trừ
+    if (currentValue === 999999) {
+      return res.status(200).json({
+        success: true,
+        message: `Sử dụng ${action} thành công (Unlimited)`,
+        data: {
+          action,
+          remaining: 999999,
+          currentUsage: userSubscription.currentUsage.usage
+        }
+      });
+    }
+
     // Check if still has quota
     if (currentValue <= 0) {
       return res.status(400).json({
@@ -607,6 +622,8 @@ exports.updateUsage = async (req, res) => {
     );
 
     const newValue = currentValue - 1;
+
+    console.log(`✅ Usage updated: ${action} for user ${userId}, remaining: ${newValue}`);
 
     res.status(200).json({
       success: true,
@@ -628,7 +645,6 @@ exports.updateUsage = async (req, res) => {
   }
 };
 
-// ⭐ THÊM: Get current usage
 exports.getCurrentUsage = async (req, res) => {
   try {
     const userId = req.user.id;

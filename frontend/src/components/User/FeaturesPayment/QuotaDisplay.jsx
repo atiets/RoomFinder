@@ -1,12 +1,17 @@
-// components/QuotaDisplay.js
 import React from 'react';
-import { Box, Typography, LinearProgress, Grid, Card, CardContent, Chip } from '@mui/material';
+import { Box, Typography, Grid, Chip, Card, CardContent } from '@mui/material';
 import { useUsageManager } from '../../../hooks/useUsageManager';
 
 const QuotaDisplay = ({ compact = true }) => {
   const { currentUsage, loading } = useUsageManager();
 
-  if (loading || !currentUsage) return null;
+  if (loading || !currentUsage) {
+    return (
+      <Box sx={{ p: 2, bgcolor: '#f8f9fa', borderRadius: 2, mb: 2 }}>
+        <Typography variant="body2">Đang tải thông tin quota...</Typography>
+      </Box>
+    );
+  }
 
   const { currentUsage: usage, planName, features } = currentUsage;
 
@@ -24,20 +29,27 @@ const QuotaDisplay = ({ compact = true }) => {
       max: features.vipFeatures.vipPostsPerMonth === -1 ? '∞' : features.vipFeatures.vipPostsPerMonth,
       color: '#ff9800',
       icon: '⭐'
+    },
+    {
+      label: 'Xem SĐT',
+      current: usage.hiddenPhoneViews,
+      max: features.contactFeatures.hiddenPhoneViewsPerMonth === -1 ? '∞' : features.contactFeatures.hiddenPhoneViewsPerMonth,
+      color: '#2196f3',
+      icon: '📱'
     }
   ];
 
-  if (compact) {
-    return (
-      <Box sx={{ p: 2, bgcolor: '#f8f9fa', borderRadius: 2, mb: 2 }}>
-        <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+  return (
+    <Card sx={{ mb: 2, bgcolor: '#f8f9fa' }}>
+      <CardContent sx={{ py: 2 }}>
+        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
           📊 Quota hiện tại ({planName})
         </Typography>
         <Grid container spacing={2}>
           {quotaItems.map((item, index) => (
-            <Grid item xs={6} key={index}>
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2">
+            <Grid item xs={4} key={index}>
+              <Box textAlign="center">
+                <Typography variant="body2" gutterBottom>
                   {item.icon} {item.label}
                 </Typography>
                 <Chip 
@@ -53,11 +65,9 @@ const QuotaDisplay = ({ compact = true }) => {
             </Grid>
           ))}
         </Grid>
-      </Box>
-    );
-  }
-
-  return null; 
+      </CardContent>
+    </Card>
+  );
 };
 
 export default QuotaDisplay;
