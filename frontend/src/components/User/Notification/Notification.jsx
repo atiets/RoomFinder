@@ -1,12 +1,21 @@
 // src/components/User/Notification/Notification.jsx
 import {
+  Announcement,
+  Circle,
+  Comment,
+  Email,
+  Notifications,
+  Reply,
+  Star,
+  ThumbUp,
+} from "@mui/icons-material";
+import {
   Box,
-  Button,
+  Chip,
   Divider,
   Menu,
   MenuItem,
-  Typography,
-  Chip,
+  Typography
 } from "@mui/material";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -15,16 +24,6 @@ import {
   fetchNotifications,
   markNotificationAsRead,
 } from "../../../redux/notificationAPI";
-import {
-  Notifications,
-  Circle,
-  Comment,
-  ThumbUp,
-  Reply,
-  Star,
-  Email,
-  Announcement,
-} from "@mui/icons-material";
 import "./Notification.css";
 
 const Notification = ({
@@ -82,11 +81,13 @@ const Notification = ({
 
     socket.on("postModerationStatus", handleIncomingNotification);
     socket.on("forumNotification", handleForumNotification);
+    socket.on("notification", handleIncomingNotification);
 
     return () => {
       if (socket && socket.off) {
         socket.off("postModerationStatus", handleIncomingNotification);
         socket.off("forumNotification", handleForumNotification);
+        socket.off("notification", handleIncomingNotification);
       }
     };
   }, [socket]);
@@ -193,8 +194,8 @@ const Notification = ({
   const sortedNotifications =
     notifications && notifications.length > 0
       ? [...notifications].sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        )
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      )
       : [];
 
   const unreadCount = notifications.filter(
@@ -211,6 +212,7 @@ const Notification = ({
       transformOrigin={{ horizontal: "right", vertical: "top" }}
       anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       sx={{
+        zIndex: 1400,
         "& .MuiPaper-root": {
           backgroundColor: "#ffffff",
           borderRadius: "12px",

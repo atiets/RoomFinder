@@ -87,7 +87,7 @@
     overflow: hidden;
 } */
 
-.MuiButton-root::before {
+/* .MuiButton-root::before {
     content: '';
     position: absolute;
     top: 0;
@@ -100,7 +100,7 @@
 
 .MuiButton-root:hover::before {
     left: 100%;
-}
+} */
 
 /* Responsive Design */
 @media (max-width: 768px) {

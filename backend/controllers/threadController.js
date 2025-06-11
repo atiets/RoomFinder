@@ -23,7 +23,7 @@ exports.createThread = async (req, res) => {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { title, content, tags } = req.body;
+    const { title, content, tags, image } = req.body;
 
     // Kiểm tra thông tin user
     if (!req.user) {
@@ -49,7 +49,8 @@ exports.createThread = async (req, res) => {
       author: req.user.id,
       username: req.user.username, // Lưu trực tiếp username
       avatar: req.user.profile?.picture || null, // Lưu trực tiếp avatar URL
-      status: 'pending' // Hoặc 'approved' nếu không cần duyệt
+      status: 'pending', // Hoặc 'approved' nếu không cần duyệt
+      image: image || null // Lưu ảnh nếu có
     });
 
     const savedThread = await newThread.save();

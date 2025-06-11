@@ -49,6 +49,9 @@ const ThreadSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
   },
+  image: {  
+    type: String
+  },
   created_at: {
     type: Date,
     default: Date.now

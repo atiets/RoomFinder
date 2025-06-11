@@ -7,16 +7,15 @@ const { io } = require("../congfig/websocket");
 
 const sendEmail = require("../services/emailService");
 const { checkPostModeration } = require("./aiController");
-const { onlineUsers, getIO } = require("../congfig/websocket");
+const { onlineUsers } = require("../congfig/websocket");
 const { checkAlertSubscriptions } = require("./alertSubscription");
 const SubscriptionService = require('../services/subscriptionService');
 
 function sendSocketNotification(userId, data) {
-  const socketServer = io();
   const socketId = onlineUsers[userId];
 
   if (socketId) {
-    const userSocket = socketServer.sockets.sockets.get(socketId);
+    const userSocket = io().sockets.sockets.get(socketId);
     if (userSocket) {
       userSocket.emit("notification", data);
       console.log(`[Socket] Đã gửi thông báo tới userId=${userId}`);
@@ -173,7 +172,7 @@ exports.createPost = async (req, res) => {
 
     const parsedAddress = safeParse(address);
     const fullAddress = `${parsedAddress.exactaddress}, ${parsedAddress.ward}, ${parsedAddress.district}, ${parsedAddress.province}`;
-    
+
     const coordinates = await getCoordinates(fullAddress);
     const parsedLocationDetails = safeParse(locationDetails);
     const parsedPropertyDetails = safeParse(propertyDetails);
@@ -280,7 +279,7 @@ exports.createPost = async (req, res) => {
       expiryDate: null,
       latitude: coordinates?.latitude || null,
       longitude: coordinates?.longitude || null,
-      isVip: isVipPost, 
+      isVip: isVipPost,
       userId: userId,
     });
 
@@ -331,21 +330,34 @@ exports.createPost = async (req, res) => {
         }
 
         await savedPost.save();
-
         const postTypeText = isVipPost ? 'VIP ' : '';
-        
-        if (moderationResult.status === "approved") {
-          sendSocketNotification(userId, {
-            message: `Bài đăng ${postTypeText}của bạn với tiêu đề "${savedPost.title}" đã được duyệt và sẽ hiển thị công khai.`,
-          });
-        } else if (moderationResult.status === "rejected") {
-          sendSocketNotification(userId, {
-            message: `Bài đăng ${postTypeText}của bạn với tiêu đề "${savedPost.title}" bị từ chối. Lý do: ${moderationResult.reason}`,
-          });
-        } else if (moderationResult.status === "pending") {
-          sendSocketNotification(userId, {
-            message: `Bài đăng ${postTypeText}của bạn với tiêu đề "${savedPost.title}" đang đợi admin duyệt.`,
-          });
+
+        const owner = await User.findById(savedPost.contactInfo.user);
+        if (owner) {
+          let message = "";
+
+          if (moderationResult.status === "approved") {
+            message = `Bài đăng ${postTypeText}của bạn với tiêu đề "${savedPost.title}" đã được duyệt và sẽ hiển thị công khai.`;
+          } else if (moderationResult.status === "rejected") {
+            message = `Bài đăng ${postTypeText}của bạn với tiêu đề "${savedPost.title}" bị từ chối. Lý do: ${moderationResult.reason}`;
+          } else if (moderationResult.status === "pending") {
+            message = `Bài đăng ${postTypeText}của bạn với tiêu đề "${savedPost.title}" đang đợi admin duyệt.`;
+          }
+
+          const notification = {
+            message,
+            type: "post",
+            post_id: savedPost._id,
+            status: "unread",
+            createdAt: new Date(),
+          };
+
+          owner.notifications.push(notification);
+          await owner.save();
+
+          // Gửi socket
+          const socket = io();
+          socket.to(owner._id.toString()).emit("notification", notification);
         }
       } catch (err) {
         console.error("Lỗi xử lý hậu kiểm duyệt:", err);
@@ -612,7 +624,7 @@ exports.getCompareChartData = async (req, res) => {
     // Lấy tất cả bài đăng trong 12 tháng qua theo điều kiện lọc
     const startDate = new Date(last12Months[11].startDate);
     const endDate = new Date(currentYear, currentMonth + 1, 0); // Cuối tháng 5/2025
-    
+
     const posts = await Post.find({
       status: "approved",
       visibility: "visible",
@@ -620,7 +632,7 @@ exports.getCompareChartData = async (req, res) => {
       'address.district': district,
       category: category,
       transactionType: transactionType,
-      createdAt: { 
+      createdAt: {
         $gte: startDate,
         $lte: endDate
       },
@@ -788,11 +800,27 @@ exports.getAllPosts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const status = req.query.status || "";
     const visibility = req.query.visibility || "";
+    const search = req.query.search || "";
     const startIndex = (page - 1) * limit;
 
     const query = {};
+
     if (status) query.status = status;
     if (visibility) query.visibility = visibility;
+
+    // Nếu có từ khóa tìm kiếm
+    if (search) {
+      const searchRegex = new RegExp(search, "i"); // không phân biệt hoa/thường
+
+      query.$or = [
+        { title: { $regex: searchRegex } },
+        { content: { $regex: searchRegex } },
+        { "contactInfo.username": { $regex: searchRegex } },
+        { "contactInfo.phoneNumber": { $regex: searchRegex } },
+        { "address.province": { $regex: searchRegex } },
+        { "address.district": { $regex: searchRegex } },
+      ];
+    }
 
     const total = await Post.countDocuments(query);
     const posts = await Post.find(query).skip(startIndex).limit(limit);
@@ -1113,6 +1141,9 @@ exports.approvePost = async (req, res) => {
       };
       owner.notifications.push(notification);
       await owner.save();
+
+      const socket = io();
+      socket.to(owner._id.toString()).emit('notification', notification);
     }
 
     res
@@ -1129,6 +1160,8 @@ exports.approvePost = async (req, res) => {
 exports.rejectPost = async (req, res) => {
   try {
     const postId = req.params.id;
+
+    // 1. Cập nhật bài viết
     const post = await Post.findByIdAndUpdate(
       postId,
       { status: "rejected", visibility: "hidden" },
@@ -1139,11 +1172,47 @@ exports.rejectPost = async (req, res) => {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    res.status(200).json({ message: "Post rejected successfully", post });
+    // 2. Kiểm tra thông tin người dùng của bài viết
+    const userId = post?.contactInfo?.user;
+    if (!userId) {
+      return res.status(400).json({ message: "Không tìm thấy thông tin người đăng." });
+    }
+
+    const owner = await User.findById(userId);
+    if (!owner) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 3. Thêm thông báo
+    const notification = {
+      message: `Bài viết "${post.title}" của bạn đã bị từ chối.`,
+      type: "post",
+      post_id: postId,
+      status: "unread",
+      createdAt: new Date(),
+    };
+
+    owner.notifications.push(notification);
+    await owner.save();
+
+    const socket = io();
+
+    if (socket) {
+      socket.to(owner._id.toString()).emit("notification", notification);
+    }
+
+    // 5. Trả về phản hồi
+    res.status(200).json({
+      message: "Post rejected successfully",
+      post,
+    });
+
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error rejecting post", error: error.message });
+    console.error("Reject Post Error:", error);
+    res.status(500).json({
+      message: "Error rejecting post",
+      error: error.message,
+    });
   }
 };
 

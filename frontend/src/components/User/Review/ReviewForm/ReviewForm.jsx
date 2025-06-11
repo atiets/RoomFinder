@@ -1,11 +1,12 @@
-import { Typography, Checkbox, FormControlLabel } from "@mui/material";
-import Swal from "sweetalert2";
+import { Checkbox, FormControlLabel, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { useParams, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import { createReview } from "../../../../redux/postAPI";
+import { uploadImages } from "../../../../redux/uploadApi";
 import "./ReviewForm.css";
 
 const ReviewForm = () => {
@@ -76,105 +77,72 @@ const ReviewForm = () => {
       };
     });
   }, []);
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (
-      quality === 0 ||
-      location === 0 ||
-      price === 0 ||
-      service === 0 ||
-      security === 0
-    ) {
+    if ([quality, location, price, service, security].includes(0)) {
       Swal.fire({
         icon: "warning",
         title: "Thiếu đánh giá",
-        text: "Vui lòng chọn đầy đủ 5 tiêu chí đánh giá (chất lượng, vị trí, giá cả, phục vụ, an ninh).",
+        text: "Vui lòng chọn đầy đủ 5 tiêu chí đánh giá.",
         confirmButtonText: "OK",
       });
       return;
     }
 
-    const averageRating = calculateAverageRating();
-
-    const reviewData = {
-      rating: {
-        quality: quality,
-        location: location,
-        price: price,
-        service: service,
-        security: security,
-        averageRating: averageRating,
-      },
-      comments: {
-        best_part: bestPart || "",
-        worst_part: worstPart || "",
-        advice: advice || "",
-        additional_comment: additionalComment || "",
-      },
-      review_checks: {
-        is_info_complete: isInfoComplete,
-        is_image_accurate: isImageAccurate,
-        is_host_responsive: isHostResponsive,
-        is_introduce: isIntroduce,
-      },
-      media: {
-        images: media?.images || [],
-        video: media?.video || "",
-      },
-    };
-
-    // // Ảnh và video (media)
-    // if (media?.images?.length > 0) {
-    //   media.images.forEach((image) => {
-    //     formData.append("media", image); // Nếu là File
-    //   });
-    // }
-
-    // if (media?.video) {
-    //   formData.append("media", media.video); // Nếu là File
-    // }
-
     try {
       setLoading(true);
 
-      // Gửi dữ liệu tới API
+      // Upload tất cả file (ảnh + video)
+      const allFiles = mediaFiles.map((media) => media.file);
+      const uploadedUrls = allFiles.length > 0 ? await uploadImages(allFiles, token) : [];
+
+      const imageUrls = [];
+      let videoUrl = "";
+
+      // Phân loại ảnh và video dựa trên media.type ban đầu
+      mediaFiles.forEach((media, index) => {
+        const url = uploadedUrls[index];
+
+        if (media.type.startsWith("image")) {
+          imageUrls.push(url);
+        } else if (media.type.startsWith("video")) {
+          videoUrl = url;
+        }
+      });
+
+      const averageRating = calculateAverageRating();
+
+      const reviewData = {
+        rating: { quality, location, price, service, security, averageRating },
+        comments: {
+          best_part: bestPart || "",
+          worst_part: worstPart || "",
+          advice: advice || "",
+          additional_comment: additionalComment || "",
+        },
+        review_checks: {
+          is_info_complete: isInfoComplete,
+          is_image_accurate: isImageAccurate,
+          is_host_responsive: isHostResponsive,
+          is_introduce: isIntroduce,
+        },
+        media: {
+          images: imageUrls,
+          video: videoUrl,
+        },
+      };
+
       await createReview(postId, reviewData, token);
 
       toast.success("Đánh giá thành công! Cảm ơn bạn.", {
         position: "top-right",
         autoClose: 2000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        onClose: () => {
-          window.location.reload();
-        },
+        onClose: () => window.location.reload(),
       });
 
-      // Reset form
-      setRating({
-        quality: 0,
-        location: 0,
-        price: 0,
-        service: 0,
-        security: 0,
-      });
-      setComment({
-        best_part: "",
-        worst_part: "",
-        advice: "",
-        additional_comment: "",
-      });
-      setIsInfoComplete(false);
-      setIsImageAccurate(false);
-      setIsHostResponsive(false);
-      setIsIntroduce(false);
-      setMedia(null);
-      setShowForm(false);
-      setError(null);
+      resetAllStates();
+
     } catch (err) {
       setError(err.response?.data?.message || "Không thể gửi đánh giá.");
       toast.error("Đánh giá thất bại. Vui lòng thử lại.", {
@@ -186,6 +154,17 @@ const ReviewForm = () => {
     }
   };
 
+  const resetAllStates = () => {
+    setRating({ quality: 0, location: 0, price: 0, service: 0, security: 0 });
+    setComment({ best_part: "", worst_part: "", advice: "", additional_comment: "" });
+    setIsInfoComplete(false);
+    setIsImageAccurate(false);
+    setIsHostResponsive(false);
+    setIsIntroduce(false);
+    setMediaFiles([]);
+    setShowForm(false);
+    setError(null);
+  };
   // const handleStarClick = (index) => {
   //   setRating(index + 1);
   // };
@@ -269,12 +248,12 @@ const ReviewForm = () => {
         file.type.startsWith("image") &&
         newMedia.filter((m) => m.type.startsWith("image")).length < MAX_IMAGES
       ) {
-        newMedia.push(file);
+        newMedia.push({ file, type: file.type, previewUrl: URL.createObjectURL(file) });
       } else if (
         file.type.startsWith("video") &&
         newMedia.filter((m) => m.type.startsWith("video")).length < MAX_VIDEO
       ) {
-        newMedia.push(file);
+        newMedia.push({ file, type: file.type, previewUrl: URL.createObjectURL(file) });
       }
     });
 
@@ -307,6 +286,7 @@ const ReviewForm = () => {
 
   const averageRating = calculateAverageRating();
 
+  console.log("Media Data:", media);
   return (
     <div className="addreview-review-header">
       <Typography className="add-review-post-title">
@@ -352,7 +332,7 @@ const ReviewForm = () => {
                             viewBox="0 0 24 24"
                             fill={
                               value <=
-                              (hoveredRating[category] || rating[category])
+                                (hoveredRating[category] || rating[category])
                                 ? "#FFD700"
                                 : "#E4E5E9"
                             }
@@ -561,29 +541,21 @@ const ReviewForm = () => {
               </div>
 
               <div className="media-preview-container">
-                {mediaFiles.map((file, index) => (
+                {mediaFiles.map((media, index) => (
                   <div key={index} className="media-preview">
-                    {file.type.startsWith("image") ? (
+                    {media.type.startsWith("image") ? (
                       <img
-                        src={URL.createObjectURL(file)}
+                        src={media.previewUrl}
                         alt={`Preview ${index}`}
                         className="media-preview-image"
                       />
                     ) : (
                       <video controls className="preview-video">
-                        <source
-                          src={URL.createObjectURL(file)}
-                          type={file.type}
-                        />
+                        <source src={media.previewUrl} type={media.type} />
                         Trình duyệt không hỗ trợ video.
                       </video>
                     )}
-                    <button
-                      className="remove-btn"
-                      onClick={() => handleRemove(index)}
-                    >
-                      ❌
-                    </button>
+                    <button className="remove-btn" onClick={() => handleRemove(index)}>❌</button>
                   </div>
                 ))}
 
