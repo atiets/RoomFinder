@@ -1688,10 +1688,10 @@ exports.countPostsByCity = async (req, res) => {
 
     const cities = [
       "Thành phố Hồ Chí Minh",
-      "Đà Nẵng",
-      "Cần Thơ",
-      "Bình Dương",
-      "Hà Nội",
+      "Thành phố Đà Nẵng",
+      "Thành phố Cần Thơ",
+      "Tỉnh Bình Dương",
+      "Thành phố Hà Nội",
     ];
 
     const results = {};

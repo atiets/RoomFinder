@@ -7,6 +7,8 @@
     margin-left: auto;
     margin-right: auto;
     padding-top: 1rem;
+    border: 1px solid #ccc;
+    padding: 20px;
 }
 
 .chat-box-right {
@@ -15,6 +17,7 @@
     height: 100%;
     width: 50%;
     padding-right: 0.5rem;
+    border-right: 1px solid #ccc;
 }
 
 .chat-box-right-header {
@@ -372,4 +375,119 @@
     display: block;
     margin-top: 5px;
     font-size: 14px;
+}
+
+.empty-chat-box-in-user {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 50%;
+    margin-left: 0.5rem;
+    justify-content: center;
+    align-items: center;
+    color: #ff8c00;
+    /* Cam đậm */
+    font-size: 18px;
+    border-radius: 12px;
+    text-align: center;
+    padding: 30px 20px;
+    box-shadow: 0 4px 12px rgba(255, 165, 0, 0.2);
+    transition: all 0.3s ease;
+    gap: 10px;
+}
+
+.empty-chat-box-in-user:hover {
+    box-shadow: 0 6px 16px rgba(255, 165, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.empty-chat-box-in-user i {
+    font-size: 40px;
+    color: #FFA500;
+    margin-bottom: 10px;
+}
+
+.chat-message-wrapper {
+    display: flex;
+    flex-direction: column;
+    max-width: 70%;
+    margin: 10px;
+}
+
+.chat-sent {
+    align-self: flex-end;
+}
+
+.chat-received {
+    align-self: flex-start;
+}
+
+/* Hai màu khác nhau cho người gửi và người nhận */
+.chat-message {
+    padding: 8px 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    position: relative;
+    transition: background-color 0.2s ease-in-out;
+    word-wrap: break-word;
+}
+
+.chat-message-sent {
+    background-color: #FF7F00
+;
+    /* Cam */
+    color: white;
+}
+
+.chat-message-received {
+    background-color: #f0f0f0;
+    /* Xám nhạt */
+    color: black;
+}
+
+.chat-message-time {
+    font-size: 12px;
+    color: #999;
+    background: none !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border: none;
+    padding: 0;
+    display: block;
+    text-align: right;
+    margin-top: 4px;
+    margin-right: 8px;
+}
+
+.chat-time-outside {
+    margin-left: 10px;
+    margin-top: 4px;
+    text-align: right;
+}
+
+/* Hình ảnh */
+.chat-message-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 5px;
+    margin-left: 10px;
+}
+
+.chat-message-image {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: transform 0.2s ease-in-out;
+}
+
+.chat-message-location {
+    margin-top: 5px;
+    margin-left: 10px;
+}
+
+.chat-message-image:hover {
+    transform: scale(1.1);
 }

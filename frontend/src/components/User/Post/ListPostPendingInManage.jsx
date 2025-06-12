@@ -2,6 +2,7 @@ import { Pagination, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
 import { viewPost } from "../../../redux/chatApi";
 import {
   deletePost,
@@ -18,8 +19,9 @@ const ListPost = ({ statusPending, statusUpdate, visibility, token }) => {
   const navigate = useNavigate();
   const currentUser = useSelector((state) => state.auth.login.currentUser);
   const userId = currentUser?._id;
+  const [refresh, setRefresh] = useState(false);
 
-const handleTitleClick = async (id) => {
+  const handleTitleClick = async (id) => {
     if (!id) {
       console.error("ID bài đăng không hợp lệ");
       return;
@@ -45,9 +47,9 @@ const handleTitleClick = async (id) => {
       username: post.contactInfo?.username || "",
       phoneNumber: post.contactInfo?.phoneNumber || "",
     },
-    rentalPrice: post.rentalPrice,
-    typePrice: post.typePrice,
+    price: post.price,
     area: post.area,
+    typeArea: post.typeArea,
     status: post.status,
     visibility: post.visibility,
     images: post.images ? post.images.slice(0, 2) : [],
@@ -78,7 +80,7 @@ const handleTitleClick = async (id) => {
     };
 
     fetchPosts();
-  }, [statusPending, statusUpdate, visibility, token, dispatch]);
+  }, [statusPending, statusUpdate, visibility, token, dispatch, refresh]);
 
   if (loading)
     return (
@@ -94,7 +96,8 @@ const handleTitleClick = async (id) => {
   const handleDeletePost = async (postId) => {
     try {
       const result = await deletePost(postId, token);
-      console.log("Post deleted:", result);
+      toast.success("Xoá yêu cầu đăng thành công");
+      setRefresh(prev => !prev);
     } catch (error) {
       console.error(error);
     }
@@ -108,16 +111,17 @@ const handleTitleClick = async (id) => {
 
   return (
     <div className="user-posts-list">
+      <ToastContainer />
       {currentPosts.length > 0 ? (
         currentPosts.map((post, index) => (
           <RoomPostManage
             key={index}
             post={post}
             onTitleClick={handleTitleClick}
-            onEditPost={() => {}}
-            onHidePost={() => {}}
+            onEditPost={() => { }}
+            onHidePost={() => { }}
             onDeletePost={handleDeletePost}
-            onVisiblePost={() => {}}
+            onVisiblePost={() => { }}
           />
         ))
       ) : (

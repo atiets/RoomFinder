@@ -566,13 +566,13 @@ const AddPostRight = ({ onContentChange, isSubmitting, type, editPost }) => {
                                     value={price}
                                     onChange={(e) => setPrice(e)}
                                     required
-                                    type="number"
+                                    type="price"
                                 />
                                 <ValidatedTextField
                                     label="Tiền cọc"
                                     value={deposit}
                                     onChange={(e) => setDeposit(e)}
-                                    type='number'
+                                    type="price"
                                 />
                             </>
                         )}
@@ -583,7 +583,7 @@ const AddPostRight = ({ onContentChange, isSubmitting, type, editPost }) => {
                                 value={price}
                                 onChange={(e) => setPrice(e)}
                                 required
-                                type="number"
+                                type="price"
                             />
                         )}
                     </div>
@@ -599,7 +599,7 @@ const AddPostRight = ({ onContentChange, isSubmitting, type, editPost }) => {
                             label="Mô tả"
                             multiline
                             maxRows={10}
-                            rows={4}
+                            rows={8}
                             fullWidth
                             value={content}
                             onChange={(e) => setContent(e)}

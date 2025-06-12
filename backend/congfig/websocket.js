@@ -33,27 +33,21 @@ function initializeSocket(server) {
 
         socket.on("sendMessage", async ({ sender, receiver, content, postId, images, location }) => {
             try {
-                const senderId = new mongoose.Types.ObjectId(sender);
-                const receiverId = new mongoose.Types.ObjectId(receiver);
+                console.log("Dữ liệu nhận được từ client:", { sender, receiver, content, postId });
+                const senderId = typeof sender === 'object' ? sender._id : sender;
+                const receiverId = typeof receiver === 'object' ? receiver._id : receiver;
                 const participantsSorted = [senderId, receiverId].sort();
 
                 let conversation = await Conversation.findOne({
                     participants: { $all: participantsSorted, $size: 2 },
                 });
 
-                if (conversation) {
-                    if (postId && !conversation.postId) {
-                        conversation.postId = postId;
-                        await conversation.save();
-                    }
-                } else {
-                    if (postId) {
-                        conversation = new Conversation({
-                            participants: participantsSorted,
-                            postId: postId,
-                        });
-                        await conversation.save();
-                    }
+                if (!conversation) {
+                    conversation = new Conversation({
+                        participants: participantsSorted,
+                        postId: postId || null,
+                    });
+                    await conversation.save();
                 }
 
                 const newMessage = new Message({
