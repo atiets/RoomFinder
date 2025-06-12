@@ -12,10 +12,10 @@ import "./index.css";
 
 const imageMap = {
     "Thành phố Hồ Chí Minh": imgHCM,
-    "Hà Nội": imgHN,
-    "Đà Nẵng": imgDN,
-    "Cần Thơ": imgCT,
-    "Bình Dương": imgBD,
+    "Thành phố Hà Nội": imgHN,
+    "Thành phố Đà Nẵng": imgDN,
+    "Thành phố Cần Thơ": imgCT,
+    "Tỉnh Bình Dương": imgBD,
 };
 
 function RealEstateSection() {
@@ -25,7 +25,7 @@ function RealEstateSection() {
     const accessToken = user?.accessToken;
 
     const [transactionType, setTransactionType] = useState("Cho thuê");
-    const [category, setCategory] = useState("Căn hộ/Chung cư");
+    const [category, setCategory] = useState("Căn hộ/chung cư");
     const [counts, setCounts] = useState({});
 
     useEffect(() => {
@@ -44,7 +44,7 @@ function RealEstateSection() {
     const handleTransactionChange = (type) => {
         setTransactionType(type);
         if (type === "Cần bán" && category === "phòng trọ") {
-            setCategory("Căn hộ/Chung cư");
+            setCategory("Căn hộ/chung cư");
         }
     };
 
@@ -53,9 +53,9 @@ function RealEstateSection() {
     };
 
     const categories = [
-        "Căn hộ/Chung cư",
+        "Căn hộ/chung cư",
         "Nhà ở",
-        "Văn phòng, Mặt bằng kinh doanh",
+        "Văn phòng, mặt bằng kinh doanh",
         "Đất",
         "phòng trọ",
     ];
@@ -67,10 +67,10 @@ function RealEstateSection() {
 
     const cityOrder = [
         "Thành phố Hồ Chí Minh",
-        "Hà Nội",
-        "Đà Nẵng",
-        "Cần Thơ",
-        "Bình Dương",
+        "Thành phố Hà Nội",
+        "Thành phố Đà Nẵng",
+        "Thành phố Cần Thơ",
+        "Tỉnh Bình Dương",
     ];
 
     const locations = cityOrder.map((city) => ({

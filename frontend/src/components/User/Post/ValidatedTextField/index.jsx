@@ -16,44 +16,42 @@ const ValidatedTextField = React.forwardRef(({
     setTypeArea,
     multiline = false,
     rows = 1,
-}, ref) => { // ref là tham số thứ hai
+}, ref) => {
     const [error, setError] = useState(false);
     const [helperText, setHelperText] = useState('');
 
+    const formatNumber = (val) => {
+        const num = val.replace(/,/g, ''); // Xóa dấu phẩy cũ
+        if (isNaN(num)) return val;
+        return Number(num).toLocaleString('en-US');
+    };
+
     const validate = (val) => {
-        if (required && val.trim() === '') {
+        const rawVal = val.replace(/,/g, '');
+        if (required && rawVal.trim() === '') {
             setError(true);
             setHelperText('Trường này là bắt buộc.');
             return;
         }
 
-        if (maxLength && val.length > maxLength) {
+        if (maxLength && rawVal.length > maxLength) {
             setError(true);
             setHelperText(`Không được vượt quá ${maxLength} ký tự.`);
             return;
         }
 
-        if (type === 'number' || type === 'area') {
+        if (['number', 'area', 'price'].includes(type)) {
             const onlyDigits = /^\d+$/;
-            if (!onlyDigits.test(val)) {
+            if (!onlyDigits.test(rawVal)) {
                 setError(true);
                 setHelperText('Chỉ được nhập số.');
                 return;
             }
 
-            const num = Number(val);
+            const num = Number(rawVal);
             if (positiveOnly && num < 0) {
                 setError(true);
                 setHelperText('Phải là số dương.');
-                return;
-            }
-        }
-
-        if (type === 'phone') {
-            const phoneRegex = /^[0-9]{9,11}$/;
-            if (!phoneRegex.test(val)) {
-                setError(true);
-                setHelperText('Số điện thoại không hợp lệ (9–11 chữ số).');
                 return;
             }
         }
@@ -63,14 +61,21 @@ const ValidatedTextField = React.forwardRef(({
     };
 
     const handleChange = (e) => {
-        const val = e.target.value;
+        let val = e.target.value;
 
-        if ((type === 'phone' || type === 'number' || type === 'area') && /[^0-9]/.test(val)) {
-            return;
+        // Chỉ giữ lại chữ số và dấu phẩy (nếu có)
+        if (['phone', 'number', 'area', 'price'].includes(type)) {
+            val = val.replace(/[^0-9]/g, '');
         }
 
-        onChange(val);
-        validate(val);
+        if (type === 'price') {
+            const formatted = formatNumber(val);
+            onChange(formatted);
+            validate(formatted);
+        } else {
+            onChange(val);
+            validate(val);
+        }
     };
 
     const handleKeyDown = (e) => {
@@ -89,7 +94,7 @@ const ValidatedTextField = React.forwardRef(({
             label={<>{label}{required && <span style={{ color: 'red' }}> *</span>}</>}
             value={value}
             onChange={handleChange}
-            type={type === 'phone' || type === 'area' ? 'text' : type}
+            type={['phone', 'area', 'price'].includes(type) ? 'text' : type}
             error={error}
             helperText={helperText}
             size="small"
@@ -98,27 +103,31 @@ const ValidatedTextField = React.forwardRef(({
             rows={rows}
             InputProps={{
                 readOnly,
-                endAdornment: type === 'area' && selectedCategory === 'Đất' ? (
-                    <InputAdornment position="end">
-                        <FormControl variant="standard" size="small">
-                            <Select
-                                value={typeArea}
-                                onChange={(e) => setTypeArea(e.target.value)}
-                                disableUnderline
-                                sx={{ fontSize: '14px' }}
-                            >
-                                <MenuItem value="m²">m²</MenuItem>
-                                <MenuItem value="hecta">hecta</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </InputAdornment>
-                ) : (
-                    type === 'area' && selectedCategory !== 'Đất' && (
-                        <InputAdornment position="end" sx={{ color: '#999' }}>m²</InputAdornment>
-                    )
+                endAdornment: (
+                    type === 'area' ? (
+                        selectedCategory === 'Đất' ? (
+                            <InputAdornment position="end">
+                                <FormControl variant="standard" size="small">
+                                    <Select
+                                        value={typeArea}
+                                        onChange={(e) => setTypeArea(e.target.value)}
+                                        disableUnderline
+                                        sx={{ fontSize: '14px' }}
+                                    >
+                                        <MenuItem value="m²">m²</MenuItem>
+                                        <MenuItem value="hecta">hecta</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </InputAdornment>
+                        ) : (
+                            <InputAdornment position="end" sx={{ color: '#999' }}>m²</InputAdornment>
+                        )
+                    ) : type === 'price' ? (
+                        <InputAdornment position="end" sx={{ color: '#999' }}>VNĐ</InputAdornment>
+                    ) : null
                 )
             }}
-            onKeyDown={(type === 'phone' || type === 'number' || type === 'area') ? handleKeyDown : undefined}
+            onKeyDown={['phone', 'number', 'area', 'price'].includes(type) ? handleKeyDown : undefined}
         />
     );
 });

@@ -2,6 +2,7 @@ import { Pagination, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom"; // Import useNavigate hook
+import { ToastContainer, toast } from "react-toastify";
 import { viewPost } from "../../../redux/chatApi";
 import {
   deletePost,
@@ -21,6 +22,7 @@ const ListPostByStatusVisibility = ({ status, visibility, token }) => {
   const postsPerPage = 5;
   const currentUser = useSelector((state) => state.auth.login.currentUser);
   const userId = currentUser?._id;
+  const [refresh, setRefresh] = useState(false);
 
   const [editPost, setEditPost] = useState([]);
 
@@ -50,10 +52,8 @@ const ListPostByStatusVisibility = ({ status, visibility, token }) => {
     try {
       setLoading(true);
       const response = await togglePostVisibility(postId, token);
-      if (response.success) {
-        const updatedPosts = posts.filter((post) => post.id !== postId);
-        dispatch(setPosts(updatedPosts));
-      }
+      toast.success("Cập nhật thành công!");
+      setRefresh(prev => !prev);
     } catch (error) {
       console.error("Lỗi khi ẩn bài viết:", error);
     } finally {
@@ -65,10 +65,8 @@ const ListPostByStatusVisibility = ({ status, visibility, token }) => {
     try {
       setLoading(true);
       const response = await togglePostVisibility(postId, token);
-      if (response.success) {
-        const updatedPosts = posts.filter((post) => post.id !== postId);
-        dispatch(setPosts(updatedPosts));
-      }
+      toast.success("Cập nhật thành công!");
+      setRefresh(prev => !prev);
     } catch (error) {
       console.error("Lỗi khi ẩn bài viết:", error);
     } finally {
@@ -129,7 +127,7 @@ const ListPostByStatusVisibility = ({ status, visibility, token }) => {
     };
 
     fetchUserPosts();
-  }, [status, visibility, token]);
+  }, [status, visibility, token, refresh]);
 
   if (loading)
     return (
@@ -148,6 +146,7 @@ const ListPostByStatusVisibility = ({ status, visibility, token }) => {
 
   return (
     <div className="user-posts-list">
+      <ToastContainer/>
       {currentPosts.length > 0 ? (
         currentPosts.map((post, index) => (
           <RoomPostManage

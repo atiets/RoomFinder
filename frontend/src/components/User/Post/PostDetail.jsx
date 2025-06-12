@@ -129,8 +129,7 @@ const PostDetail = ({ onToggleFavorite }) => {
         postId: post._id,
         title: post.title,
         image: post.images?.[0],
-        price: post.rentalPrice,
-        typePrice: post.typePrice,
+        price: post.price,
         contactInfo: post.contactInfo?.user,
       },
     });

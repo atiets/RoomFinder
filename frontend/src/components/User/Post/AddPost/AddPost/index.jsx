@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
-import Swal from 'sweetalert2';
 import useSocket from '../../../../../hooks/useSocket';
 import { useUsageManager } from '../../../../../hooks/useUsageManager';
 import { createPost } from '../../../../../redux/postAPI';
@@ -59,7 +58,7 @@ const AddPost = () => {
                 return false;
             }
         }
-        
+
         setIsVip(newIsVip);
         return true;
     };
@@ -111,10 +110,10 @@ const AddPost = () => {
 
         setIsSubmitting(true);
         setLoading(true);
-        
+
         try {
             const finalData = new FormData();
-            
+
             // ⭐ Basic info - Đảm bảo đầy đủ
             finalData.append('title', title || '');
             finalData.append('content', content || '');
@@ -174,11 +173,8 @@ const AddPost = () => {
             }));
 
             // ⭐ Price info
-            finalData.append('price', parseFloat(price || 0));
-            finalData.append('deposit', parseFloat(deposit || 0));
-
-            // ⭐ Default values
-            finalData.append('defaultDaysToShow', 7);
+            finalData.append('price', parseFloat((price || '0').replace(/,/g, '')));
+            finalData.append('deposit', parseFloat((deposit || '0').replace(/,/g, '')));
 
             // ⭐ Handle media
             if (mediaData?.images) {
@@ -210,27 +206,27 @@ const AddPost = () => {
 
             // ⭐ Tạo post
             await createPost(finalData, accessToken);
-            
+
             // ⭐ Update usage sau khi tạo post thành công
             console.log(`🔄 Post created successfully, updating usage for action: ${postAction}`);
             const updateResult = await updateUsage(postAction);
-            
+
             if (updateResult) {
                 console.log(`✅ Usage updated successfully:`, updateResult);
             } else {
                 console.log(`⚠️ Failed to update usage, but post was created`);
             }
-            
-            const successMessage = isVip 
+
+            const successMessage = isVip
                 ? "🌟 Đăng tin VIP thành công!"
                 : "📝 Đăng tin thành công!";
-            
+
             toast.success(successMessage);
-            
+
             setTimeout(() => {
                 navigate("/");
             }, 1500);
-            
+
         } catch (error) {
             console.error('Error creating post:', error);
             const errorMessage = error?.response?.data?.message || "Đăng tin thất bại!";
@@ -268,7 +264,7 @@ const AddPost = () => {
                 <FooterAddPost
                     onSubmit={submitPost}
                     onPreview={previewPost}
-                    type={type} 
+                    type={type}
                     editPost={editPost}
                     mediaData={mediaData}
                     contentData={contentData}
