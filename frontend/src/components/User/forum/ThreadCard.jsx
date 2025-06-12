@@ -1,4 +1,3 @@
-// src/components/User/forum/ThreadCard.jsx
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
@@ -21,11 +20,10 @@ import Swal from 'sweetalert2';
 import { useThreadLike } from '../../../hooks/useThreadLike';
 import CommentModal from './CommentThread/CommentModal';
 import './CommentThread/comment-system.css';
-import ThreadActions from './ThreadActions'; // Updated import
-import ThreadEditDialog from './ThreadEditDialog'; // Updated import
-import ThreadMenu from './ThreadMenu'; // Updated import
+import ThreadActions from './ThreadActions';
+import ThreadEditDialog from './ThreadEditDialog';
+import ThreadMenu from './ThreadMenu';
 
-// Rest of the component remains the same...
 const StyledCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(3),
   borderRadius: '8px',
@@ -50,7 +48,7 @@ const ThreadCard = ({ thread, onCommentClick, onThreadUpdated, onThreadDeleted, 
     tags = [],
     likesCount: initialLikesCount = 0,
     comments = 0,
-    image = null,
+    image = null, // FIXED: Include image prop
     viewCount = 0,
     author
   } = thread;
@@ -260,6 +258,31 @@ const ThreadCard = ({ thread, onCommentClick, onThreadUpdated, onThreadDeleted, 
             {truncatedContent}
           </Typography>
 
+          {/* FIXED: Image Display - Always show if exists */}
+          {image && (
+            <CardMedia
+              component="img"
+              image={image}
+              alt={title || "Thread image"}
+              sx={{
+                mt: 2,
+                borderRadius: '8px',
+                maxHeight: '400px',
+                objectFit: 'contain',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease',
+                '&:hover': {
+                  transform: 'scale(1.02)'
+                }
+              }}
+              onClick={() => {
+                // Optional: Open image in modal/lightbox
+                window.open(image, '_blank');
+              }}
+            />
+          )}
+
           {/* Read More Button */}
           {shouldShowReadMore && (
             <Button
@@ -285,23 +308,10 @@ const ThreadCard = ({ thread, onCommentClick, onThreadUpdated, onThreadDeleted, 
             </Button>
           )}
 
-          {/* Collapse Content */}
+          {/* Collapse Content - Remove duplicate image display */}
           <Collapse in={expanded} timeout="auto" unmountOnExit>
             <Box sx={{ mt: 1.5 }}>
-              {image && (
-                <CardMedia
-                  component="img"
-                  image={image}
-                  alt={title || "Thread image"}
-                  sx={{
-                    mt: 2,
-                    borderRadius: '8px',
-                    maxHeight: '400px',
-                    objectFit: 'contain',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                  }}
-                />
-              )}
+              {/* Additional expanded content if needed */}
             </Box>
           </Collapse>
 

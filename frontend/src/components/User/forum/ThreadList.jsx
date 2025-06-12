@@ -1,4 +1,3 @@
-// src/components/User/forum/ThreadList.jsx
 import { Box, Pagination, Skeleton, Typography } from '@mui/material';
 import { useSelector } from 'react-redux';
 import { toast } from "react-toastify";
@@ -7,19 +6,20 @@ import ThreadCard from './ThreadCard';
 
 const ThreadList = ({
   threads,
-  setThreads, // Direct state setter
+  setThreads,
   loading,
   onThreadClick,
   page,
   totalPages,
   onPageChange,
-  onThreadUpdated, // Callback from parent
-  onThreadDeleted, // Callback from parent
-  onThreadAdded,   // Callback from parent (future use)
+  onThreadUpdated,
+  onThreadDeleted,
+  onThreadAdded,
   type,
 }) => {
   const user = useSelector((state) => state.auth.login.currentUser);
   const accessToken = user?.accessToken;
+
   // Skeleton để hiển thị khi đang loading
   const ThreadSkeleton = () => (
     <Box sx={{ mb: 2 }}>
@@ -172,23 +172,22 @@ const ThreadList = ({
       {/* Danh sách threads */}
       <Box sx={{ position: 'relative' }}>
         {threads.map((thread) => {
-          // Map dữ liệu từ API response sang format mà ThreadCard expect
+          // FIXED: Map dữ liệu từ API response sang format mà ThreadCard expect (include image)
           const mappedThread = {
             id: thread._id,
-            _id: thread._id, // Keep both for compatibility
+            _id: thread._id,
             title: thread.title || '',
             content: thread.content || '',
             username: thread.username || 'Unknown User',
             avatar: thread.avatar || null,
             created_at: thread.created_at || thread.createdAt || new Date().toISOString(),
             tags: thread.tags || [],
-            // Sử dụng data từ backend đã format với like/dislike counts
             likesCount: thread.likesCount || 0,
             dislikesCount: thread.dislikesCount || 0,
             comments: thread.commentCount || 0,
-            image: thread.image || null,
+            image: thread.image || null, // FIXED: Include image field
             viewCount: thread.viewCount || 0,
-            author: thread.author // Include author for ownership checking
+            author: thread.author
           };
 
           return (
