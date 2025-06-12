@@ -116,6 +116,12 @@ const CompareChart = () => {
       );
       
       console.log("CompareChart - API response received:", data);
+      
+      // Kiểm tra và xử lý dữ liệu categoryAnalysis
+      if (data.categoryAnalysis) {
+        console.log("CompareChart - Category analysis data:", data.categoryAnalysis);
+      }
+      
       setChartData(data);
       setLoading(false);
     } catch (err) {
@@ -265,14 +271,16 @@ const CompareChart = () => {
               <Typography variant="h6" className="section-title">So sánh với khu vực lân cận</Typography>
               {console.log("CompareChart - Rendering NeighborhoodComparison with data:", {
                 neighboringDistricts: chartData.neighboringDistricts,
-                selectedDistrict: currentDistrict, // Sử dụng currentDistrict
-                selectedNeighbors: selectedNeighbors
+                selectedDistrict: currentDistrict,
+                selectedNeighbors: selectedNeighbors,
+                currentDistrictData: chartData.overview
               })}
               <NeighborhoodComparison 
                 data={chartData.neighboringDistricts}
-                selectedDistrict={currentDistrict} // Sử dụng currentDistrict
+                selectedDistrict={currentDistrict}
                 selectedNeighbors={selectedNeighbors}
                 onNeighborSelect={handleNeighborSelect}
+                currentDistrictData={chartData.overview} // ✅ Truyền thêm dữ liệu quận hiện tại
               />
             </Paper>
           </Grid>
@@ -283,13 +291,13 @@ const CompareChart = () => {
               <Typography variant="h6" className="section-title">Phân tích theo loại bất động sản</Typography>
               {console.log("CompareChart - Rendering CategoryAnalysis with data:", {
                 categoryAnalysis: chartData.categoryAnalysis,
-                selectedCategory: currentCategory, // Sử dụng currentCategory
-                selectedTransaction: currentTransaction // Sử dụng currentTransaction
+                selectedCategory: currentCategory,
+                selectedTransaction: currentTransaction
               })}
               <CategoryAnalysis 
                 data={chartData.categoryAnalysis}
-                selectedCategory={currentCategory} // Sử dụng currentCategory
-                selectedTransaction={currentTransaction} // Sử dụng currentTransaction
+                selectedCategory={currentCategory} // ✅ Sử dụng currentCategory
+                selectedTransaction={currentTransaction} // ✅ Sử dụng currentTransaction
               />
             </Paper>
           </Grid>
