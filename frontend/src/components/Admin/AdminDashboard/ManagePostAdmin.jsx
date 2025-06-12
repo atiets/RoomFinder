@@ -1,14 +1,14 @@
 import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import {
+  Box,
   Button,
+  Chip,
   Menu,
   MenuItem,
   Pagination,
   TextField,
   Typography,
-  Box,
-  Chip,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -106,7 +106,6 @@ const ManagePostAdmin = () => {
     "Đang hiển thị": { status: "approved", visibility: "visible" },
     "Đã từ chối": { status: "rejected", visibility: "hidden" },
     "Đã ẩn": { status: "approved", visibility: "hidden" },
-    "Bài đăng chỉnh sửa": { status: "update", visibility: "hidden" },
     "🌟 Chỉ tin VIP": { status: "", visibility: "", onlyVip: true },
   };
 
@@ -126,7 +125,8 @@ const ManagePostAdmin = () => {
         pageToFetch,
         postsPerPage,
         status,
-        visibility
+        visibility,
+        debouncedSearch
       );
 
       // const data = await getAllPosts(token, currentPage, 5, status, visibility, debouncedSearch);
@@ -153,6 +153,7 @@ const ManagePostAdmin = () => {
           views: post.views || 0,
           createdAt: post.createdAt,
           images: post.images ? post.images.slice(0, 2) : [],
+          defaultDaysToShow: post.defaultDaysToShow,
         }));
 
         if (onlyVip) {
@@ -227,7 +228,7 @@ const ManagePostAdmin = () => {
 
   useEffect(() => {
     fetchFilteredPosts();
-  }, [filter, currentPage, searchTerm]);
+  }, [filter, currentPage, searchTerm, debouncedSearch]);
 
   const handleFilterChange = (event) => {
     const newFilter = event.target.innerText;
@@ -423,7 +424,6 @@ const ManagePostAdmin = () => {
           <MenuItem onClick={handleFilterChange}>Đang hiển thị</MenuItem>
           <MenuItem onClick={handleFilterChange}>Đã từ chối</MenuItem>
           <MenuItem onClick={handleFilterChange}>Đã ẩn</MenuItem>
-          <MenuItem onClick={handleFilterChange}>Bài đăng chỉnh sửa</MenuItem>
           <MenuItem
             onClick={handleFilterChange}
             className="vip-filter-item"

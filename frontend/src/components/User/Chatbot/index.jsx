@@ -132,7 +132,7 @@ const SupportChatModal = ({ open, onClose }) => {
                             boxShadow: 1,
                         }}
                     >
-                        {m.sender?._id?.trim() === botID?.trim() ? `[Assistant] ${m.content}` : m.content}
+                        {m.content}
                         {m.images && m.images.length > 0 && (
                             <div className="message-images">
                                 {m.images.map((imgUrl, index) => (
