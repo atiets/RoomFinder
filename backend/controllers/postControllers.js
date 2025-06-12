@@ -875,7 +875,7 @@ exports.getPostById = async (req, res) => {
     // Update post object để return đúng số view
     post.views += viewIncrement;
 
-    console.log(`📈 Post view updated: ${post.title}, VIP: ${post.isVip}, View boost: ${viewIncrement}`);
+    // console.log(`📈 Post view updated: ${post.title}, VIP: ${post.isVip}, View boost: ${viewIncrement}`);
 
     res.status(200).json(post);
   } catch (error) {
