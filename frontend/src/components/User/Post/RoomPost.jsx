@@ -14,9 +14,9 @@ import {
 import "./RoomPost.css";
 
 const RoomPost = ({ post, onTitleClick, onToggleFavorite, isFavorite }) => {
-  const handleFavoriteClick = () => {
+  const handleFavoriteClick = (e) => {
     console.log("onToggleFavorite in RoomPost:", onToggleFavorite);
-
+    e.stopPropagation();
     if (onToggleFavorite) {
       onToggleFavorite(post._id, !isFavorite);
     } else {

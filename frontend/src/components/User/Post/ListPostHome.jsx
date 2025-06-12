@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Slider from "react-slick";
@@ -14,15 +14,30 @@ import RoomPost from "./RoomPost";
 
 const ListPostHome = ({ post = [], title, favorite }) => {
   const navigate = useNavigate();
-  const [favorites, setFavorites] = React.useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [refreshUI, setRefreshUI] = useState(0); // Thêm state để force re-render UI
   const user = useSelector((state) => state.auth.login.currentUser);
-  const { toggleFavorite } = useFavoriteToggle(user);
   const userId = user?._id;
   const token = user?.accessToken;
   
   let axiosJWT = axios.create({
-    baseURL: process.env.REACT_APP_BASE_URL_API,
+    baseURL: process.env.REACT_APP_BASE_URL_API || "http://localhost:8000",
   });
+
+  // Hàm kiểm tra bài đăng có trong danh sách yêu thích không
+  const isPostFavorited = (postItem) => {
+    if (!favorites || !favorites.length) return false;
+    
+    return favorites.some(fav => {
+      if (typeof fav === 'string') {
+        // Nếu fav là chuỗi ID
+        return fav === postItem.id || fav === postItem._id;
+      } else {
+        // Nếu fav là object
+        return fav.id === postItem.id || fav._id === postItem._id || fav === postItem.id;
+      }
+    });
+  };
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -32,6 +47,7 @@ const ListPostHome = ({ post = [], title, favorite }) => {
             Authorization: `Bearer ${user?.accessToken}`,
           },
         });
+        console.log("Dữ liệu yêu thích từ API:", response.data.favorites);
         setFavorites(response.data.favorites);
       } catch (error) {
         console.error("Lỗi khi tải danh sách yêu thích:", error);
@@ -41,7 +57,7 @@ const ListPostHome = ({ post = [], title, favorite }) => {
     if (user?.accessToken) {
       fetchFavorites();
     }
-  }, [user]);
+  }, [user, refreshUI]); // Thêm refreshUI để trigger fetch lại dữ liệu
 
   const handleTitleClick = async (id) => {
     if (!id) {
@@ -57,7 +73,7 @@ const ListPostHome = ({ post = [], title, favorite }) => {
     }
   };
 
-  const handleToggleFavorite = (postId, isFavorite) => {
+  const handleToggleFavorite = async (postId, isFavorite) => {
     if (!user) {
       Swal.fire({
         icon: "warning",
@@ -73,18 +89,41 @@ const ListPostHome = ({ post = [], title, favorite }) => {
       return;
     }
 
-    toggleFavorite(postId, isFavorite)
-      .then(() => {
-        setFavorites(
-          isFavorite
-            ? favorites.filter((fav) => fav._id !== postId)
-            : [...favorites, { _id: postId }],
-        );
-      })
-      .catch((error) => console.error("Lỗi khi bật/tắt yêu thích:", error));
+    try {
+      console.log(`Đang ${isFavorite ? 'xóa khỏi' : 'thêm vào'} yêu thích:`, postId);
+      
+      const baseUrl = process.env.REACT_APP_BASE_URL_API || "http://localhost:8000";
+      const url = `${baseUrl}/v1/posts/${postId}/favorite`;
+      
+      let response;
+      if (isFavorite) {
+        // Xóa khỏi danh sách yêu thích
+        response = await axiosJWT.delete(url, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } else {
+        // Thêm vào danh sách yêu thích
+        response = await axiosJWT.post(url, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+      
+      // Cập nhật danh sách yêu thích từ phản hồi API
+      if (response.data.favorites) {
+        console.log("Danh sách yêu thích mới:", response.data.favorites);
+        setFavorites(response.data.favorites);
+        setRefreshUI(prev => prev + 1); // Force re-render
+      }
+    } catch (error) {
+      console.error("Lỗi khi bật/tắt yêu thích:", error);
+      if (error.response) {
+        console.error("Server status:", error.response.status);
+        console.error("Server data:", error.response.data);
+      }
+    }
   };
 
-  // ⭐ Sort posts với VIP lên đầu
+  // Sort posts với VIP lên đầu
   const sortedPosts = React.useMemo(() => {
     if (!Array.isArray(post)) return [];
     
@@ -110,14 +149,13 @@ const ListPostHome = ({ post = [], title, favorite }) => {
 
   const isPostArray = Array.isArray(post);
   
-  // ⭐ Count VIP posts for display
+  // Count VIP posts for display
   const vipCount = sortedPosts.filter(p => p.isVip).length;
 
   return (
     <div className="approved-posts-slider">
       <div className="approved-post-in-home-title">
         {title}
-        {/* ⭐ VIP indicator */}
         {vipCount > 0 && (
           <span className="vip-indicator">
             🌟 {vipCount} tin VIP
@@ -128,17 +166,12 @@ const ListPostHome = ({ post = [], title, favorite }) => {
       {isPostArray ? (
         <Slider {...sliderSettings}>
           {sortedPosts.slice(0, 5).map((postItem, index) => (
-            <div key={postItem._id || index} className="approved-posts-item">
+            <div key={postItem.id || postItem._id || index} className="approved-posts-item">
               <RoomPost
                 post={postItem}
-                onTitleClick={() => handleTitleClick(postItem._id)}
-                isFavorite={favorites.some((fav) => fav._id === postItem._id)}
-                onToggleFavorite={() =>
-                  handleToggleFavorite(
-                    postItem._id,
-                    favorites.some((fav) => fav._id === postItem._id),
-                  )
-                }
+                onTitleClick={() => handleTitleClick(postItem.id || postItem._id)}
+                isFavorite={isPostFavorited(postItem)}
+                onToggleFavorite={() => handleToggleFavorite(postItem.id || postItem._id, isPostFavorited(postItem))}
               />
               {index === Math.min(sortedPosts.length, 5) - 1 && (
                 <button
@@ -151,7 +184,7 @@ const ListPostHome = ({ post = [], title, favorite }) => {
                     }
                   }}
                 >
-                  See More
+                  Xem thêm
                   <img
                     src={arrowsIcon}
                     alt="arrows"
