@@ -470,25 +470,43 @@ export const searchAndCategorizePosts = async (params, token) => {
 
 export const useFavoriteToggle = (user) => {
   const [favorites, setFavorites] = useState([]);
-
+  
   const toggleFavorite = async (postId, isCurrentlyFavorite) => {
     try {
-      const url = `${API_URL}${postId}/favorite`;
-      const headers = { Authorization: `Bearer ${user?.accessToken}` };
+      if (!user?.accessToken) {
+        console.error("Người dùng chưa đăng nhập");
+        return Promise.reject(new Error("Yêu cầu xác thực"));
+      }
+      
+      if (!postId) {
+        console.error("PostID không hợp lệ:", postId);
+        return Promise.reject(new Error("ID bài đăng không hợp lệ"));
+      }
 
+      const baseUrl = process.env.REACT_APP_BASE_URL_API || 'http://localhost:8000';
+      const url = `${baseUrl}/v1/posts/${postId}/favorite`;
+      const headers = { Authorization: `Bearer ${user.accessToken}` };
+      
       if (isCurrentlyFavorite) {
-        await axios.delete(url, { headers });
-        setFavorites(favorites.filter((fav) => fav._id !== postId));
+        const response = await axios.delete(url, { headers });
+        // Lấy danh sách favorites mới từ API
+        return response.data.favorites;
       } else {
-        await axios.post(url, {}, { headers });
-        setFavorites((prev) => [...prev, { _id: postId }]);
+        const response = await axios.post(url, {}, { headers });
+        // Lấy danh sách favorites mới từ API
+        return response.data.favorites;
       }
     } catch (error) {
       console.error("Lỗi khi bật/tắt trạng thái yêu thích:", error);
+      if (error.response) {
+        console.error("Trạng thái máy chủ:", error.response.status);
+        console.error("Dữ liệu máy chủ:", error.response.data);
+      }
+      throw error;
     }
   };
 
-  return { favorites, toggleFavorite };
+  return { favorites, toggleFavorite, setFavorites };
 };
 
 export async function fetchSuggestedPosts(postId, token, page) {
