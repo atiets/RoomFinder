@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { uploadImages } from './uploadApi'; // Import upload function
 
 const API_URL = `${process.env.REACT_APP_BASE_URL_API}/v1/forum`;
 
@@ -52,14 +53,29 @@ export const getThreadById = async (threadId) => {
 };
 
 /**
- * Tạo thread mới
+ * Tạo thread mới với hỗ trợ upload ảnh
  * @param {Object} threadData - Dữ liệu thread mới
  * @param {string} token - JWT token để authentication
  * @returns {Promise} - Trả về thông tin thread đã được tạo
  */
 export const createThread = async (threadData, token) => {
   try {
-    const response = await axios.post(`${API_URL}/threads`, threadData, {
+    let processedData = { ...threadData };
+
+    // Handle image upload if there's an image file
+    if (threadData.image && threadData.image instanceof File) {
+      console.log('Uploading image for thread...');
+      const uploadedUrls = await uploadImages([threadData.image], token);
+      if (uploadedUrls && uploadedUrls.length > 0) {
+        processedData.image = uploadedUrls[0];
+        console.log('Image uploaded successfully:', uploadedUrls[0]);
+      } else {
+        console.warn('Image upload failed, creating thread without image');
+        processedData.image = null;
+      }
+    }
+
+    const response = await axios.post(`${API_URL}/threads`, processedData, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -105,7 +121,7 @@ export const createThread = async (threadData, token) => {
 };
 
 /**
- * Cập nhật thread
+ * Cập nhật thread với hỗ trợ upload ảnh
  * @param {string} threadId - ID của thread
  * @param {Object} updateData - Data cập nhật
  * @param {string} token - JWT token
@@ -113,7 +129,22 @@ export const createThread = async (threadData, token) => {
  */
 export const updateThread = async (threadId, updateData, token) => {
   try {
-    const response = await axios.put(`${API_URL}/threads/${threadId}`, updateData, {
+    let processedData = { ...updateData };
+
+    // Handle image upload if there's a new image file
+    if (updateData.image && updateData.image instanceof File) {
+      console.log('Uploading new image for thread...');
+      const uploadedUrls = await uploadImages([updateData.image], token);
+      if (uploadedUrls && uploadedUrls.length > 0) {
+        processedData.image = uploadedUrls[0];
+        console.log('New image uploaded successfully:', uploadedUrls[0]);
+      } else {
+        console.warn('Image upload failed, keeping existing image');
+        delete processedData.image; // Don't update image if upload failed
+      }
+    }
+
+    const response = await axios.put(`${API_URL}/threads/${threadId}`, processedData, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",

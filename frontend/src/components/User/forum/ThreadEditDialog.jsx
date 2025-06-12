@@ -1,4 +1,3 @@
-// src/components/User/forum/ThreadEditDialog.jsx - Updated với ImageUploader
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import {
@@ -22,15 +21,15 @@ import Swal from 'sweetalert2';
 import { updateThread } from '../../../redux/threadApi';
 import ThreadEditor from './CreateThread/ThreadEditor';
 import TagInput from './CreateThread/TagInput';
-import ImageUploader from './CreateThread/ImageUploader'; // Import ImageUploader
+import ImageUploader from './CreateThread/ImageUploader';
 
 const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated, showSnackbar }) => {
   const currentUser = useSelector((state) => state.auth?.login?.currentUser);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [editTags, setEditTags] = useState([]);
-  const [image, setImage] = useState(null); // Thêm state cho image
-  const [imagePreview, setImagePreview] = useState(null); // Thêm state cho imagePreview
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [quillInstance, setQuillInstance] = useState(null);
   const [error, setError] = useState(null);
@@ -42,10 +41,10 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated, showSnackbar
       setEditContent(thread.content || '');
       setEditTags(thread.tags || []);
       
-      // Set existing image if available
+      // FIXED: Set existing image if available
       if (thread.image) {
         setImagePreview(thread.image);
-        setImage(null); // Reset new image file
+        setImage(null);
       } else {
         setImagePreview(null);
         setImage(null);
@@ -169,7 +168,7 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated, showSnackbar
         tags: editTags
       };
 
-      // Handle image update
+      // FIXED: Handle image update properly
       if (image) {
         // New image file selected
         updateData.image = image;
@@ -187,13 +186,13 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated, showSnackbar
       if (response.success) {
         onClose();
         
-        // Callback to parent để update thread với đầy đủ data
+        // FIXED: Callback to parent with updated image
         const updatedThreadData = {
           ...thread,
           title: trimmedTitle,
           content: trimmedContent,
           tags: editTags,
-          image: image ? URL.createObjectURL(image) : (imagePreview || null), // Update image preview
+          image: response.data.image || (imagePreview || null), // Use response image or current preview
           updated_at: new Date().toISOString(),
           ...response.data
         };
@@ -324,7 +323,7 @@ const ThreadEditDialog = ({ open, onClose, thread, onThreadUpdated, showSnackbar
           error={null}
         />
 
-        {/* Image Uploader - Thêm component ImageUploader */}
+        {/* FIXED: Image Uploader with proper props */}
         <ImageUploader
           imagePreview={imagePreview}
           setImagePreview={setImagePreview}
