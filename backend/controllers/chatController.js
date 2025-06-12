@@ -2,7 +2,6 @@ const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
 const User = require("../models/User");
 const mongoose = require("mongoose");
-const UserSubscription = require("../models/UserSubscription");
 
 const botId = process.env.BOT_ID || "";
 
@@ -237,7 +236,9 @@ exports.getConversationsByAdmin = async (req, res) => {
     try {
         const { id: userId } = req.user;
         const { unreadOnly, search = "" } = req.query;
+
         const isManager = userId === process.env.MANAGER_ID;
+
         let conversations = [];
 
         if (isManager) {
@@ -246,7 +247,9 @@ exports.getConversationsByAdmin = async (req, res) => {
             const adminIds = adminUsers.map(user => user._id);
 
             // 2. Lấy conversation có ít nhất 1 admin tham gia
-            conversations = await Conversation.find({ claimedByAdmin: { $in: adminIds } })
+            conversations = await Conversation.find({
+                claimedByAdmin: { $in: adminIds }
+            })
                 .populate({
                     path: "participants",
                     select: "_id username email profile.picture profile.isOnline",
@@ -257,6 +260,7 @@ exports.getConversationsByAdmin = async (req, res) => {
                     options: { strictPopulate: false }
                 })
                 .sort({ updatedAt: -1 });
+
         } else {
             // Kiểm tra nếu là admin thì mới cho phép
             const currentUser = await User.findById(userId);
@@ -265,7 +269,9 @@ exports.getConversationsByAdmin = async (req, res) => {
             }
 
             // Lấy những conversation mà admin đó đã claim
-            conversations = await Conversation.find({ claimedByAdmin: userId })
+            conversations = await Conversation.find({
+                claimedByAdmin: userId
+            })
                 .populate({
                     path: "participants",
                     select: "_id username email profile.picture profile.isOnline",
@@ -283,10 +289,15 @@ exports.getConversationsByAdmin = async (req, res) => {
             conversations = conversations.filter(c => !c.readBy.includes(userId));
         }
 
-        // Tìm kiếm theo tên người dùng nếu có
+        // Tìm kiếm theo tên người dùng
         if (search) {
             const searchLower = search.toLowerCase();
-            conversations = conversations.filter(c => c.participants.some(p => p._id.toString() !== userId && p.username.toLowerCase().includes(searchLower)));
+            conversations = conversations.filter(c =>
+                c.participants.some(p =>
+                    p._id.toString() !== userId &&
+                    p.username.toLowerCase().includes(searchLower)
+                )
+            );
         }
 
         // Format dữ liệu
@@ -298,13 +309,14 @@ exports.getConversationsByAdmin = async (req, res) => {
         }));
 
         return res.status(200).json(formatted);
+
     } catch (err) {
         console.error("Lỗi khi lấy danh sách conversation:", err);
         res.status(500).json({ message: "Lỗi server" });
     }
 };
 
-//Lấy tin nhắn support user
+//Lấy tin nhắn support user 
 exports.getMessagesWithBot = async (req, res) => {
     try {
         console.log("Bot ID:", botId);
