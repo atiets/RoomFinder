@@ -34,6 +34,313 @@ const StyledCard = styled(Card)(({ theme }) => ({
   },
 }));
 
+// FIXED: Component để hiển thị HTML content với CSS-based truncate (giữ nguyên format Quill)
+const RichTextContent = ({ htmlContent, expanded, onToggle }) => {
+  if (!htmlContent) return null;
+
+  // Function để đếm text length từ HTML (bỏ qua tags)
+  const getTextLength = (html) => {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return (div.textContent || div.innerText || '').length;
+  };
+
+  const shouldTruncate = getTextLength(htmlContent) > 300;
+
+  return (
+    <Box>
+      {/* FIXED: Luôn hiển thị HTML content với đầy đủ format Quill */}
+      <Box
+        sx={{
+          // Quill Editor Styles - Luôn áp dụng
+          '& .ql-editor, & div': {
+            fontFamily: 'inherit',
+          },
+          '& p': { 
+            margin: '0 0 12px 0',
+            lineHeight: 1.6,
+            '&:last-child': { marginBottom: 0 }
+          },
+          '& h1': { 
+            fontSize: '2rem',
+            fontWeight: 'bold',
+            margin: '16px 0 12px 0',
+            lineHeight: 1.3
+          },
+          '& h2': { 
+            fontSize: '1.75rem',
+            fontWeight: 'bold',
+            margin: '16px 0 12px 0',
+            lineHeight: 1.3
+          },
+          '& h3': { 
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            margin: '14px 0 10px 0',
+            lineHeight: 1.3
+          },
+          '& h4': { 
+            fontSize: '1.25rem',
+            fontWeight: 'bold',
+            margin: '14px 0 10px 0',
+            lineHeight: 1.3
+          },
+          '& h5': { 
+            fontSize: '1.125rem',
+            fontWeight: 'bold',
+            margin: '12px 0 8px 0',
+            lineHeight: 1.3
+          },
+          '& h6': { 
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            margin: '12px 0 8px 0',
+            lineHeight: 1.3
+          },
+          '& strong, & b': { 
+            fontWeight: 'bold' 
+          },
+          '& em, & i': { 
+            fontStyle: 'italic' 
+          },
+          '& u': { 
+            textDecoration: 'underline' 
+          },
+          '& s, & strike': { 
+            textDecoration: 'line-through' 
+          },
+          '& ul': { 
+            margin: '12px 0',
+            paddingLeft: '24px',
+            listStyleType: 'disc'
+          },
+          '& ol': { 
+            margin: '12px 0',
+            paddingLeft: '24px',
+            listStyleType: 'decimal'
+          },
+          '& li': { 
+            margin: '4px 0',
+            lineHeight: 1.6
+          },
+          '& blockquote': {
+            borderLeft: '4px solid #ddd',
+            paddingLeft: '16px',
+            margin: '16px 0',
+            fontStyle: 'italic',
+            color: '#666',
+            backgroundColor: '#f9f9f9',
+            padding: '12px 16px',
+            borderRadius: '4px'
+          },
+          '& a': {
+            color: '#2E7D32',
+            textDecoration: 'none',
+            '&:hover': { 
+              textDecoration: 'underline',
+              color: '#1B5E20'
+            }
+          },
+          '& img': {
+            maxWidth: '100%',
+            height: 'auto',
+            borderRadius: '8px',
+            margin: '12px 0',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          },
+          '& pre': {
+            backgroundColor: '#f5f5f5',
+            padding: '12px',
+            borderRadius: '6px',
+            overflow: 'auto',
+            fontSize: '14px',
+            fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+            border: '1px solid #e0e0e0',
+            margin: '12px 0'
+          },
+          '& code': {
+            backgroundColor: '#f5f5f5',
+            padding: '2px 6px',
+            borderRadius: '3px',
+            fontSize: '14px',
+            fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+            border: '1px solid #e0e0e0'
+          },
+          '& table': {
+            width: '100%',
+            borderCollapse: 'collapse',
+            margin: '12px 0',
+            fontSize: '14px'
+          },
+          '& th, & td': {
+            border: '1px solid #ddd',
+            padding: '8px 12px',
+            textAlign: 'left'
+          },
+          '& th': {
+            backgroundColor: '#f5f5f5',
+            fontWeight: 'bold'
+          },
+          '& hr': {
+            border: 'none',
+            borderTop: '2px solid #e0e0e0',
+            margin: '20px 0'
+          },
+          // Text alignment from Quill
+          '& .ql-align-center': {
+            textAlign: 'center'
+          },
+          '& .ql-align-right': {
+            textAlign: 'right'
+          },
+          '& .ql-align-justify': {
+            textAlign: 'justify'
+          },
+          // Font sizes from Quill
+          '& .ql-size-small': {
+            fontSize: '0.75rem'
+          },
+          '& .ql-size-large': {
+            fontSize: '1.25rem'
+          },
+          '& .ql-size-huge': {
+            fontSize: '1.5rem'
+          },
+          // Colors from Quill
+          '& .ql-color-red': {
+            color: '#e60000'
+          },
+          '& .ql-color-orange': {
+            color: '#f90'
+          },
+          '& .ql-color-yellow': {
+            color: '#ff0'
+          },
+          '& .ql-color-green': {
+            color: '#008a00'
+          },
+          '& .ql-color-blue': {
+            color: '#06c'
+          },
+          '& .ql-color-purple': {
+            color: '#93f'
+          },
+          // Background colors from Quill  
+          '& .ql-bg-black': {
+            backgroundColor: '#000'
+          },
+          '& .ql-bg-red': {
+            backgroundColor: '#e60000'
+          },
+          '& .ql-bg-orange': {
+            backgroundColor: '#f90'
+          },
+          '& .ql-bg-yellow': {
+            backgroundColor: '#ff0'
+          },
+          '& .ql-bg-green': {
+            backgroundColor: '#008a00'
+          },
+          '& .ql-bg-blue': {
+            backgroundColor: '#06c'
+          },
+          '& .ql-bg-purple': {
+            backgroundColor: '#93f'
+          },
+          // Indent
+          '& .ql-indent-1': {
+            paddingLeft: '3em'
+          },
+          '& .ql-indent-2': {
+            paddingLeft: '6em'
+          },
+          '& .ql-indent-3': {
+            paddingLeft: '9em'
+          },
+          '& .ql-indent-4': {
+            paddingLeft: '12em'
+          },
+          '& .ql-indent-5': {
+            paddingLeft: '15em'
+          },
+          '& .ql-indent-6': {
+            paddingLeft: '18em'
+          },
+          '& .ql-indent-7': {
+            paddingLeft: '21em'
+          },
+          '& .ql-indent-8': {
+            paddingLeft: '24em'
+          },
+          
+          lineHeight: 1.6,
+          color: 'text.primary',
+          wordBreak: 'break-word',
+          
+          // FIXED: CSS-based truncate với gradient fade
+          position: 'relative',
+          overflow: 'hidden',
+          transition: 'max-height 0.3s ease-in-out',
+          
+          // Truncate styles khi chưa expand
+          ...((!expanded && shouldTruncate) && {
+            maxHeight: '160px', // Khoảng 5-6 dòng
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '40px',
+              background: 'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.8) 70%, rgba(255,255,255,1) 100%)',
+              pointerEvents: 'none',
+              zIndex: 1
+            }
+          }),
+          
+          // Expanded styles
+          ...(expanded && {
+            maxHeight: 'none'
+          })
+        }}
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+      
+      {/* Read More Button */}
+      {shouldTruncate && (
+        <Button
+          onClick={onToggle}
+          size="small"
+          sx={{
+            p: 0,
+            mt: 1.5,
+            minWidth: 'auto',
+            color: '#2E7D32',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            textTransform: 'none',
+            position: 'relative',
+            zIndex: 2,
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            borderRadius: '16px',
+            padding: '4px 8px',
+            '&:hover': {
+              backgroundColor: 'rgba(46, 125, 50, 0.1)',
+              textDecoration: 'none',
+              transform: 'translateY(-1px)',
+              boxShadow: '0 2px 8px rgba(46, 125, 50, 0.2)'
+            },
+            transition: 'all 0.2s ease'
+          }}
+          endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        >
+          {expanded ? 'Thu gọn' : 'Xem thêm'}
+        </Button>
+      )}
+    </Box>
+  );
+};
+
 const ThreadCard = ({ thread, onCommentClick, onThreadUpdated, onThreadDeleted, type, handleApprove, handleHide, handleReject }) => {
   const navigate = useNavigate();
   const currentUser = useSelector((state) => state.auth?.login?.currentUser);
@@ -48,7 +355,7 @@ const ThreadCard = ({ thread, onCommentClick, onThreadUpdated, onThreadDeleted, 
     tags = [],
     likesCount: initialLikesCount = 0,
     comments = 0,
-    image = null, // FIXED: Include image prop
+    image = null,
     viewCount = 0,
     author
   } = thread;
@@ -108,32 +415,6 @@ const ThreadCard = ({ thread, onCommentClick, onThreadUpdated, onThreadDeleted, 
       return 'Vừa xong';
     }
   };
-
-  const formatContent = (htmlContent) => {
-    if (!htmlContent) return '';
-    return htmlContent
-      .replace(/<\/p><p>/g, '\n\n')
-      .replace(/<p>/g, '')
-      .replace(/<\/p>/g, '')
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<strong>(.*?)<\/strong>/g, '$1')
-      .replace(/<em>(.*?)<\/em>/g, '$1')
-      .replace(/<u>(.*?)<\/u>/g, '$1')
-      .replace(/<[^>]*>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .trim();
-  };
-
-  const formattedContent = formatContent(content);
-  const contentLines = formattedContent.split('\n').length;
-  const contentLength = formattedContent.length;
-  const shouldShowReadMore = contentLines > 4 || contentLength > 300;
-  const truncatedContent = shouldShowReadMore && !expanded
-    ? formattedContent.split('\n').slice(0, 3).join('\n') + (formattedContent.length > 200 ? '...' : '')
-    : formattedContent;
 
   // Event handlers
   const handleExpandClick = () => setExpanded(!expanded);
@@ -249,16 +530,14 @@ const ThreadCard = ({ thread, onCommentClick, onThreadUpdated, onThreadDeleted, 
             </Typography>
           )}
 
-          {/* Content Text */}
-          <Typography
-            variant="body1"
-            color="text.primary"
-            sx={{ mb: 1.5, whiteSpace: 'pre-line', lineHeight: 1.6 }}
-          >
-            {truncatedContent}
-          </Typography>
+          {/* FIXED: Rich Text Content - Luôn giữ format Quill */}
+          <RichTextContent
+            htmlContent={content}
+            expanded={expanded}
+            onToggle={handleExpandClick}
+          />
 
-          {/* FIXED: Image Display - Always show if exists */}
+          {/* Image Display */}
           {image && (
             <CardMedia
               component="img"
@@ -277,43 +556,10 @@ const ThreadCard = ({ thread, onCommentClick, onThreadUpdated, onThreadDeleted, 
                 }
               }}
               onClick={() => {
-                // Optional: Open image in modal/lightbox
                 window.open(image, '_blank');
               }}
             />
           )}
-
-          {/* Read More Button */}
-          {shouldShowReadMore && (
-            <Button
-              onClick={handleExpandClick}
-              size="small"
-              sx={{
-                p: 0,
-                minWidth: 'auto',
-                color: '#2E7D32',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                  textDecoration: 'underline',
-                  transform: 'translateX(4px)'
-                },
-                transition: 'all 0.2s ease'
-              }}
-              endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            >
-              {expanded ? 'Thu gọn' : 'Xem thêm'}
-            </Button>
-          )}
-
-          {/* Collapse Content - Remove duplicate image display */}
-          <Collapse in={expanded} timeout="auto" unmountOnExit>
-            <Box sx={{ mt: 1.5 }}>
-              {/* Additional expanded content if needed */}
-            </Box>
-          </Collapse>
 
           {/* Tags */}
           {tags && tags.length > 0 && (
