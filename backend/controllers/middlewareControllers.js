@@ -83,7 +83,7 @@ const middlewareControllers = {
             await user.save();
         }
       
-        if (user.postQuota > 0 || (user.plan && user.plan.expiredAt > now)) {
+        if (user.postQuota > 0 || (user.plan && user.planExpiredAt > now)) {
             return next(); // Cho phép đăng tin
         }
       

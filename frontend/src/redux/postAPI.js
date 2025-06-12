@@ -330,19 +330,22 @@ export const getTopProvinces = async (token) => {
   }
 };
 
-// API URL cho reviews
-const REVIEW_API_URL =
-  `${process.env.REACT_APP_BASE_URL_API}/v1/reviews/`;
+// API URL for reviews
+const REVIEW_API_URL = `${process.env.REACT_APP_BASE_URL_API}/v1/reviews/`;
 
 export const createReview = async (postId, reviewData, token) => {
   try {
+    if (!postId || !reviewData || !token) {
+      throw new Error("Thiếu thông tin bắt buộc để tạo đánh giá");
+    }
+
     const response = await axios.post(
       `${REVIEW_API_URL}${postId}`,
       reviewData,
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          // "Content-Type": "multipart/form-data",
+          "Content-Type": "application/json",
         },
       },
     );
@@ -355,20 +358,32 @@ export const createReview = async (postId, reviewData, token) => {
 
 export const getReviewsByPostId = async (postId) => {
   try {
-    const response = await axios.get(`${REVIEW_API_URL}${postId}`);
-    return response.data || []; // Đảm bảo luôn trả về mảng
+    if (!postId) {
+      throw new Error("PostId không hợp lệ");
+    }
+
+    const response = await axios.get(`${REVIEW_API_URL}${postId}`, {
+      timeout: 10000, // 10 second timeout
+    });
+    
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error("Lỗi khi lấy bài đánh giá:", error);
-    return [];
+    return []; // Always return array
   }
 };
 
 export const deleteReview = async (reviewId, token) => {
   try {
+    if (!reviewId || !token) {
+      throw new Error("Thiếu thông tin bắt buộc để xóa đánh giá");
+    }
+
     const response = await axios.delete(`${REVIEW_API_URL}${reviewId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      timeout: 10000,
     });
     return response.data;
   } catch (error) {
@@ -379,6 +394,10 @@ export const deleteReview = async (reviewId, token) => {
 
 export const editReview = async (reviewId, updatedData, token) => {
   try {
+    if (!reviewId || !updatedData || !token) {
+      throw new Error("Thiếu thông tin bắt buộc để chỉnh sửa đánh giá");
+    }
+
     const response = await axios.put(
       `${REVIEW_API_URL}${reviewId}`,
       updatedData,
@@ -387,6 +406,7 @@ export const editReview = async (reviewId, updatedData, token) => {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
+        timeout: 10000,
       },
     );
     return response.data;
