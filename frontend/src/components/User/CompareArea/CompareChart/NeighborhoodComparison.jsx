@@ -29,7 +29,6 @@ import {
   Legend
 } from 'chart.js';
 
-// Đăng ký các component của Chart.js
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -39,56 +38,65 @@ ChartJS.register(
   Legend
 );
 
-const NeighborhoodComparison = ({ data, selectedDistrict, selectedNeighbors, onNeighborSelect }) => {
+const NeighborhoodComparison = ({ data, selectedDistrict, selectedNeighbors, onNeighborSelect, currentDistrictData }) => {
   const [showCompareModal, setShowCompareModal] = useState(false);
   
   // Chuyển đổi dữ liệu thành mảng và thêm district key
-  const neighborhoodData = Object.entries(data).map(([district, info]) => ({
+  const neighborhoodData = Object.entries(data || {}).map(([district, info]) => ({
     district,
     ...info
   }));
   
-  // Thêm khu vực được chọn
+  // Lấy thông tin quận hiện tại từ currentDistrictData (được truyền từ overview)
+  const currentDistrictInfo = currentDistrictData ? {
+    commonPrice: currentDistrictData.currentPrice || 0,
+    priceFluctuation: currentDistrictData.priceFluctuation || 0,
+    count: currentDistrictData.totalPosts || 0
+  } : {
+    commonPrice: 0,
+    priceFluctuation: 0,
+    count: 0
+  };
+  
+  // Thêm khu vực được chọn với dữ liệu thực tế
   const allDistricts = [
-    // Quận hiện tại được chọn là mặc định
+    // Quận hiện tại được chọn
     {
       district: selectedDistrict,
+      commonPrice: currentDistrictInfo.commonPrice,
+      priceFluctuation: currentDistrictInfo.priceFluctuation,
+      count: currentDistrictInfo.count,
       isSelected: true,
       isCurrentDistrict: true
     },
     // Các quận lân cận
     ...neighborhoodData.map(item => ({
       district: item.district,
-      commonPrice: item.commonPrice,
-      priceFluctuation: item.priceFluctuation,
-      count: item.count,
+      commonPrice: item.commonPrice || 0,
+      priceFluctuation: item.priceFluctuation || 0,
+      count: item.count || 0,
       isSelected: selectedNeighbors.includes(item.district),
       isCurrentDistrict: false
     }))
   ];
   
-  // Dữ liệu cho biểu đồ so sánh
-  const chartData = [...selectedNeighbors, selectedDistrict]
-    .filter(district => {
-      // Lọc ra quận hiện tại và các quận đã chọn
-      return district === selectedDistrict || 
-        (data[district] && data[district].commonPrice);
-    })
-    .map(district => {
-      if (district === selectedDistrict) {
-        // Quận hiện tại (giá trị từ data nếu có)
-        return {
-          name: district,
-          price: 0, // Cần cập nhật giá thực tế nếu có
-          color: '#4caf50'
-        };
-      }
-      return {
+  // Dữ liệu cho biểu đồ so sánh - bao gồm cả quận hiện tại
+  const chartData = [
+    // Luôn bao gồm quận hiện tại
+    {
+      name: selectedDistrict,
+      price: currentDistrictInfo.commonPrice,
+      color: '#4caf50'
+    },
+    // Thêm các quận đã chọn
+    ...selectedNeighbors
+      .filter(district => data[district] && data[district].commonPrice)
+      .map(district => ({
         name: district,
         price: data[district].commonPrice,
         color: '#ff9800'
-      };
-    });
+      }))
+  ].filter(item => item.price > 0);
   
   // Chuẩn bị dữ liệu Chart.js
   const barChartData = {
@@ -142,14 +150,14 @@ const NeighborhoodComparison = ({ data, selectedDistrict, selectedNeighbors, onN
   };
 
   const handleCompareClick = () => {
-    if (selectedNeighbors.length > 0) {
+    if (selectedNeighbors.length > 0 || currentDistrictInfo.commonPrice > 0) {
       setShowCompareModal(true);
     }
   };
 
   return (
     <Box className="neighborhood-comparison">
-      {neighborhoodData.length > 0 ? (
+      {allDistricts.length > 0 ? (
         <>
           <TableContainer className="comparison-table">
             <Table size="small">
@@ -181,12 +189,10 @@ const NeighborhoodComparison = ({ data, selectedDistrict, selectedNeighbors, onN
                       )}
                     </TableCell>
                     <TableCell align="right">
-                      {item.isCurrentDistrict ? '—' : formatCurrency(item.commonPrice)}
+                      {item.commonPrice > 0 ? formatCurrency(item.commonPrice) : '—'}
                     </TableCell>
                     <TableCell align="right" className="trend-cell">
-                      {item.isCurrentDistrict ? (
-                        '—'
-                      ) : (
+                      {item.commonPrice > 0 ? (
                         <Box className="trend-value">
                           {getTrendIcon(item.priceFluctuation)}
                           <Typography 
@@ -196,10 +202,10 @@ const NeighborhoodComparison = ({ data, selectedDistrict, selectedNeighbors, onN
                             {item.priceFluctuation > 0 ? '+' : ''}{item.priceFluctuation.toFixed(2)}%
                           </Typography>
                         </Box>
-                      )}
+                      ) : '—'}
                     </TableCell>
                     <TableCell align="right">
-                      {item.isCurrentDistrict ? '—' : item.count}
+                      {item.count > 0 ? item.count : '—'}
                     </TableCell>
                     <TableCell align="center">
                       {!item.isCurrentDistrict && (
@@ -211,6 +217,7 @@ const NeighborhoodComparison = ({ data, selectedDistrict, selectedNeighbors, onN
                             size="small"
                             onClick={() => onNeighborSelect(item.district)}
                             className="select-chip"
+                            disabled={item.commonPrice === 0}
                           />
                         </Tooltip>
                       )}
@@ -229,10 +236,10 @@ const NeighborhoodComparison = ({ data, selectedDistrict, selectedNeighbors, onN
               variant="outlined"
               startIcon={<Compare />}
               onClick={handleCompareClick}
-              disabled={selectedNeighbors.length === 0}
+              disabled={chartData.length === 0}
               className="compare-button"
             >
-              So sánh chi tiết
+              So sánh chi tiết ({chartData.length} khu vực)
             </Button>
           </Box>
           
@@ -243,11 +250,19 @@ const NeighborhoodComparison = ({ data, selectedDistrict, selectedNeighbors, onN
             maxWidth="md"
             fullWidth
           >
-            <DialogTitle>So sánh chi tiết giá bất động sản</DialogTitle>
+            <DialogTitle>
+              So sánh chi tiết giá bất động sản ({chartData.length} khu vực)
+            </DialogTitle>
             <DialogContent>
-              <Box height={400} mt={2}>
-                <Bar data={barChartData} options={barChartOptions} />
-              </Box>
+              {chartData.length > 0 ? (
+                <Box height={400} mt={2}>
+                  <Bar data={barChartData} options={barChartOptions} />
+                </Box>
+              ) : (
+                <Typography variant="body1" align="center" sx={{ py: 4 }}>
+                  Không có dữ liệu để hiển thị biểu đồ so sánh
+                </Typography>
+              )}
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setShowCompareModal(false)}>Đóng</Button>
