@@ -411,13 +411,3 @@
     align-items: center;
     margin-bottom: 1rem;
 }
-
-.vip-badge {
-  font-size: 10px;
-  padding: 2px 5px;
-  border-radius: 4px;
-  margin-left: 5px;
-  font-weight: bold;
-  background-color: #ff9800;
-  color: white;
-}

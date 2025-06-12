@@ -2,7 +2,6 @@ const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
 const User = require("../models/User");
 const mongoose = require("mongoose");
-const UserSubscription = require("../models/UserSubscription");
 
 const botId = process.env.BOT_ID || "";
 
@@ -234,108 +233,87 @@ exports.getFilteredConversations = async (req, res) => {
 
 //Lấy danh sách cuộc hội thoại của admin
 exports.getConversationsByAdmin = async (req, res) => {
-  try {
-    const { id: userId } = req.user;
-    const { unreadOnly, search = "", isVip = false } = req.query;
-    const isManager = userId === process.env.MANAGER_ID;
-    let conversations = [];
-    
-    if (isManager) {
-      // 1. Lấy danh sách user có admin: true
-      const adminUsers = await User.find({ admin: true }, "_id");
-      const adminIds = adminUsers.map(user => user._id);
-      
-      // 2. Lấy conversation có ít nhất 1 admin tham gia
-      conversations = await Conversation.find({ claimedByAdmin: { $in: adminIds } })
-        .populate({
-          path: "participants",
-          select: "_id username email profile.picture profile.isOnline",
-          options: { strictPopulate: false }
-        })
-        .populate({
-          path: "lastMessage",
-          options: { strictPopulate: false }
-        })
-        .sort({ updatedAt: -1 });
-    } else {
-      // Kiểm tra nếu là admin thì mới cho phép
-      const currentUser = await User.findById(userId);
-      if (!currentUser || !currentUser.admin) {
-        return res.status(403).json({ message: "Bạn không có quyền truy cập." });
-      }
-      
-      // Lấy những conversation mà admin đó đã claim
-      conversations = await Conversation.find({ claimedByAdmin: userId })
-        .populate({
-          path: "participants",
-          select: "_id username email profile.picture profile.isOnline",
-          options: { strictPopulate: false }
-        })
-        .populate({
-          path: "lastMessage",
-          options: { strictPopulate: false }
-        })
-        .sort({ updatedAt: -1 });
+    try {
+        const { id: userId } = req.user;
+        const { unreadOnly, search = "" } = req.query;
+
+        const isManager = userId === process.env.MANAGER_ID;
+
+        let conversations = [];
+
+        if (isManager) {
+            // 1. Lấy danh sách user có admin: true
+            const adminUsers = await User.find({ admin: true }, "_id");
+            const adminIds = adminUsers.map(user => user._id);
+
+            // 2. Lấy conversation có ít nhất 1 admin tham gia
+            conversations = await Conversation.find({
+                claimedByAdmin: { $in: adminIds }
+            })
+                .populate({
+                    path: "participants",
+                    select: "_id username email profile.picture profile.isOnline",
+                    options: { strictPopulate: false }
+                })
+                .populate({
+                    path: "lastMessage",
+                    options: { strictPopulate: false }
+                })
+                .sort({ updatedAt: -1 });
+
+        } else {
+            // Kiểm tra nếu là admin thì mới cho phép
+            const currentUser = await User.findById(userId);
+            if (!currentUser || !currentUser.admin) {
+                return res.status(403).json({ message: "Bạn không có quyền truy cập." });
+            }
+
+            // Lấy những conversation mà admin đó đã claim
+            conversations = await Conversation.find({
+                claimedByAdmin: userId
+            })
+                .populate({
+                    path: "participants",
+                    select: "_id username email profile.picture profile.isOnline",
+                    options: { strictPopulate: false }
+                })
+                .populate({
+                    path: "lastMessage",
+                    options: { strictPopulate: false }
+                })
+                .sort({ updatedAt: -1 });
+        }
+
+        // Lọc chưa đọc nếu có yêu cầu
+        if (unreadOnly === "true") {
+            conversations = conversations.filter(c => !c.readBy.includes(userId));
+        }
+
+        // Tìm kiếm theo tên người dùng
+        if (search) {
+            const searchLower = search.toLowerCase();
+            conversations = conversations.filter(c =>
+                c.participants.some(p =>
+                    p._id.toString() !== userId &&
+                    p.username.toLowerCase().includes(searchLower)
+                )
+            );
+        }
+
+        // Format dữ liệu
+        const formatted = conversations.map(c => ({
+            ...c._doc,
+            readBy: c.readBy,
+            visible: c.visible,
+            firstPostImage: c.postId?.images?.[0] || null
+        }));
+
+        return res.status(200).json(formatted);
+
+    } catch (err) {
+        console.error("Lỗi khi lấy danh sách conversation:", err);
+        res.status(500).json({ message: "Lỗi server" });
     }
-    
-    // Lọc chưa đọc nếu có yêu cầu
-    if (unreadOnly === "true") {
-      conversations = conversations.filter(c => !c.readBy.includes(userId));
-    }
-    
-    // Tìm kiếm theo tên người dùng nếu có
-    if (search) {
-      const searchLower = search.toLowerCase();
-      conversations = conversations.filter(c => 
-        c.participants.some(p => 
-          p._id.toString() !== userId && 
-          p.username.toLowerCase().includes(searchLower)
-        )
-      );
-    }
-    
-    // Lọc người dùng VIP nếu có yêu cầu
-    let vipUserIds = [];
-    if (isVip === 'true') {
-      const UserSubscription = mongoose.model('UserSubscription');
-      
-      // Lấy danh sách người dùng có gói Pro hoặc Plus đang hoạt động
-      const vipSubscriptions = await UserSubscription.find({
-        planType: { $in: ['pro', 'plus'] },
-        isActive: true
-      }, "userId");
-      
-      vipUserIds = vipSubscriptions.map(sub => sub.userId.toString());
-      
-      // Chỉ giữ lại các cuộc hội thoại có người dùng VIP
-      conversations = conversations.filter(c => 
-        c.participants.some(p => 
-          p._id.toString() !== userId && // Không phải admin
-          vipUserIds.includes(p._id.toString()) // Là người dùng VIP
-        )
-      );
-    }
-    
-    // Format dữ liệu trả về và thêm trường isVipUser
-    const formatted = conversations.map(c => {
-      // Tìm người tham gia không phải admin
-      const otherParticipant = c.participants.find(p => p._id.toString() !== userId);
-      const isVipUser = otherParticipant ? vipUserIds.includes(otherParticipant._id.toString()) : false;
-      
-      return {
-        ...c._doc,
-        readBy: c.readBy,
-        visible: c.visible,
-        firstPostImage: c.postId?.images?.[0] || null,
-        isVipUser: isVipUser 
-      };
-    });
-    
-    return res.status(200).json(formatted);
-  } catch (err) {
-    console.error("Lỗi khi lấy danh sách conversation:", err);
-    res.status(500).json({ message: "Lỗi server" });
-  }
 };
 
 //Lấy tin nhắn support user 
