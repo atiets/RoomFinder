@@ -353,7 +353,6 @@ exports.getUnclaimedConversations = async (req, res) => {
     try {
         const unclaimed = await Conversation.find({
             claimedByAdmin: { $exists: false }, // hoặc: claimedByAdmin: null
-            type: "support" // tùy vào hệ thống bạn có type hay không
         }).populate("participants lastMessage");
 
         res.json(unclaimed);
