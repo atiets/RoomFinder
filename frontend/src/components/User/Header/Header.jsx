@@ -288,7 +288,7 @@ const Header = () => {
         cancelButtonText: "Hủy",
       }).then((result) => {
         if (result.isConfirmed) {
-          navigate("/upgrade-plan"); 
+          navigate("/subscription"); 
         }
       });
     } else {

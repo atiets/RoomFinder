@@ -136,7 +136,7 @@ const features = [
             📈 Tăng 300-500% lượt xem
           </Typography>
           <Typography variant="caption" display="block">
-            ⏰ Refresh tự động hàng ngày
+            🏢 Logo thương hiệu
           </Typography>
         </Box>
       );
