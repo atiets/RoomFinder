@@ -9,7 +9,7 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { Avatar, Button, Checkbox, FormControl, Input, InputLabel, MenuItem, Select } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import defaultImage from '../../../assets/images/defaultImage.jpg';
 import useSocket from '../../../hooks/useSocket';
@@ -20,17 +20,52 @@ import './chat.css';
 import MessageLocation from './MessageLocation';
 import SuggestedQuestions from './SuggestedQuestions';
 
+const formatPriceToText = (price) => {
+    const numericPrice = Number(price);
+
+    if (isNaN(numericPrice)) {
+        return "Liên hệ";
+    }
+
+    if (numericPrice >= 1_000_000_000) {
+        const billions = (numericPrice / 1_000_000_000).toFixed(1);
+        return `${billions} tỷ`;
+    }
+
+    if (numericPrice >= 1_000_000) {
+        const millions = (numericPrice / 1_000_000).toFixed(1);
+        return `${millions} triệu`;
+    }
+
+    if (numericPrice >= 1_000) {
+        const thousands = Math.floor(numericPrice / 1_000);
+        return `${thousands}k`;
+    }
+
+    return `${numericPrice.toLocaleString()}`;
+};
+
 const Chat = () => {
     const location = useLocation();
     const chatRef = useRef(null);
     const inputRef = useRef(null);
     const fileInputRef = useRef(null);
+    const navigate = useNavigate();
 
     const postID = location.state?.postId || null;
     const title = location.state?.title || null;
-    const images = location.state?.images || null;
-    const price = location.state?.price || null;
+    const images = location.state?.image || null;
     const contactInfo = location.state?.contactInfo || null;
+    const rawPrice = location.state?.price;
+    console.log("Giá truyền đến: ", rawPrice);
+    const [price, setPrice] = useState();
+
+    useEffect(() => {
+        const numericPrice = Number(rawPrice);
+        setPrice(formatPriceToText(numericPrice));
+    }, [rawPrice]);
+
+    console.log("Giá đc format: ", price);
 
     const currentUser = useSelector((state) => state.auth.login.currentUser);
     const id = currentUser?._id;
@@ -58,8 +93,6 @@ const Chat = () => {
     const conversationId = selectedChat?._id || null;
 
     const BOT_ID = process.env.REACT_APP_BASE_URL_BOT_ID;
-
-    console.log('title', title);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -282,6 +315,7 @@ const Chat = () => {
         }
         setSelectedChat(msg);
         setNewMessage("");
+        navigate(location.pathname, { replace: true });
     };
 
     const handleCloseIconClick = () => {
@@ -315,30 +349,6 @@ const Chat = () => {
         }
     };
 
-    const formatPriceToText = (price) => {
-        if (typeof price !== "number" || isNaN(price)) {
-            return "Liên hệ";
-        }
-
-        if (price >= 1_000_000_000) {
-            const billions = (price / 1_000_000_000).toFixed(1);
-            return `${billions} tỷ`;
-        }
-
-        if (price >= 1_000_000) {
-            const millions = (price / 1_000_000).toFixed(1);
-            return `${millions} triệu`;
-        }
-
-        if (price >= 1_000) {
-            const thousands = Math.floor(price / 1_000);
-            return `${thousands}k`;
-        }
-
-        return `${price.toLocaleString()}`;
-    };
-
-    console.log("Giá", price);
     console.log("Selected Chat:", selectedChat);
     return (
         <div className="chat-container">
@@ -417,7 +427,7 @@ const Chat = () => {
                                             {truncateMessage(msg.lastMessage?.content, 50)}
                                         </div>
                                     </div>
-                                    <img src={msg.postId?.images || defaultImage} alt="message" className="chat-card-image" />
+                                    <img src={msg.postId?.images || defaultImage || images} alt="message" className="chat-card-image" />
                                 </div>
                             );
                         })
@@ -518,11 +528,8 @@ const Chat = () => {
                         <div className='chat-box-left-posts-content'>
                             <div className='chat-box-left-posts-title'>{title || selectedChat?.postId?.title}</div>
                             <div className="chat-box-left-posts-price">
-                                {price != null
-                                    ? formatPriceToText(price)
-                                    : selectedChat?.postId?.rentalPrice != null
-                                        ? formatPriceToText(selectedChat.postId.rentalPrice)
-                                        : "Liên hệ"}
+                                {price}
+                                <span className="price-unit">VNĐ</span>
                             </div>
                         </div>
                         <div className='chat-box-left-posts-image'>

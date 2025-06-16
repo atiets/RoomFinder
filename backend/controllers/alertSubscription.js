@@ -1,7 +1,9 @@
 const AlertSubscription = require("../models/AlertSubscription");
 const User = require("../models/User");
 const sendEmail = require("../services/emailService");
-const { io } = require('../congfig/websocket'); 
+const { io } = require('../congfig/websocket');
+const nodemailer = require("nodemailer");
+
 // Tạo subscription
 const createAlertSubscription = async (req, res) => {
     try {
@@ -86,24 +88,44 @@ function matchSubscriptionWithPost(subscription, post) {
 }
 
 const sendEmailNotification = async (userEmail, post) => {
+  try {
     const subject = `Thông báo: Có bài đăng mới phù hợp với bạn`;
     const html = `
-    <h3>Chào bạn,</h3>
-    <p>Chúng tôi vừa tìm thấy một bài đăng phù hợp với yêu cầu của bạn:</p>
-    <ul>
-        <li><strong>Tiêu đề:</strong> ${post.title}</li>
-        <li><strong>Giá:</strong> ${post.price} VND</li>
-        <li><strong>Diện tích:</strong> ${post.area} m²</li>
-        <li><strong>Khu vực:</strong> ${post.address?.district}, ${post.address?.province}</li>
-    </ul>
-    <p><a href="https://yourwebsite.com/posts/${post._id}">Xem chi tiết bài đăng</a></p>
-    <br/>
-    <p>Trân trọng,<br/>Phòng trọ xinh</p>
+      <h3>Chào bạn,</h3>
+      <p>Chúng tôi vừa tìm thấy một bài đăng phù hợp với yêu cầu của bạn:</p>
+      <ul>
+          <li><strong>Tiêu đề:</strong> ${post.title}</li>
+          <li><strong>Giá:</strong> ${post.price} VND</li>
+          <li><strong>Diện tích:</strong> ${post.area} m²</li>
+          <li><strong>Khu vực:</strong> ${post.address?.district}, ${post.address?.province}</li>
+      </ul>
+      <p><a href="https://yourwebsite.com/posts/${post._id}">Xem chi tiết bài đăng</a></p>
+      <br/>
+      <p>Trân trọng,<br/>Phòng trọ xinh</p>
     `;
 
-    await sendEmail(userEmail, subject, html);
-};
+    const transporter = nodemailer.createTransport({
+      service: "Gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
 
+    const mailOptions = {
+      from: `"Phòng trọ xinh" <${process.env.EMAIL_USER}>`,
+      to: userEmail,
+      subject,
+      html,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email đã gửi: ", info.response);
+  } catch (error) {
+    console.error("❌ Lỗi gửi email:", error); // Thêm dòng này để debug
+    throw new Error("Không thể gửi email thông báo."); // Vẫn throw lại, nhưng đã log rõ lý do
+  }
+};
 const createInAppNotification = async (userId, post) => {
     try {
         const user = await User.findById(userId);
@@ -115,7 +137,7 @@ const createInAppNotification = async (userId, post) => {
         const message = `Có bài đăng mới phù hợp: ${post.title}`;
         const newNotification = {
             message,
-            type:'post',
+            type: 'post',
             post_id: post._id,
             status: "unread",
             createdAt: new Date(),

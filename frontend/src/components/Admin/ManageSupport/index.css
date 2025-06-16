@@ -17,6 +17,7 @@
     height: 100%;
     width: 50%;
     padding-right: 0.5rem;
+    border-right: 1px solid #bac2ba;
 }
 
 .admin-chat-box-right-header {

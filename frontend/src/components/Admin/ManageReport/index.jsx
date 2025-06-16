@@ -52,16 +52,16 @@ const AdminReports = () => {
 
     useEffect(() => {
         fetchReport();
-    }, [searchText, statusFilter]);
+    }, [debouncedSearch, statusFilter]);
 
     useEffect(() => {
         const filtered = reports.filter(
             (r) =>
                 r.status === statusFilter &&
-                r.postTitle.toLowerCase().includes(searchText.toLowerCase())
+                r.postTitle.toLowerCase().includes(debouncedSearch.toLowerCase())
         );
         setFilteredReports(filtered);
-    }, [statusFilter, searchText, reports]);
+    }, [statusFilter, debouncedSearch, reports]);
 
     useEffect(() => {
         setSelectAll(
