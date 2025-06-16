@@ -1,13 +1,15 @@
+import CheckIcon from '@mui/icons-material/Check';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SendIcon from '@mui/icons-material/Send';
-import { Avatar, FormControl, Input, InputLabel, MenuItem, Select } from '@mui/material';
+import { Avatar, Button, FormControl, Input, InputLabel, MenuItem, Select } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import useSocket from '../../../hooks/useSocket';
-import { getListConversation, getMessagesByConversation } from '../../../redux/chatApi';
+import { getListConversation, getMessagesByConversation, getUnclaimedConversations } from '../../../redux/chatApi';
 import { uploadImages } from '../../../redux/uploadApi';
 import './index.css';
 
@@ -95,21 +97,89 @@ const ManageSupport = () => {
 
   useEffect(() => {
     if (!socket) return;
-    const handleReceiveMessage = (newMessage) => {
-      setMessagesChat((prev) => [...prev, newMessage]);
+
+    const onReceive = (data) => {
+      const { message, updatedConversation, userIds } = data;
+
+      console.log("Received message:", message);
+      console.log("Conversation mở hiện tại:", selectedChat?._id);
+      console.log("Conversation của message:", updatedConversation._id);
+
+      if (selectedChat?._id === updatedConversation._id) {
+        console.log("✅ Appending message to UI:", message);
+        setMessagesChat((prev) => [...prev, message]);
+      }
+
+      handleUpdateConversation({ updatedConversation, userIds });
     };
-    socket.on("receiveMessage", handleReceiveMessage);
+
+    socket.on("receiveMessage", onReceive);
+
     return () => {
-      socket.off("receiveMessage", handleReceiveMessage);
+      socket.off("receiveMessage", onReceive);
     };
-  }, [socket]);
+  }, [socket, selectedChat?.userId]);
+
+  const handleUpdateConversation = (payload = {}) => {
+    const { userIds = [], updatedConversation = {} } = payload;
+
+    console.log("🔧 [handleUpdateConversation]");
+    console.log("➡️ Current user ID:", id);
+    console.log("➡️ Payload userIds:", userIds);
+    console.log("➡️ Payload updatedConversation:", updatedConversation);
+
+    setConversation(prev => {
+      // Sửa tìm conversation theo đúng _id của updatedConversation
+      const exists = prev.find(conv => conv._id === updatedConversation._id);
+      let newList;
+
+      if (exists) {
+        console.log("🔁 Updating existing conversation in list");
+        newList = prev.map(conv =>
+          conv._id === updatedConversation._id
+            ? { ...conv, ...updatedConversation }
+            : conv
+        );
+      } else {
+        console.log("➕ Adding new conversation to list");
+        // Giữ nguyên logic lấy participant format
+        const newFormatted = getOtherParticipants([updatedConversation], id);
+        newList = [...newFormatted, ...prev];
+      }
+
+      // Sắp xếp conversation mới nhất lên đầu
+      return [...newList].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    });
+  };
+
+  const handleUpdate = (data) => {
+    const { conversation, message } = data;
+    const formatted = getOtherParticipants([conversation])[0];
+    if (
+      selectedChat &&
+      selectedChat._id?.toString() === formatted._id?.toString()
+    ) {
+      setSelectedChat(formatted);
+    } else {
+      console.log("ℹ️ selectedChat is different, skipping selectedChat update");
+    }
+
+    setConversation((prevConversations) =>
+      prevConversations.map((conv) =>
+        conv._id === formatted._id ? formatted : conv
+      )
+    );
+  };
 
   const getOtherParticipants = (conversations) => {
-    const botId = process.env.BOT_ID;
+    const botId = process.env.REACT_APP_BASE_URL_BOT_ID?.toString();
+    console.log("id của bot: ", botId);
     return (conversations || []).map(chat => {
       const participants = Array.isArray(chat.participants) ? chat.participants : [];
       const otherParticipant = participants.find(p => p._id?.toString() !== botId);
+
       console.log("Other participant:", otherParticipant);
+
       return {
         ...chat,
         conversationId: chat._id,
@@ -119,7 +189,6 @@ const ManageSupport = () => {
       };
     });
   };
-
 
   const fetchMessages = async () => {
     try {
@@ -218,11 +287,32 @@ const ManageSupport = () => {
 
   const fetchConversations = async () => {
     try {
-      const response = await getListConversation(id, token, unreadOnly, debouncedText);
-      const formatted = getOtherParticipants(response.data || [], id);
-      setConversation(formatted);
-    } catch (error) {
-      console.error("Lỗi khi lọc cuộc trò chuyện:", error);
+      const res1 = await getListConversation(id, token, unreadOnly, debouncedText);
+      const res2 = await getUnclaimedConversations(token);
+
+      const formatted1 = getOtherParticipants(res1.data || [], id);
+      const formatted2 = getOtherParticipants(res2.data || [], id);
+
+      const merged = [...formatted1];
+
+      formatted2.forEach((conv) => {
+        if (!merged.some((c) => c._id === conv._id)) {
+          merged.push(conv);
+        }
+      });
+
+      // 👉 Sort: Unclaimed lên đầu
+      const sorted = merged.sort((a, b) => {
+        const aClaimed = !!a.claimedByAdmin;
+        const bClaimed = !!b.claimedByAdmin;
+
+        if (aClaimed === bClaimed) return 0;
+        return aClaimed ? 1 : -1; // Unclaimed first
+      });
+
+      setConversation(sorted);
+    } catch (err) {
+      console.error("Lỗi khi lấy toàn bộ cuộc trò chuyện:", err);
     }
   };
 
@@ -312,6 +402,46 @@ const ManageSupport = () => {
     };
   }, [socket, id]);
 
+  useEffect(() => {
+    if (!socket) return;
+    socket.on("conversationResolved", handleUpdate);
+    return () => {
+      socket.off("conversationResolved", handleUpdate);
+    };
+  }, [socket, selectedChat?._id]);
+
+
+  const handleResolveConversation = () => {
+    socket.emit("resolveConversation", {
+      conversationId: selectedChat?._id,
+      adminId: id
+    });
+  };
+
+  useEffect(() => {
+    const fetchUnclaimedConversations = async () => {
+      try {
+        const res = await getUnclaimedConversations(token);
+        const processed = res.data.map((item) => getOtherParticipants([item])[0]);
+        setConversation((prev) => {
+          const newList = [...prev];
+
+          processed.forEach((conv) => {
+            if (!newList.some((c) => c._id === conv._id)) {
+              newList.push(conv);
+            }
+          });
+
+          return newList;
+        });
+      } catch (err) {
+        console.error("Failed to fetch unclaimed conversations", err);
+      }
+    };
+
+    fetchUnclaimedConversations();
+  }, [token]);
+
   return (
     <div className="admin-chat-container">
       <ToastContainer position="admin-top-right" autoClose={5000} />
@@ -374,15 +504,34 @@ const ManageSupport = () => {
                     </div>
                   </div>
                   {!isClaimed && (
-                    <button
-                      className="claim-button"
+                    <Button
+                      variant="outlined"
+                      startIcon={<CheckIcon sx={{ fontSize: '16px' }} />}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleClaimConversation(msg._id);
                       }}
+                      sx={{
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        color: '#2e7d32',
+                        borderColor: '#2e7d32',
+                        height: '34px',
+                        px: 1.5,
+                        py: 0.3,
+                        textTransform: 'none',
+                        backgroundColor: '#fff',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          backgroundColor: '#e8f5e9',
+                          borderColor: '#1b5e20',
+                          color: '#1b5e20'
+                        }
+                      }}
                     >
                       Claim
-                    </button>
+                    </Button>
                   )}
                 </div>
               );
@@ -418,6 +567,39 @@ const ManageSupport = () => {
             </div>
           )}
         </div>
+        {(selectedChat?.adminStatus === "processing" || selectedChat?.adminStatus === "pending") && (
+          <div className='admin-chat-box-left-content-header'>
+            <Button
+              variant="outlined"
+              startIcon={<CheckCircleIcon sx={{ fontSize: '16px' }} />}
+              sx={{
+                borderRadius: '6px',
+                textTransform: 'none',
+                fontWeight: 500,
+                fontSize: '12px',
+                minHeight: '28px',
+                px: 1.5,
+                py: 0.3,
+                color: '#f57c00',
+                borderColor: '#f57c00',
+                backgroundColor: '#fff',
+                transition: 'all 0.25s ease',
+                '&:hover': {
+                  backgroundColor: '#fff3e0',
+                  borderColor: '#ef6c00',
+                  color: '#ef6c00'
+                },
+                '&:active': {
+                  backgroundColor: '#ffe0b2',
+                  boxShadow: 'none'
+                }
+              }}
+              onClick={handleResolveConversation}
+            >
+              Resolve
+            </Button>
+          </div>
+        )}
         <div className='admin-chat-box-left-content' ref={chatRef}>
           {messagesChat
             .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
@@ -437,8 +619,6 @@ const ManageSupport = () => {
                     ))}
                   </div>
                 )}
-                {/* Thời gian */}
-                <span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
               </div>
             ))}
 

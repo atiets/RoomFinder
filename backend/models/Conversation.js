@@ -19,8 +19,9 @@ const ConversationSchema = new mongoose.Schema({
     adminStatus: {
         type: String,
         enum: ["pending", "processing", "done", null],
-        default: "pending",
+        default: "done",
     },
+    isConversationSupport: { type: Boolean, default: false },
     updatedAt: { type: Date, default: Date.now }
 });
 

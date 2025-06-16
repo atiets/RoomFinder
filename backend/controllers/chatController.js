@@ -323,7 +323,7 @@ exports.getMessagesWithBot = async (req, res) => {
         const { userId } = req.params;
         const userObjectId = mongoose.Types.ObjectId(userId);
         const botObjectId = mongoose.Types.ObjectId(botId);
-        
+
         console.log("Bot id object:", botObjectId);
         const conversation = await Conversation.findOne({
             participants: {
@@ -352,7 +352,8 @@ exports.getMessagesWithBot = async (req, res) => {
 exports.getUnclaimedConversations = async (req, res) => {
     try {
         const unclaimed = await Conversation.find({
-            claimedByAdmin: { $exists: false }, // hoặc: claimedByAdmin: null
+            claimedByAdmin: null,
+            isConversationSupport: true
         }).populate("participants lastMessage");
 
         res.json(unclaimed);

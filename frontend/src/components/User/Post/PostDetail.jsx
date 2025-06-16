@@ -75,6 +75,7 @@ const PostDetail = ({ onToggleFavorite }) => {
   const [showAll, setShowAll] = useState(false);
   const thumbnailWrapperRef = useRef(null);
   const [refreshData, setRefreshData] = useState(false);
+  const [priceNormal, setPriceNormal] = useState();
 
   let axiosJWT = axios.create({
     baseURL: process.env.REACT_APP_BASE_URL_API,
@@ -129,7 +130,7 @@ const PostDetail = ({ onToggleFavorite }) => {
         postId: post._id,
         title: post.title,
         image: post.images?.[0],
-        price: post.price,
+        price: priceNormal,
         contactInfo: post.contactInfo?.user,
       },
     });
@@ -141,6 +142,7 @@ const PostDetail = ({ onToggleFavorite }) => {
         const response = await getPostDetail(id);
         console.log("Response Data:", response);
         setPost(response.data);
+        setPriceNormal(response.data?.price);
       } catch (error) {
         console.error("Lỗi khi lấy chi tiết bài đăng:", error);
       }

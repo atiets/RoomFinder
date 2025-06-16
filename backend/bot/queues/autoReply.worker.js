@@ -21,21 +21,32 @@ async function handleIncomingMessage(io, socketId, { sender, content }, onlineUs
         if (botId) participantIds.push(mongoose.Types.ObjectId(botId));
         participantIds.sort();
 
-        let conversation = await Conversation.findOne({
-            participants: { $all: participantIds, $size: participantIds.length }
-        });
+        let conversation;
 
-        if (!conversation) {
-            conversation = await Conversation.create({ participants: participantIds });
+        // Nếu có bot, tìm conversation có cả user và bot
+        if (botId) {
+            conversation = await Conversation.findOne({
+                participants: { $all: participantIds, $size: participantIds.length },
+                isConversationSupport: true
+            });
+        } else {
+            // Nếu không có bot, tìm mọi conversation có user tham gia và isConversationSupport: true
+            conversation = await Conversation.findOne({
+                participants: mongoose.Types.ObjectId(sender),
+                isConversationSupport: true
+            });
         }
 
-        if (conversation.adminStatus === "done") {
-            conversation.adminStatus = "pending";
+        if (!conversation) {
+            conversation = await Conversation.create({
+                participants: participantIds,
+                isConversationSupport: true
+            });
         }
 
         // 2. Thử trả lời theo rule
         let reply = null;
-        let canBotReply = conversation.adminStatus === "pending" || conversation.adminStatus === "done";
+        let canBotReply = conversation.adminStatus === "done";
         if (canBotReply) {
             reply = matchRule(content);
             if (!reply) {
@@ -62,9 +73,8 @@ async function handleIncomingMessage(io, socketId, { sender, content }, onlineUs
                 const onlineAdminIds = getOnlineAdmins(onlineUsers);
                 conversation.lastMessage = userMessage._id;
                 conversation.updatedAt = new Date();
-                if (conversation.adminStatus === "pending" || conversation.adminStatus === "done") {
-                    conversation.adminStatus = "processing";
-                }
+                conversation.adminStatus = "processing";
+
                 await conversation.save();
 
                 const populatedConversation = await Conversation.findById(conversation._id)
@@ -82,6 +92,7 @@ async function handleIncomingMessage(io, socketId, { sender, content }, onlineUs
                 }
             } else {
                 const adminId = conversation.claimedByAdmin.toString();
+                conversation.adminStatus = "processing";
                 const adminSocketId = onlineUsers[adminId];
                 if (adminSocketId) {
                     conversation.lastMessage = userMessage._id;
