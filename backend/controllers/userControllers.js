@@ -15,6 +15,41 @@ const userController = {
       res.status(500).json({ error: "An error occurred", details: err.message });
     }
   },
+  getUserProfile: async (req, res) => {
+  try {
+    const userId = req.user.id; // Lấy từ middleware verifyToken
+    
+    console.log("🔍 Getting user profile for userId:", userId);
+    
+    // Tìm user và exclude password
+    const user = await User.findById(userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    console.log("✅ User profile found:", {
+      id: user._id,
+      username: user.username,
+      postQuota: user.postQuota
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    console.error("Get user profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error getting user profile",
+      error: error.message
+    });
+  }
+},
 
   //delete user
   deleteUser: async (req, res) => {

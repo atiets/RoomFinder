@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
-import Swal from 'sweetalert2';
+import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import axios from "axios";
+import Swal from "sweetalert2";
 
 export const useUsageManager = () => {
   const [currentUsage, setCurrentUsage] = useState(null);
   const [loading, setLoading] = useState(false);
-  
+
   const currentUser = useSelector((state) => state.auth?.login?.currentUser);
-  const accessToken = currentUser?.accessToken || localStorage.getItem('accessToken');
+  const accessToken =
+    currentUser?.accessToken || localStorage.getItem("accessToken");
 
   // API endpoints
-  const API_BASE = process.env.REACT_APP_BASE_URL_API || 'http://localhost:8000';
+  const API_BASE =
+    process.env.REACT_APP_BASE_URL_API || "http://localhost:8000";
 
   // Fetch current usage
   const fetchCurrentUsage = async () => {
@@ -19,28 +21,31 @@ export const useUsageManager = () => {
 
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE}/v1/payments/usage/current`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+      const response = await axios.get(
+        `${API_BASE}/v1/payments/usage/current`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
 
       if (response.data.success) {
         setCurrentUsage(response.data.data);
+        console.log("✅ Usage fetched:", response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching usage:', error);
-      
-      // Nếu không tìm thấy subscription, thiết lập gói Free mặc định
-      if (error.response?.status === 404 && error.response?.data?.message?.includes("Không tìm thấy gói")) {
+      console.error("Error fetching usage:", error);
+
+      // Nếu không tìm thấy subscription (gói Free)
+      if (error.response?.status === 404) {
+        console.log("🆓 No subscription found - User is on Free plan");
         setCurrentUsage({
-          planType: 'free',
-          planName: 'Gói miễn phí',
+          planType: "free",
+          planName: "Gói miễn phí",
           currentUsage: {
-            usage: {
-              postsCreated: 0, // Giả sử chưa sử dụng tin nào
-              vipPostsUsed: 0,
-              hiddenPhoneViews: 0
-            }
-          }
+            postsCreated: currentUser?.postQuota || 3,
+            vipPostsUsed: 0,
+            hiddenPhoneViews: 0,
+          },
         });
       }
     } finally {
@@ -49,7 +54,7 @@ export const useUsageManager = () => {
   };
 
   const refreshUsage = async () => {
-    console.log('🔄 Refreshing usage data...');
+    console.log("🔄 Refreshing usage data...");
     await fetchCurrentUsage();
   };
 
@@ -60,70 +65,80 @@ export const useUsageManager = () => {
       return { canUse: false };
     }
 
-    // ⭐⭐⭐ XỬ LÝ ĐẶC BIỆT CHO GÓI FREE ⭐⭐⭐
-    // Nếu không có currentUsage hoặc currentUsage.success = false,
-    // giả định đây là gói Free và tự xử lý logic check quota
-    if (!currentUsage || (currentUsage && !currentUsage.currentUsage)) {
-      console.log("Xử lý đặc biệt cho gói Free");
-      
-      // Đối với gói Free
-      if (action === 'post') {
-        // Giả sử trong gói Free còn quota để đăng tin thường (vì không có dữ liệu thực)
-        return { 
-          canUse: true, 
-          remaining: 3, // Giả định còn 3 tin
-          message: "Gói Free: còn lại 3 tin đăng" 
-        };
-      } else if (action === 'vip_post') {
-        // Gói Free không được đăng tin VIP
-        showQuotaExhaustedAlert(action, "Gói Free không hỗ trợ đăng tin VIP");
-        return { canUse: false };
-      }
-    }
-
     try {
       const response = await axios.get(`${API_BASE}/v1/payments/usage/check`, {
         headers: { Authorization: `Bearer ${accessToken}` },
-        params: { action }
+        params: { action },
       });
 
       if (response.data.success) {
-        const { canUse, remaining, message } = response.data.data;
-        
+        const { canUse, remaining, message, planType } = response.data.data;
+
+        console.log(
+          `✅ Check usage result: ${action} - canUse: ${canUse}, remaining: ${remaining}, plan: ${planType}`
+        );
+
         if (!canUse) {
           showQuotaExhaustedAlert(action, message);
           return { canUse: false };
         }
-        
-        return { canUse: true, remaining, message };
+
+        return { canUse: true, remaining, message, planType };
       }
       return { canUse: false };
     } catch (error) {
-      console.error('Error checking usage:', error);
-      
-      // ⭐⭐⭐ XỬ LÝ LỖI 404 - KHÔNG TÌM THẤY GÓI ⭐⭐⭐
-      if (error.response?.status === 404 && 
-          error.response?.data?.message?.includes("Không tìm thấy gói")) {
-        
-        console.log("Không tìm thấy gói đăng ký - Xử lý như gói Free");
-        
-        // Với gói Free
-        if (action === 'post') {
-          // Cho phép đăng tin thường (giả sử còn 3 lượt)
-          return { 
-            canUse: true, 
-            remaining: 3,
-            message: "Gói Free: Còn lại 3 tin đăng" 
+      console.error("Error checking usage:", error);
+
+      // Handle 404 - Free plan
+      if (error.response?.status === 404) {
+        console.log("🆓 Free plan - Handle locally");
+
+        if (action === "post") {
+          const freeQuota = currentUser?.postQuota || 0;
+          const canUse = freeQuota > 0;
+
+          if (!canUse) {
+            showQuotaExhaustedAlert(
+              action,
+              "Bạn đã hết quota đăng tin miễn phí"
+            );
+          }
+
+          return {
+            canUse,
+            remaining: freeQuota,
+            message: canUse
+              ? `Còn ${freeQuota} tin miễn phí`
+              : "Hết quota tin miễn phí",
+            planType: "free",
           };
-        } else if (action === 'vip_post') {
-          // Không cho phép đăng tin VIP với gói Free
+        } else if (action === "vip_post") {
           showQuotaExhaustedAlert(action, "Gói Free không hỗ trợ đăng tin VIP");
-          return { canUse: false };
+          return { canUse: false, planType: "free" };
         }
       }
-      
-      // Các lỗi khác
+
       return { canUse: false };
+    }
+  };
+
+  const refreshUserData = async () => {
+    if (!accessToken) return;
+
+    try {
+      // Gọi API để lấy thông tin user mới nhất
+      const response = await axios.get(`${API_BASE}/v1/user/profile`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (response.data.success) {
+        // Dispatch action để update Redux state
+        // Bạn cần tạo action này trong Redux
+        console.log("User data refreshed:", response.data.user);
+        return response.data.user;
+      }
+    } catch (error) {
+      console.error("Error refreshing user data:", error);
     }
   };
 
@@ -131,87 +146,71 @@ export const useUsageManager = () => {
   const updateUsage = async (action) => {
     if (!accessToken) return false;
 
-    // ⭐⭐⭐ XỬ LÝ ĐẶC BIỆT CHO GÓI FREE ⭐⭐⭐
-    // Nếu không có currentUsage hoặc là gói free mặc định
-    if (!currentUsage || 
-        (currentUsage && currentUsage.planType === 'free' && !currentUsage.currentUsage?.usage)) {
-      console.log("Bỏ qua cập nhật usage cho gói Free mặc định");
-      
-      // Không cần cập nhật thực tế với DB, chỉ update state local
-      if (action === 'post') {
-        setCurrentUsage(prev => ({
-          ...prev,
-          planType: 'free',
-          planName: 'Gói miễn phí',
-          currentUsage: {
-            usage: {
-              postsCreated: (prev?.currentUsage?.usage?.postsCreated || 0) + 1,
-              vipPostsUsed: 0,
-              hiddenPhoneViews: 0
-            }
-          }
-        }));
-      }
-      
-      return true; // Giả lập thành công
-    }
-
     try {
       console.log(`🔄 Updating usage for action: ${action}`);
-      
-      const response = await axios.post(`${API_BASE}/v1/payments/usage/update`, 
+
+      const response = await axios.post(
+        `${API_BASE}/v1/payments/usage/update`,
         { action },
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
       if (response.data.success) {
-        console.log(`Usage updated successfully:`, response.data.data);
-        
+        console.log(`✅ Usage updated successfully:`, response.data.data);
+
+        // Refresh usage data
         await fetchCurrentUsage();
-        
+
+        // Nếu là gói free, refresh user data để lấy postQuota mới
+        if (response.data.data.planType === "free") {
+          await refreshUserData();
+        }
+
         return response.data.data;
       }
       return false;
     } catch (error) {
-      console.error('Error updating usage:', error);
-      
-      // ⭐⭐⭐ XỬ LÝ LỖI 404 - KHÔNG TÌM THẤY GÓI ⭐⭐⭐
-      if (error.response?.status === 404 && 
-          error.response?.data?.message?.includes("Không tìm thấy gói")) {
-        
-        console.log("Không tìm thấy gói đăng ký - Bỏ qua cập nhật usage");
-        return true; // Coi như thành công cho gói Free
+      console.error("Error updating usage:", error);
+
+      if (error.response?.status === 404) {
+        console.log("🆓 Free plan - Quota updated by backend");
+
+        // Refresh user data để lấy postQuota mới
+        await refreshUserData();
+        await fetchCurrentUsage();
+
+        return true;
       }
-      
+
       return false;
     }
   };
 
-  // Showp alerts
+  // Show alerts
   const showLoginAlert = () => {
     Swal.fire({
-      icon: 'warning',
-      title: 'Chưa đăng nhập',
-      text: 'Vui lòng đăng nhập để sử dụng tính năng này.',
-      confirmButtonText: 'Đăng nhập',
-      confirmButtonColor: '#4caf50'
+      icon: "warning",
+      title: "Chưa đăng nhập",
+      text: "Vui lòng đăng nhập để sử dụng tính năng này.",
+      confirmButtonText: "Đăng nhập",
+      confirmButtonColor: "#4caf50",
     });
   };
 
   const showQuotaExhaustedAlert = (action, message) => {
     const actionNames = {
-      'post': 'đăng tin thường',
-      'vip_post': 'đăng tin VIP',
-      'view_phone': 'xem số điện thoại ẩn'
+      post: "đăng tin thường",
+      vip_post: "đăng tin VIP",
+      view_phone: "xem số điện thoại ẩn",
     };
 
     Swal.fire({
-      icon: 'error',
-      title: '⚠️ Đã hết quota!',
+      icon: "error",
+      title: "⚠️ Đã hết quota!",
       html: `
         <div style="text-align: center;">
           <p style="font-size: 16px; margin-bottom: 15px; color: #d32f2f;">${message}</p>
-          <p style="color: #666;">Bạn đã sử dụng hết quota <strong>${actionNames[action]}</strong> cho tháng này.</p>
+          <p style="color: #666;">Bạn đã sử dụng hết quota <strong>${actionNames[action]}</strong>.</p>
           <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
             <p style="margin: 0; color: #4caf50; font-weight: bold;">
               💡 Giải pháp:
@@ -225,14 +224,14 @@ export const useUsageManager = () => {
         </div>
       `,
       showCancelButton: true,
-      confirmButtonText: '🚀 Nâng cấp gói ngay',
-      cancelButtonText: 'Để sau',
-      confirmButtonColor: '#4caf50',
-      cancelButtonColor: '#757575',
-      width: '500px'
+      confirmButtonText: "🚀 Nâng cấp gói ngay",
+      cancelButtonText: "Để sau",
+      confirmButtonColor: "#4caf50",
+      cancelButtonColor: "#757575",
+      width: "500px",
     }).then((result) => {
       if (result.isConfirmed) {
-        window.location.href = '/subscription';
+        window.location.href = "/subscription";
       }
     });
   };
@@ -244,39 +243,45 @@ export const useUsageManager = () => {
 
   const shouldShowQuotaWarning = (action) => {
     if (!currentUsage) return false;
-    
+
+    const planType = currentUsage.planType || "free";
+
+    if (planType === "free") {
+      const freeQuota = currentUser?.postQuota || 0;
+      return freeQuota <= 1 && freeQuota > 0;
+    }
+
     const { usage } = currentUsage.currentUsage;
     let remaining = 0;
-    
+
     switch (action) {
-      case 'post':
+      case "post":
         remaining = usage.postsCreated;
         break;
-      case 'vip_post':
+      case "vip_post":
         remaining = usage.vipPostsUsed;
         break;
-      case 'view_phone':
+      case "view_phone":
         remaining = usage.hiddenPhoneViews;
         break;
       default:
         return false;
     }
-    
-    // Hiển thị warning nếu quota <= 5 và > 0
+
     return remaining <= 5 && remaining > 0;
   };
 
   // Show warning alert
   const showQuotaWarning = (action, remaining) => {
     const actionNames = {
-      'post': 'đăng tin thường',
-      'vip_post': 'đăng tin VIP',
-      'view_phone': 'xem số điện thoại'
+      post: "đăng tin thường",
+      vip_post: "đăng tin VIP",
+      view_phone: "xem số điện thoại",
     };
 
     Swal.fire({
-      icon: 'warning',
-      title: '⚠️ Quota sắp hết!',
+      icon: "warning",
+      title: "⚠️ Quota sắp hết!",
       html: `
         <div style="text-align: center;">
           <p style="font-size: 16px; margin-bottom: 15px;">
@@ -286,15 +291,15 @@ export const useUsageManager = () => {
         </div>
       `,
       showCancelButton: true,
-      confirmButtonText: '🚀 Nâng cấp ngay',
-      cancelButtonText: 'Để sau',
-      confirmButtonColor: '#4caf50',
-      cancelButtonColor: '#757575',
+      confirmButtonText: "🚀 Nâng cấp ngay",
+      cancelButtonText: "Để sau",
+      confirmButtonColor: "#4caf50",
+      cancelButtonColor: "#757575",
       timer: 5000,
-      timerProgressBar: true
+      timerProgressBar: true,
     }).then((result) => {
       if (result.isConfirmed) {
-        window.location.href = '/subscription';
+        window.location.href = "/subscription";
       }
     });
   };
@@ -306,8 +311,9 @@ export const useUsageManager = () => {
     updateUsage,
     fetchCurrentUsage,
     refreshUsage,
+    refreshUserData,
     showQuotaExhaustedAlert,
-    shouldShowQuotaWarning, 
+    shouldShowQuotaWarning,
     showQuotaWarning,
   };
 };

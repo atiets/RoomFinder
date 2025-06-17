@@ -18,7 +18,6 @@ router.post("/momo/ipn", paymentController.handleMoMoCallback);
 router.get("/vnpay/callback", paymentController.handleVNPayCallback);
 router.post("/vnpay/ipn", paymentController.handleVNPayCallback);
 
-// ⭐ THÊM: Usage endpoints
 router.get("/usage/check", protect, paymentController.checkUsage);
 router.post("/usage/update", protect, paymentController.updateUsage);
 router.get("/usage/current", protect, paymentController.getCurrentUsage);
