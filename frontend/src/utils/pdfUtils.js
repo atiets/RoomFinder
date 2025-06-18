@@ -1,38 +1,69 @@
-// utils/pdfUtils.js - Fixed font issues
+// utils/pdfUtils.js - Fixed with html2canvas approach
+import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { formatCurrency, formatDate, getPaymentMethodText } from './helpers';
 
-export const generateInvoicePDF = (transaction, currentUser) => {
+export const generateInvoicePDF = async (transaction, currentUser) => {
   try {
-    const doc = new jsPDF();
+    // Tạo HTML content
+    const htmlContent = generateInvoiceHTML(transaction, currentUser);
     
-    doc.setFont('helvetica', 'normal');
+    // Tạo container tạm thời
+    const container = document.createElement('div');
+    container.innerHTML = htmlContent;
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.width = '794px'; // A4 width in pixels
+    container.style.backgroundColor = 'white';
+    container.style.padding = '20px';
+    container.style.fontFamily = 'Arial, sans-serif';
     
-    // Header
-    addHeader(doc, transaction);
+    document.body.appendChild(container);
     
-    // Company Info
-    addCompanyInfo(doc);
+    // Chờ một chút để DOM render
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Customer Info
-    const customerY = addCustomerInfo(doc, transaction, currentUser);
+    // Chụp screenshot
+    const canvas = await html2canvas(container, {
+      scale: 2, // Tăng chất lượng
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      width: 794,
+      height: container.scrollHeight + 40,
+      scrollX: 0,
+      scrollY: 0
+    });
     
-    // Transaction Info
-    const transactionY = addTransactionInfo(doc, transaction, customerY);
+    // Xóa container tạm thời
+    document.body.removeChild(container);
     
-    // Features
-    const featuresY = addFeatures(doc, transaction, transactionY);
+    // Tạo PDF
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
     
-    // Total Amount
-    const totalY = addTotalAmount(doc, transaction, featuresY);
+    const imgWidth = 210; // A4 width in mm
+    const pageHeight = 295; // A4 height in mm
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
     
-    // Footer
-    addFooter(doc, totalY);
+    // Thêm trang đầu tiên
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
     
-    // Save PDF
-    const fileName = `HoaDon_${transaction.invoiceNumber}_${transaction.packageName}.pdf`;
-    doc.save(fileName);
+    // Thêm các trang tiếp theo nếu cần
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+    
+    // Lưu file
+    const fileName = `HoaDon_${transaction.invoiceNumber}_${convertToSimpleText(transaction.packageName)}_${Date.now()}.pdf`;
+    pdf.save(fileName);
     
     console.log('✅ PDF Invoice generated:', fileName);
     return true;
@@ -43,148 +74,170 @@ export const generateInvoicePDF = (transaction, currentUser) => {
   }
 };
 
-const addHeader = (doc, transaction) => {
-  doc.setFontSize(20);
-  doc.setTextColor(46, 125, 50);
-  doc.text('ROOMFINDER', 105, 20, { align: 'center' });
-  
-  doc.setFontSize(16);
-  doc.setTextColor(0, 0, 0);
-  doc.text('HOA DON THANH TOAN', 105, 30, { align: 'center' });
-  
-  doc.setFontSize(12);
-  doc.text(`So: ${transaction.invoiceNumber}`, 105, 40, { align: 'center' });
-  
-  // Line separator
-  doc.setDrawColor(129, 199, 132);
-  doc.setLineWidth(1);
-  doc.line(20, 45, 190, 45);
+const generateInvoiceHTML = (transaction, currentUser) => {
+  return `
+    <div style="width: 750px; font-family: Arial, sans-serif; color: #333; line-height: 1.6; background: white;">
+      
+      <!-- Header -->
+      <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #4CAF50; padding-bottom: 20px;">
+        <h1 style="font-size: 28px; font-weight: bold; color: #2E7D32; margin: 0 0 10px 0;">
+          PHÒNG TRỌ XINH
+        </h1>
+        <h2 style="font-size: 20px; font-weight: 600; margin: 0 0 10px 0; color: #333;">
+          HÓA ĐƠN THANH TOÁN
+        </h2>
+        <p style="font-size: 16px; color: #666; margin: 0;">
+          Số: ${transaction.invoiceNumber}
+        </p>
+      </div>
+      
+      <!-- Company Info -->
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 30px; font-size: 14px; color: #666;">
+        <strong style="color: #2E7D32;">Công ty TNHH PHÒNG TRỌ XINH</strong><br>
+        Địa chỉ: 01 Đ. Võ Văn Ngân, Linh Chiểu, Thủ Đức, TP.HCM<br>
+        Điện thoại: (+84) 0313-728-397<br>
+        Email: PhongTroXinh@gmail.com
+      </div>
+      
+      <!-- Customer Info Section -->
+      <div style="margin-bottom: 30px;">
+        <h3 style="font-size: 18px; font-weight: 600; color: #2E7D32; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 2px solid #E8F5E8;">
+          📋 THÔNG TIN KHÁCH HÀNG
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600; width: 250px; color: #2E7D32;">
+              👤 Tên khách hàng:
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">
+              ${transaction.userName || currentUser?.username || 'N/A'}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600; color: #2E7D32;">
+              📧 Email:
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">
+              ${transaction.userEmail || currentUser?.email || 'N/A'}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600; color: #2E7D32;">
+              📅 Ngày tạo hóa đơn:
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">
+              ${formatDateToVietnamese(new Date())}
+            </td>
+          </tr>
+        </table>
+      </div>
+      
+      <!-- Transaction Info Section -->
+      <div style="margin-bottom: 30px;">
+        <h3 style="font-size: 18px; font-weight: 600; color: #2E7D32; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 2px solid #E8F5E8;">
+          💳 THÔNG TIN GIAO DỊCH
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600; width: 250px; color: #2E7D32;">
+              🔑 Mã giao dịch:
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; font-family: monospace; font-weight: 600;">
+              ${transaction.id}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600; color: #2E7D32;">
+              📅 Ngày giao dịch:
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">
+              ${formatDateToVietnamese(transaction.transactionDate)}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600; color: #2E7D32;">
+              📦 Gói dịch vụ:
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600; color: #2E7D32; font-size: 16px;">
+              ${transaction.packageName}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600; color: #2E7D32;">
+              💰 Phương thức thanh toán:
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">
+              ${getPaymentMethodTextVietnamese(transaction.paymentMethod)}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600; color: #2E7D32;">
+              ✅ Trạng thái:
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; color: #4CAF50; font-weight: 600;">
+              Thành công
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600; color: #2E7D32;">
+              ⏰ Thời gian hiệu lực:
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">
+              ${formatDateToVietnamese(transaction.transactionDate)} - ${formatDateToVietnamese(transaction.expiryDate)}
+            </td>
+          </tr>
+        </table>
+      </div>
+      
+      <!-- Features Section -->
+      <div style="margin-bottom: 30px; margin-top: 300px; !important;">
+        <h3 style="font-size: 18px; font-weight: 600; color: #2E7D32; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 2px solid #E8F5E8;">
+          🎯 TÍNH NĂNG GÓI ${transaction.packageName.toUpperCase()}
+        </h3>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #4CAF50;">
+          <ul style="margin: 0; padding-left: 25px; line-height: 2;">
+            ${transaction.features.map((feature, index) => `
+              <li style="margin-bottom: 8px; font-size: 14px;">
+                <strong style="color: #2E7D32;">✓</strong> ${feature}
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Total Amount Section -->
+      <div style="margin-bottom: 30px;">
+        <div style="background: linear-gradient(135deg, #E8F5E8 0%, #C8E6C9 100%); padding: 25px; border-radius: 15px; border: 2px solid #4CAF50; text-align: center;">
+          <div style="font-size: 18px; font-weight: 600; color: #2E7D32; margin-bottom: 10px;">
+            💰 TỔNG TIỀN THANH TOÁN
+          </div>
+          <div style="font-size: 32px; font-weight: bold; color: #2E7D32;">
+            ${formatCurrency ? formatCurrency(transaction.amount) : `${transaction.amount.toLocaleString('vi-VN')} VNĐ`}
+          </div>
+          <div style="font-size: 14px; color: #666; margin-top: 5px;">
+            (Đã bao gồm VAT)
+          </div>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div style="background: #E8F5E8; padding: 20px; border-radius: 8px; margin-top: 40px; border: 2px solid #4CAF50;">
+        <div style="text-align: center; font-size: 14px; color: #2E7D32; margin-bottom: 15px;">
+          <strong>🙏 Cảm ơn quý khách đã sử dụng dịch vụ của Phòng trọ xinh!</strong>
+        </div>
+        <div style="text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ccc; padding-top: 15px;">
+          📞 Mọi thắc mắc vui lòng liên hệ:<br>
+          📧 Email: PhongTroXinh@gmail.com | ☎️ Hotline: (+84) 0313-728-397<br><br>
+          <em>Hóa đơn được tạo tự động vào ${formatDateToVietnamese(new Date())}</em>
+        </div>
+      </div>
+      
+    </div>
+  `;
 };
 
-const addCompanyInfo = (doc) => {
-  doc.setFontSize(10);
-  doc.setTextColor(102, 102, 102);
-  doc.text('Cong ty TNHH PHONG TRO XINH', 20, 55);
-  doc.text('Dia chi: 01 D. Vo Van Ngan, Linh Chieu, Thu Duc, Ho Chi Minh', 20, 62);
-  doc.text('Dien thoai: (+84) 0313-728-397 | Email: PhongTroXinh@gmail.com', 20, 69);
-};
-
-const addCustomerInfo = (doc, transaction, currentUser) => {
-  doc.setFontSize(12);
-  doc.setTextColor(0, 0, 0);
-  doc.text('THONG TIN KHACH HANG', 20, 85);
-  
-  const customerData = [
-    ['Ten khach hang:', transaction.userName || currentUser?.username || 'N/A'],
-    ['Email:', transaction.userEmail || currentUser?.email || 'N/A'],
-    ['Ngay tao hoa don:', formatDateSimple(new Date())],
-  ];
-  
-  autoTable(doc, {
-    startY: 90,
-    body: customerData,
-    theme: 'plain',
-    styles: { 
-      fontSize: 10, 
-      cellPadding: 2,
-      font: 'helvetica' // ⭐ Specify font for table
-    },
-    columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 50 },
-      1: { cellWidth: 120 }
-    }
-  });
-  
-  return doc.lastAutoTable.finalY;
-};
-
-const addTransactionInfo = (doc, transaction, startY) => {
-  const finalY = startY + 10;
-  doc.setFontSize(12);
-  doc.setTextColor(0, 0, 0);
-  doc.text('THONG TIN GIAO DICH', 20, finalY);
-  
-  const transactionData = [
-    ['Ma giao dich:', transaction.id],
-    ['Ngay giao dich:', formatDateSimple(transaction.transactionDate)],
-    ['Goi dich vu:', transaction.packageName],
-    ['Phuong thuc thanh toan:', getPaymentMethodTextSimple(transaction.paymentMethod)],
-    ['Trang thai:', 'Thanh cong'],
-    ['Thoi gian hieu luc:', `${formatDateSimple(transaction.transactionDate)} - ${formatDateSimple(transaction.expiryDate)}`],
-  ];
-  
-  autoTable(doc, {
-    startY: finalY + 5,
-    body: transactionData,
-    theme: 'plain',
-    styles: { 
-      fontSize: 10, 
-      cellPadding: 2,
-      font: 'helvetica'
-    },
-    columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 60 },
-      1: { cellWidth: 110 }
-    }
-  });
-  
-  return doc.lastAutoTable.finalY;
-};
-
-const addFeatures = (doc, transaction, startY) => {
-  const featuresY = startY + 10;
-  doc.setFontSize(12);
-  doc.setTextColor(0, 0, 0);
-  doc.text(`TINH NANG GOI ${transaction.packageName.toUpperCase()}`, 20, featuresY);
-  
-  const featuresData = transaction.features.map((feature, index) => [
-    `${index + 1}.`, convertToSimpleText(feature)
-  ]);
-  
-  autoTable(doc, {
-    startY: featuresY + 5,
-    body: featuresData,
-    theme: 'plain',
-    styles: { 
-      fontSize: 9, 
-      cellPadding: 2,
-      font: 'helvetica'
-    },
-    columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 15 },
-      1: { cellWidth: 155 }
-    }
-  });
-  
-  return doc.lastAutoTable.finalY;
-};
-
-const addTotalAmount = (doc, transaction, startY) => {
-  const totalY = startY + 10;
-  doc.setFillColor(232, 245, 232);
-  doc.rect(20, totalY, 170, 15, 'F');
-  
-  doc.setFontSize(14);
-  doc.setTextColor(46, 125, 50);
-  doc.text('TONG TIEN:', 25, totalY + 10);
-  doc.text(formatCurrency(transaction.amount), 165, totalY + 10, { align: 'right' });
-  
-  return totalY;
-};
-
-const addFooter = (doc, totalY) => {
-  const footerY = totalY + 30;
-  doc.setFontSize(10);
-  doc.setTextColor(102, 102, 102);
-  doc.text('Cam on quy khach da su dung dich vu cua Phong tro xinh!', 105, footerY, { align: 'center' });
-  doc.text('Moi thac mac vui long lien he: PhongTroXinh@gmail.com | (+84) 0313-728-397', 105, footerY + 7, { align: 'center' });
-
-  const currentTime = formatDateSimple(new Date());
-  doc.text(`Hoa don duoc tao tu dong vao ${currentTime}`, 105, footerY + 14, { align: 'center' });
-};
-
-// ⭐ Helper functions for simple text
-const formatDateSimple = (dateString) => {
+// ⭐ Helper functions với tiếng Việt
+const formatDateToVietnamese = (dateString) => {
   const date = new Date(dateString);
   const day = date.getDate().toString().padStart(2, '0');
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -194,18 +247,20 @@ const formatDateSimple = (dateString) => {
   return `${hours}:${minutes} ${day}/${month}/${year}`;
 };
 
-const getPaymentMethodTextSimple = (method) => {
+const getPaymentMethodTextVietnamese = (method) => {
   switch (method) {
-    case 'momo': return 'Vi MoMo';
-    case 'bank_transfer': return 'Chuyen khoan ngan hang';
-    case 'vnpay': return 'VNPay';
-    case 'zalopay': return 'ZaloPay';
-    case 'manual': return 'Thanh toan thu cong';
-    default: return 'Khac';
+    case 'momo': return '📱 Ví MoMo';
+    case 'bank_transfer': return '🏦 Chuyển khoản ngân hàng';
+    case 'vnpay': return '💳 VNPay';
+    case 'zalopay': return '📱 ZaloPay';
+    case 'manual': return '💵 Thanh toán thủ công';
+    default: return '❓ Khác';
   }
 };
 
 const convertToSimpleText = (text) => {
+  if (!text) return '';
+  
   // Convert Vietnamese diacritics to simple text
   const map = {
     'á': 'a', 'à': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
@@ -220,9 +275,22 @@ const convertToSimpleText = (text) => {
     'ơ': 'o', 'ớ': 'o', 'ờ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
     'ú': 'u', 'ù': 'u', 'ủ': 'u', 'ũ': 'u', 'ụ': 'u',
     'ư': 'u', 'ứ': 'u', 'ừ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
-    'ý': 'y', 'ỳ': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y'
+    'ý': 'y', 'ỳ': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y',
+    'Á': 'A', 'À': 'A', 'Ả': 'A', 'Ã': 'A', 'Ạ': 'A',
+    'Ă': 'A', 'Ắ': 'A', 'Ằ': 'A', 'Ẳ': 'A', 'Ẵ': 'A', 'Ặ': 'A',
+    'Â': 'A', 'Ấ': 'A', 'Ầ': 'A', 'Ẩ': 'A', 'Ẫ': 'A', 'Ậ': 'A',
+    'Đ': 'D',
+    'É': 'E', 'È': 'E', 'Ẻ': 'E', 'Ẽ': 'E', 'Ẹ': 'E',
+    'Ê': 'E', 'Ế': 'E', 'Ề': 'E', 'Ể': 'E', 'Ễ': 'E', 'Ệ': 'E',
+    'Í': 'I', 'Ì': 'I', 'Ỉ': 'I', 'Ĩ': 'I', 'Ị': 'I',
+    'Ó': 'O', 'Ò': 'O', 'Ỏ': 'O', 'Õ': 'O', 'Ọ': 'O',
+    'Ô': 'O', 'Ố': 'O', 'Ồ': 'O', 'Ổ': 'O', 'Ỗ': 'O', 'Ộ': 'O',
+    'Ơ': 'O', 'Ớ': 'O', 'Ờ': 'O', 'Ở': 'O', 'Ỡ': 'O', 'Ợ': 'O',
+    'Ú': 'U', 'Ù': 'U', 'Ủ': 'U', 'Ũ': 'U', 'Ụ': 'U',
+    'Ư': 'U', 'Ứ': 'U', 'Ừ': 'U', 'Ử': 'U', 'Ữ': 'U', 'Ự': 'U',
+    'Ý': 'Y', 'Ỳ': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y', 'Ỵ': 'Y'
   };
   
-  return text.replace(/[áàảãạăắằẳẵặâấầẩẫậđéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]/g, 
+  return text.replace(/[áàảãạăắằẳẵặâấầẩẫậđéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴ]/g, 
     char => map[char] || char);
 };

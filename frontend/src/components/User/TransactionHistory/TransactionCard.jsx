@@ -32,14 +32,20 @@ import TransactionDetails from './TransactionDetails';
 import TransactionFeatures from './TransactionFeatures';
 
 const TransactionCard = ({ transaction, currentUser }) => {
-  const handleDownloadPDF = (e) => {
-    e.stopPropagation();
-    try {
-      generateInvoicePDF(transaction, currentUser);
-    } catch (error) {
-      alert(error.message);
-    }
-  };
+const handleDownloadPDF = async (e) => {
+  e.stopPropagation();
+  
+  try {
+    await generateInvoicePDF(transaction, currentUser);
+    
+    console.log('✅ Hóa đơn PDF đã được tạo thành công');
+    
+  } catch (error) {
+    console.error('❌ Lỗi khi tạo PDF:', error);
+    alert(`Có lỗi xảy ra: ${error.message || 'Không thể tạo hóa đơn PDF'}`);
+  } finally {
+  }
+};
 
   return (
     <Accordion sx={{
