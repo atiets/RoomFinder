@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, CircularProgress } from '@mui/material';
 import { GetApp } from '@mui/icons-material';
-import { generateRealEstateReportPDF } from '../../../../utils/reportPdfUtils';
+import { generateReportWithCanvas } from '../../../../utils/canvasToPdfGenerator';
 
 const DownloadReportButton = ({ chartData }) => {
   const [loading, setLoading] = useState(false);
@@ -20,12 +20,10 @@ const DownloadReportButton = ({ chartData }) => {
         throw new Error('Thiếu thông tin khu vực');
       }
 
-      await generateRealEstateReportPDF(chartData);
+      // ⭐ SỬ DỤNG HTML2CANVAS + jsPDF
+      await generateReportWithCanvas(chartData);
       
-      // Show success message
-      setTimeout(() => {
-        alert('Tải báo cáo PDF thành công!');
-      }, 500);
+      console.log('✅ Báo cáo PDF đã được tạo thành công');
       
     } catch (error) {
       console.error('Lỗi khi xuất PDF:', error);

@@ -94,21 +94,18 @@ const getFeaturesByPlanType = (planType, features) => {
       'Hỗ trợ cơ bản'
     ],
     pro: [
-      'Tin đăng không giới hạn',
+      'Đăng tin miễn phí 30 tin/tháng',
       'Tin VIP 5 tin/tháng', 
-      'Xem SĐT có điều kiện',
-      'Duyệt tin 24h',
-      'Hỗ trợ ưu tiên'
+      'Xem SĐT có tức thì',
+      'Duyệt tin 24h'
     ],
     plus: [
       'Tin đăng không giới hạn',
       'Tin VIP không giới hạn',
       'Xem SĐT tức thì',
       'Duyệt tin 2-4h',
-      'Hỗ trợ VIP ưu tiên',
       'Thêm logo thương hiệu',
-      'Luôn hiển thị đầu tiên',
-      'Báo cáo chi tiết'
+      'Luôn hiển thị đầu tiên'
     ]
   };
 
