@@ -10,6 +10,7 @@ const { checkPostModeration } = require("./aiController");
 const { onlineUsers } = require("../congfig/websocket");
 const { checkAlertSubscriptions } = require("./alertSubscription");
 const SubscriptionService = require('../services/subscriptionService');
+const UserSubscription = require("../models/UserSubscription");
 
 function sendSocketNotification(userId, data) {
   const socketId = onlineUsers[userId];
@@ -188,88 +189,67 @@ exports.createPost = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
-    try {
+    // ===== ✅ SỬA PHẦN KIỂM TRA QUOTA =====
+    // Tìm subscription trước để xác định loại gói
+    const userSubscription = await UserSubscription.findOne({
+      userId: userId,
+      isActive: true,
+      endDate: { $gt: new Date() }
+    });
+
+    if (userSubscription) {
+      // // ===== GÓI PRO/PLUS: Sử dụng API usage =====
+      // try {
+      //   if (isVipPost) {
+      //     const vipQuotaResponse = await axios.get(
+      //       `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/check?action=vip_post`,
+      //       {
+      //         headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
+      //       }
+      //     );
+
+      //     if (!vipQuotaResponse.data.success || !vipQuotaResponse.data.data.canUse) {
+      //       return res.status(403).json({
+      //         message: "Bạn đã hết lượt đăng tin VIP trong tháng này.",
+      //       });
+      //     }
+      //   } else {
+      //     const postQuotaResponse = await axios.get(
+      //       `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/check?action=post`,
+      //       {
+      //         headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
+      //       }
+      //     );
+
+      //     if (!postQuotaResponse.data.success || !postQuotaResponse.data.data.canUse) {
+      //       return res.status(403).json({
+      //         message: "Bạn đã hết lượt đăng tin trong tháng này.",
+      //       });
+      //     }
+      //   }
+      // } catch (quotaError) {
+      //   console.error("Error checking Pro/Plus quota:", quotaError);
+      //   return res.status(500).json({
+      //     message: "Lỗi khi kiểm tra quota đăng tin",
+      //   });
+      // }
+    } else {
+      // ===== GÓI FREE: Kiểm tra trực tiếp user.postQuota =====
+      console.log(`🆓 Free plan user - postQuota: ${user.postQuota}`);
+      
       if (isVipPost) {
-        try {
-          const vipQuotaResponse = await axios.get(
-            `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/check?action=vip_post`,
-            {
-              headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
-            }
-          );
-
-          if (!vipQuotaResponse.data.success || !vipQuotaResponse.data.data.canUse) {
-            return res.status(403).json({
-              message: "Bạn đã hết lượt đăng tin VIP trong tháng này hoặc gói của bạn không hỗ trợ tin VIP.",
-            });
-          }
-        } catch (vipQuotaError) {
-          // Với gói Free hoặc lỗi khác, không cho phép đăng VIP
-          console.error("Error checking VIP quota:", vipQuotaError);
-          return res.status(403).json({
-            message: "Gói của bạn không hỗ trợ đăng tin VIP hoặc đã hết lượt. Vui lòng nâng cấp gói.",
-          });
-        }
-      } else {
-        // Xử lý tin thường - thêm xử lý đặc biệt cho gói Free
-        try {
-          const postQuotaResponse = await axios.get(
-            `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/check?action=post`,
-            {
-              headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
-            }
-          );
-
-          if (!postQuotaResponse.data.success || !postQuotaResponse.data.data.canUse) {
-            return res.status(403).json({
-              message: "Bạn đã hết lượt đăng tin trong tháng này. Vui lòng nâng cấp gói để đăng thêm.",
-            });
-          }
-        } catch (quotaCheckError) {
-          // Xử lý đặc biệt cho gói Free (không có subscription)
-          if (quotaCheckError.response && 
-              quotaCheckError.response.status === 404 && 
-              quotaCheckError.response.data && 
-              quotaCheckError.response.data.message && 
-              quotaCheckError.response.data.message.includes("Không tìm thấy gói")) {
-            
-            // Đây là người dùng gói Free
-            // Kiểm tra họ đã đăng 3 tin trong tháng chưa
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            
-            const postsThisMonth = await Post.countDocuments({
-              userId: userId,
-              createdAt: {
-                $gte: new Date(currentYear, currentMonth, 1),
-                $lt: new Date(currentYear, currentMonth + 1, 1)
-              }
-            });
-            
-            console.log(`Người dùng gói Free - đã đăng ${postsThisMonth}/3 tin tháng này`);
-            
-            if (postsThisMonth >= 3) {
-              return res.status(403).json({
-                message: "Bạn đã đăng tối đa 3 tin trong tháng này (giới hạn của gói Free). Vui lòng nâng cấp để đăng thêm.",
-              });
-            }
-            
-            // Nếu ít hơn 3 tin, tiếp tục với quá trình tạo bài đăng
-            console.log(`Người dùng gói Free với ${postsThisMonth} tin tháng này, cho phép đăng tin`);
-          } else {
-            // Đây là lỗi khác, không liên quan đến gói Free
-            console.error("Error checking quota:", quotaCheckError);
-            return res.status(500).json({
-              message: "Lỗi khi kiểm tra quota đăng tin",
-            });
-          }
-        }
+        return res.status(403).json({
+          message: "Gói Free không hỗ trợ đăng tin VIP. Vui lòng nâng cấp gói.",
+        });
       }
-    } catch (quotaError) {
-      console.error("Error in quota check section:", quotaError);
-      return res.status(500).json({
-        message: "Lỗi khi kiểm tra quota đăng tin",
-      });
+
+      if (!user.postQuota || user.postQuota <= 0) {
+        return res.status(403).json({
+          message: "Bạn đã hết quota đăng tin miễn phí. Vui lòng nâng cấp gói để đăng thêm.",
+        });
+      }
+
+      console.log(`✅ Free plan user có thể đăng tin. Quota còn lại: ${user.postQuota}`);
     }
     // ===== KẾT THÚC PHẦN KIỂM TRA QUOTA ĐÃ SỬA =====
 
@@ -336,39 +316,39 @@ exports.createPost = async (req, res) => {
     // Lưu bài đăng
     const savedPost = await newPost.save();
 
+    // ===== ✅ SỬA PHẦN UPDATE QUOTA SAU KHI TẠO POST THÀNH CÔNG =====
     try {
-      if (isVipPost) {
-        await axios.post(
-          `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/update`,
-          { action: 'vip_post' },
-          {
-            headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
-          }
-        ).catch(err => {
-          // Bỏ qua lỗi 404 cho gói Free vì đã check ở trên
-          if (!(err.response?.status === 404 && err.response?.data?.message?.includes("Không tìm thấy gói"))) {
-            console.error("Error updating VIP usage tracking:", err);
-          }
-        });
-        console.log(`✅ Updated VIP usage for user ${userId}`);
+      if (userSubscription) {
+        // // ===== GÓI PRO/PLUS: Sử dụng API usage =====
+        // const action = isVipPost ? 'vip_post' : 'post';
+        
+        // await axios.post(
+        //   `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/update`,
+        //   { action },
+        //   {
+        //     headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
+        //   }
+        // );
+        
+        // console.log(`✅ Updated ${userSubscription.planType} usage: ${action} for user ${userId}`);
       } else {
-        await axios.post(
-          `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/update`,
-          { action: 'post' },
-          {
-            headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
-          }
-        ).catch(err => {
-          // Bỏ qua lỗi 404 cho gói Free vì đã đếm số post ở trên
-          if (!(err.response?.status === 404 && err.response?.data?.message?.includes("Không tìm thấy gói"))) {
-            console.error("Error updating post usage tracking:", err);
-          }
-        });
-        console.log(`✅ Updated post usage for user ${userId}`);
+        // ===== GÓI FREE: Trừ trực tiếp user.postQuota =====
+        await User.findByIdAndUpdate(
+          userId,
+          { $inc: { postQuota: -1 } }
+        );
+        
+        console.log(`✅ Updated Free quota: postQuota decreased for user ${userId}. New quota: ${user.postQuota - 1}`);
       }
     } catch (usageError) {
       console.error("Error updating usage tracking:", usageError);
-      // Không throw error để không ảnh hưởng đến việc tạo post
+      
+      await Post.findByIdAndDelete(savedPost._id);
+      
+      return res.status(500).json({
+        message: "Lỗi khi cập nhật quota. Bài đăng đã được hủy.",
+        error: usageError.message
+      });
     }
 
     res.status(201).json({
@@ -376,7 +356,6 @@ exports.createPost = async (req, res) => {
       post: savedPost,
     });
 
-    // Background processing for moderation
     (async () => {
       try {
         const moderationResult = await checkPostModeration(savedPost);
@@ -434,6 +413,7 @@ exports.createPost = async (req, res) => {
     });
   }
 };
+
 
 // Hàm chung để xử lý dữ liệu quận/huyện
 const processDistrictData = async () => {

@@ -1,9 +1,9 @@
-import { ExpandLess, ExpandMore } from "@mui/icons-material"; // Import các icon từ MUI
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { useState } from "react";
-import "./Sidebar.css"; // Đảm bảo rằng bạn đã tạo file CSS
+import "./Sidebar.css";
 
 const Sidebar = ({ setSelectedMenu }) => {
-  const [selectedMenu, setSelectedMenuState] = useState("dashboard"); // State để lưu trữ mục menu hiện tại
+  const [selectedMenu, setSelectedMenuState] = useState("dashboard");
   const [showNewsOptions, setShowNewsOptions] = useState(false);
 
   const handleMenuClick = (menu) => {
@@ -14,12 +14,21 @@ const Sidebar = ({ setSelectedMenu }) => {
 
   const handleNewsClick = () => {
     setShowNewsOptions(!showNewsOptions);
-    setSelectedMenuState("news");
+    // Chỉ set selectedMenu thành "news" nếu chưa có submenu nào được chọn
+    if (!showNewsOptions) {
+      setSelectedMenu("news");
+      setSelectedMenuState("news");
+    }
   };
 
   const handleSubMenuClick = (menu) => {
     setSelectedMenu(menu);
     setSelectedMenuState(menu);
+  };
+
+  // Helper function để check nếu news menu hoặc submenu đang active
+  const isNewsMenuActive = () => {
+    return selectedMenu === "news" || selectedMenu === "newsList" || selectedMenu === "addNews";
   };
 
   return (
@@ -57,7 +66,7 @@ const Sidebar = ({ setSelectedMenu }) => {
             📢 Khiếu nại, phản hồi
           </li>
           <li
-            className={selectedMenu === "news" ? "active" : ""}
+            className={isNewsMenuActive() ? "active" : ""} // Cải thiện logic active
             onClick={handleNewsClick}
           >
             <span>📜 Quản lý tin tức</span>
@@ -67,10 +76,9 @@ const Sidebar = ({ setSelectedMenu }) => {
               <ExpandMore className="MuiSvgIcon-root" />
             )}
           </li>
-          <li
-            className={selectedMenu === "news" ? "active" : ""}
-            onClick={handleNewsClick}
-          ></li>
+          
+          {/* XÓA DÒNG <li> RỖNG Ở ĐÂY */}
+          
           {showNewsOptions && (
             <ul className="submenu">
               <li

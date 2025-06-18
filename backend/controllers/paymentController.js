@@ -478,41 +478,93 @@ exports.checkUsage = async (req, res) => {
     const userId = req.user.id;
     const { action } = req.query;
 
+    // ===== TÌM USER SUBSCRIPTION TRƯỚC =====
     const userSubscription = await UserSubscription.findOne({
       userId: userId,
       isActive: true,
       endDate: { $gt: new Date() }
     }).populate('subscriptionId');
 
-    if (!userSubscription) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy gói đăng ký hoạt động"
+    // ===== NẾU CÓ GÓI PRO/PLUS =====
+    if (userSubscription) {
+      const { usage } = userSubscription.currentUsage;
+      let canUse = false;
+      let remaining = 0;
+      let message = "";
+
+      switch (action) {
+        case 'post':
+          canUse = usage.postsCreated > 0;
+          remaining = usage.postsCreated;
+          message = canUse ? `Còn ${remaining} tin đăng` : "Đã hết quota tin đăng";
+          break;
+        
+        case 'vip_post':
+          canUse = usage.vipPostsUsed > 0;
+          remaining = usage.vipPostsUsed;
+          message = canUse ? `Còn ${remaining} tin VIP` : "Đã hết quota tin VIP";
+          break;
+        
+        case 'view_phone':
+          canUse = usage.hiddenPhoneViews > 0;
+          remaining = usage.hiddenPhoneViews;
+          message = canUse ? `Còn ${remaining} lượt xem SĐT` : "Đã hết quota xem số điện thoại";
+          break;
+        
+        default:
+          return res.status(400).json({
+            success: false,
+            message: "Action không hợp lệ"
+          });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          canUse,
+          remaining,
+          message,
+          currentUsage: usage,
+          planType: userSubscription.planType,
+          planName: userSubscription.planName
+        }
       });
     }
 
-    const { usage } = userSubscription.currentUsage;
+    // ===== NẾU KHÔNG CÓ GÓI PRO/PLUS THÌ LÀ FREE =====
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy user"
+      });
+    }
+
+    // Xử lý cho gói Free
     let canUse = false;
     let remaining = 0;
     let message = "";
 
     switch (action) {
       case 'post':
-        canUse = usage.postsCreated > 0;
-        remaining = usage.postsCreated;
-        message = canUse ? `Còn ${remaining} tin đăng` : "Đã hết quota tin đăng";
+        // Gói Free: check User.postQuota
+        canUse = user.postQuota > 0;
+        remaining = user.postQuota;
+        message = canUse ? `Còn ${remaining} tin đăng miễn phí` : "Đã hết quota tin đăng miễn phí";
         break;
       
       case 'vip_post':
-        canUse = usage.vipPostsUsed > 0;
-        remaining = usage.vipPostsUsed;
-        message = canUse ? `Còn ${remaining} tin VIP` : "Đã hết quota tin VIP";
+        // Gói Free: không được đăng tin VIP
+        canUse = false;
+        remaining = 0;
+        message = "Gói Free không hỗ trợ đăng tin VIP";
         break;
       
       case 'view_phone':
-        canUse = usage.hiddenPhoneViews > 0;
-        remaining = usage.hiddenPhoneViews;
-        message = canUse ? `Còn ${remaining} lượt xem SĐT` : "Đã hết quota xem số điện thoại";
+        // Gói Free: không được xem số điện thoại ẩn
+        canUse = false;
+        remaining = 0;
+        message = "Gói Free không hỗ trợ xem số điện thoại ẩn";
         break;
       
       default:
@@ -528,9 +580,13 @@ exports.checkUsage = async (req, res) => {
         canUse,
         remaining,
         message,
-        currentUsage: usage,
-        planType: userSubscription.planType,
-        planName: userSubscription.planName
+        currentUsage: {
+          postsCreated: remaining,
+          vipPostsUsed: 0,
+          hiddenPhoneViews: 0
+        },
+        planType: 'free',
+        planName: 'Gói miễn phí'
       }
     });
 
@@ -551,37 +607,143 @@ exports.updateUsage = async (req, res) => {
 
     console.log(`🔄 Updating usage for user ${userId}, action: ${action}`);
 
+    // ===== TÌM USER SUBSCRIPTION TRƯỚC =====
     const userSubscription = await UserSubscription.findOne({
       userId: userId,
       isActive: true,
       endDate: { $gt: new Date() }
     });
 
-    if (!userSubscription) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy gói đăng ký hoạt động"
+    // ===== NẾU CÓ GÓI PRO/PLUS =====
+    if (userSubscription) {
+      let updateField = "";
+      let currentValue = 0;
+
+      switch (action) {
+        case 'post':
+          updateField = 'currentUsage.usage.postsCreated';
+          currentValue = userSubscription.currentUsage.usage.postsCreated;
+          break;
+        
+        case 'vip_post':
+          updateField = 'currentUsage.usage.vipPostsUsed';
+          currentValue = userSubscription.currentUsage.usage.vipPostsUsed;
+          break;
+        
+        case 'view_phone':
+          updateField = 'currentUsage.usage.hiddenPhoneViews';
+          currentValue = userSubscription.currentUsage.usage.hiddenPhoneViews;
+          break;
+        
+        default:
+          return res.status(400).json({
+            success: false,
+            message: "Action không hợp lệ"
+          });
+      }
+
+      // Check nếu là unlimited (999999) thì không trừ
+      if (currentValue === 999999) {
+        return res.status(200).json({
+          success: true,
+          message: `Sử dụng ${action} thành công (Unlimited)`,
+          data: {
+            action,
+            remaining: 999999,
+            currentUsage: userSubscription.currentUsage.usage
+          }
+        });
+      }
+
+      // Check if still has quota
+      if (currentValue <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Đã hết quota cho action này"
+        });
+      }
+
+      // Update usage (trừ đi 1)
+      const updatedSubscription = await UserSubscription.findByIdAndUpdate(
+        userSubscription._id,
+        { 
+          $inc: { [updateField]: -1 },
+          $set: { 'currentUsage.lastResetDate': new Date() }
+        },
+        { new: true }
+      );
+
+      const newValue = currentValue - 1;
+
+      console.log(`✅ Usage updated (Pro/Plus): ${action} for user ${userId}, remaining: ${newValue}`);
+
+      return res.status(200).json({
+        success: true,
+        message: `Đã sử dụng 1 ${action}. Còn lại: ${newValue}`,
+        data: {
+          action,
+          remaining: newValue,
+          currentUsage: updatedSubscription.currentUsage.usage,
+          planType: userSubscription.planType
+        }
       });
     }
 
-    let updateField = "";
-    let currentValue = 0;
+    // ===== NẾU KHÔNG CÓ GÓI PRO/PLUS THÌ XỬ LÝ GÓI FREE =====
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy user"
+      });
+    }
 
+    // Xử lý cho gói Free
     switch (action) {
       case 'post':
-        updateField = 'currentUsage.usage.postsCreated';
-        currentValue = userSubscription.currentUsage.usage.postsCreated;
-        break;
+        // Trừ User.postQuota cho gói Free
+        if (user.postQuota <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: "Đã hết quota tin đăng miễn phí"
+          });
+        }
+
+        // Trừ 1 quota
+        const updatedUser = await User.findByIdAndUpdate(
+          userId,
+          { $inc: { postQuota: -1 } },
+          { new: true }
+        );
+
+        console.log(`✅ Usage updated (Free): post for user ${userId}, remaining: ${updatedUser.postQuota}`);
+
+        return res.status(200).json({
+          success: true,
+          message: `Đã đăng tin thành công. Còn lại: ${updatedUser.postQuota} tin miễn phí`,
+          data: {
+            action,
+            remaining: updatedUser.postQuota,
+            planType: 'free',
+            currentUsage: {
+              postsCreated: updatedUser.postQuota,
+              vipPostsUsed: 0,
+              hiddenPhoneViews: 0
+            }
+          }
+        });
       
       case 'vip_post':
-        updateField = 'currentUsage.usage.vipPostsUsed';
-        currentValue = userSubscription.currentUsage.usage.vipPostsUsed;
-        break;
+        return res.status(400).json({
+          success: false,
+          message: "Gói Free không hỗ trợ đăng tin VIP"
+        });
       
       case 'view_phone':
-        updateField = 'currentUsage.usage.hiddenPhoneViews';
-        currentValue = userSubscription.currentUsage.usage.hiddenPhoneViews;
-        break;
+        return res.status(400).json({
+          success: false,
+          message: "Gói Free không hỗ trợ xem số điện thoại ẩn"
+        });
       
       default:
         return res.status(400).json({
@@ -589,51 +751,6 @@ exports.updateUsage = async (req, res) => {
           message: "Action không hợp lệ"
         });
     }
-
-    // ⭐ Check nếu là unlimited (999999) thì không trừ
-    if (currentValue === 999999) {
-      return res.status(200).json({
-        success: true,
-        message: `Sử dụng ${action} thành công (Unlimited)`,
-        data: {
-          action,
-          remaining: 999999,
-          currentUsage: userSubscription.currentUsage.usage
-        }
-      });
-    }
-
-    // Check if still has quota
-    if (currentValue <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Đã hết quota cho action này"
-      });
-    }
-
-    // Update usage (trừ đi 1)
-    const updatedSubscription = await UserSubscription.findByIdAndUpdate(
-      userSubscription._id,
-      { 
-        $inc: { [updateField]: -1 },
-        $set: { 'currentUsage.lastResetDate': new Date() }
-      },
-      { new: true }
-    );
-
-    const newValue = currentValue - 1;
-
-    console.log(`✅ Usage updated: ${action} for user ${userId}, remaining: ${newValue}`);
-
-    res.status(200).json({
-      success: true,
-      message: `Đã sử dụng 1 ${action}. Còn lại: ${newValue}`,
-      data: {
-        action,
-        remaining: newValue,
-        currentUsage: updatedSubscription.currentUsage.usage
-      }
-    });
 
   } catch (error) {
     console.error("Update usage error:", error);
@@ -649,27 +766,61 @@ exports.getCurrentUsage = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    // ===== TÌM USER SUBSCRIPTION TRƯỚC =====
     const userSubscription = await UserSubscription.findOne({
       userId: userId,
       isActive: true,
       endDate: { $gt: new Date() }
     }).populate('subscriptionId');
 
-    if (!userSubscription) {
+    // ===== NẾU CÓ GÓI PRO/PLUS =====
+    if (userSubscription) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          planType: userSubscription.planType,
+          planName: userSubscription.planName,
+          currentUsage: userSubscription.currentUsage.usage,
+          features: userSubscription.features,
+          endDate: userSubscription.endDate
+        }
+      });
+    }
+
+    // ===== NẾU KHÔNG CÓ GÓI PRO/PLUS THÌ TRẢ VỀ GÓI FREE =====
+    const user = await User.findById(userId);
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy gói đăng ký hoạt động"
+        message: "Không tìm thấy user"
       });
     }
 
     res.status(200).json({
       success: true,
       data: {
-        planType: userSubscription.planType,
-        planName: userSubscription.planName,
-        currentUsage: userSubscription.currentUsage.usage,
-        features: userSubscription.features,
-        endDate: userSubscription.endDate
+        planType: 'free',
+        planName: 'Gói miễn phí',
+        currentUsage: {
+          postsCreated: user.postQuota || 3, // Default 3 cho gói free
+          vipPostsUsed: 0,
+          hiddenPhoneViews: 0
+        },
+        features: {
+          posting: {
+            monthlyPostLimit: 3,
+            isUnlimitedPosts: false
+          },
+          vipFeatures: {
+            vipPostsPerMonth: 0,
+            isUnlimitedVipPosts: false
+          },
+          contactFeatures: {
+            canViewHiddenPhone: false,
+            hiddenPhoneViewsPerMonth: 0
+          }
+        },
+        endDate: null // Free không có thời hạn
       }
     });
 

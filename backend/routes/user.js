@@ -8,6 +8,9 @@ const router = require("express").Router();
 //get all users
 router.get("/", middlewareControllers.verifyToken, userController.getAllUsers);
 
+//get user by id
+router.get("/profile", middlewareControllers.verifyToken, userController.getUserProfile);
+
 //delete user
 router.delete("/:id", middlewareControllers.verifyTokenAndAdminAuth, userController.deleteUser);
 
