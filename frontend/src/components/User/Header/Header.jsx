@@ -1,4 +1,3 @@
-// src/components/User/Header/Header.jsx
 import ChatIcon from '@mui/icons-material/Chat';
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import {
@@ -15,8 +14,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import axios from "axios";
 import { createAxios } from "../../../createInstance";
 import useSocketForum from '../../../hooks/useSocketForum';
+import { useUsageManager } from '../../../hooks/useUsageManager';
 import { logout } from "../../../redux/apiRequest";
 import { logoutSuccess } from "../../../redux/authSlice";
 import Notification from "../Notification/Notification";
@@ -27,7 +28,9 @@ const Header = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationsMenuAnchorEl, setNotificationsMenuAnchorEl] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [localPostQuota, setLocalPostQuota] = useState(null); // ⭐ Thêm state cho gói Free
   const currentUser = useSelector((state) => state.auth?.login?.currentUser);
+  const { currentUsage, loading } = useUsageManager(); // ⭐ Thêm hook usage
   const dispatch = useDispatch();
   const accessToken = currentUser?.accessToken;
   
@@ -48,6 +51,68 @@ const Header = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
 
+  // ⭐ HELPER FUNCTIONS
+  const getPlanType = () => {
+    if (!currentUsage) return "free";
+    return currentUsage.planType || "free";
+  };
+
+  // ⭐ FETCH USER QUOTA CHO GÓI FREE
+  const fetchUserQuota = async () => {
+    if (!currentUser?.accessToken) return;
+
+    const planType = getPlanType();
+    if (planType !== "free") return;
+
+    try {
+      console.log("🔄 Fetching user quota for Free plan...");
+
+      const response = await axios.get(
+        `${process.env.REACT_APP_BASE_URL_API || "http://localhost:8000"}/v1/users/profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${currentUser.accessToken}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        const newQuota = response.data.data.postQuota;
+        setLocalPostQuota(newQuota);
+        console.log("✅ User quota fetched:", newQuota);
+      }
+    } catch (error) {
+      console.error("Error fetching user quota:", error);
+      console.log("📋 Using fallback quota from currentUser");
+      setLocalPostQuota(currentUser?.postQuota || 3);
+    }
+  };
+
+  // ⭐ CHECK CAN POST
+  const canPost = () => {
+    if (!currentUser) return false;
+
+    const planType = getPlanType();
+
+    if (planType === "free") {
+      // Gói Free: ưu tiên localPostQuota (fetch từ API), fallback currentUser.postQuota
+      const freeQuota = localPostQuota ?? currentUser?.postQuota ?? 0;
+      return freeQuota > 0;
+    } else {
+      // Gói Pro/Plus: check từ currentUsage
+      const quota = currentUsage?.currentUsage?.postsCreated || 0;
+      return quota > 0;
+    }
+  };
+
+  // ⭐ Effect để fetch quota cho gói Free
+  useEffect(() => {
+    const planType = getPlanType();
+    if (planType === "free") {
+      fetchUserQuota();
+    }
+  }, [currentUser?.accessToken, currentUsage?.planType]);
+
   useEffect(() => {
     console.log("🔍 Header User Debug:", {
       hasCurrentUser: !!currentUser,
@@ -55,9 +120,11 @@ const Header = () => {
       userId: userId,
       hasAccessToken: !!accessToken,
       hasSocket: !!socket,
-      isSocketConnected: isConnected
+      isSocketConnected: isConnected,
+      planType: getPlanType(),
+      localPostQuota: localPostQuota
     });
-  }, [currentUser, userId, accessToken, socket, isConnected]);
+  }, [currentUser, userId, accessToken, socket, isConnected, localPostQuota]);
 
   const isSocketReady = (socketInstance) => {
     const ready = socketInstance && 
@@ -137,7 +204,6 @@ const Header = () => {
           return newCount;
         });
 
-        // Show browser notification
         if (Notification.permission === 'granted') {
           new Notification(`Diễn đàn - ${data.notification.from_user?.username || 'Ai đó'}`, {
             body: data.notification.message,
@@ -264,6 +330,7 @@ const Header = () => {
     setNotificationsMenuAnchorEl(null);
   };
 
+  // ⭐ SỬA FUNCTION handleAddPost THEO LOGIC PLAN TYPE
   const handleAddPost = () => {
     if (!currentUser) {
       Swal.fire({
@@ -273,24 +340,58 @@ const Header = () => {
         showCancelButton: true,
         confirmButtonText: "Đăng nhập",
         cancelButtonText: "Hủy",
+        customClass: {
+          popup: 'custom-swal-popup',
+          confirmButton: 'custom-swal-confirm',
+          cancelButton: 'custom-swal-cancel'
+        }
       }).then((result) => {
         if (result.isConfirmed) {
           navigate("/login");
         }
       });
-    } else if (currentUser.postQuota <= 0) {
-      Swal.fire({
-        title: "Hết lượt đăng tin",
-        text: "Bạn đã hết lượt đăng tin trong tháng.",
-        icon: "info",
-        showCancelButton: true,
-        confirmButtonText: "Chọn gói nâng cấp",
-        cancelButtonText: "Hủy",
-      }).then((result) => {
-        if (result.isConfirmed) {
-          navigate("/subscription"); 
-        }
-      });
+    } else if (!canPost()) {
+      // ⭐ CHECK THEO PLAN TYPE
+      const planType = getPlanType();
+      
+      if (planType === "free") {
+        Swal.fire({
+          title: "Hết lượt đăng tin miễn phí",
+          text: "Bạn đã hết lượt đăng tin miễn phí trong tháng. Nâng cấp gói để có thêm lượt đăng tin.",
+          icon: "info",
+          showCancelButton: true,
+          confirmButtonText: "Nâng cấp gói",
+          cancelButtonText: "Hủy",
+          customClass: {
+            popup: 'custom-swal-popup',
+            confirmButton: 'custom-swal-confirm',
+            cancelButton: 'custom-swal-cancel'
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigate("/subscription");
+          }
+        });
+      } else {
+        // Pro/Plus hết quota
+        Swal.fire({
+          title: "Hết lượt đăng tin",
+          text: "Bạn đã hết lượt đăng tin trong gói hiện tại. Vui lòng chờ reset hoặc nâng cấp gói cao hơn.",
+          icon: "info",
+          showCancelButton: true,
+          confirmButtonText: "Nâng cấp gói",
+          cancelButtonText: "Hủy",
+          customClass: {
+            popup: 'custom-swal-popup',
+            confirmButton: 'custom-swal-confirm',
+            cancelButton: 'custom-swal-cancel'
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigate("/subscription");
+          }
+        });
+      }
     } else {
       navigate("/AddPost");
     }

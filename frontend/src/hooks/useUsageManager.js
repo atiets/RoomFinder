@@ -8,12 +8,10 @@ export const useUsageManager = () => {
   const [loading, setLoading] = useState(false);
 
   const currentUser = useSelector((state) => state.auth?.login?.currentUser);
-  const accessToken =
-    currentUser?.accessToken || localStorage.getItem("accessToken");
+  const accessToken = currentUser?.accessToken || localStorage.getItem("accessToken");
 
   // API endpoints
-  const API_BASE =
-    process.env.REACT_APP_BASE_URL_API || "http://localhost:8000";
+  const API_BASE = process.env.REACT_APP_BASE_URL_API || "http://localhost:8000";
 
   // Fetch current usage
   const fetchCurrentUsage = async () => {
@@ -21,6 +19,8 @@ export const useUsageManager = () => {
 
     try {
       setLoading(true);
+      console.log("🔄 useUsageManager: Fetching current usage...");
+      
       const response = await axios.get(
         `${API_BASE}/v1/payments/usage/current`,
         {
@@ -30,14 +30,14 @@ export const useUsageManager = () => {
 
       if (response.data.success) {
         setCurrentUsage(response.data.data);
-        console.log("✅ Usage fetched:", response.data.data);
+        console.log("✅ useUsageManager: Usage fetched:", response.data.data);
       }
     } catch (error) {
-      console.error("Error fetching usage:", error);
+      console.error("useUsageManager: Error fetching usage:", error);
 
       // Nếu không tìm thấy subscription (gói Free)
       if (error.response?.status === 404) {
-        console.log("🆓 No subscription found - User is on Free plan");
+        console.log("🆓 useUsageManager: No subscription found - User is on Free plan");
         setCurrentUsage({
           planType: "free",
           planName: "Gói miễn phí",
@@ -54,7 +54,7 @@ export const useUsageManager = () => {
   };
 
   const refreshUsage = async () => {
-    console.log("🔄 Refreshing usage data...");
+    console.log("🔄 useUsageManager: Refreshing usage data...");
     await fetchCurrentUsage();
   };
 
@@ -66,6 +66,8 @@ export const useUsageManager = () => {
     }
 
     try {
+      console.log(`🔍 useUsageManager: Checking usage for action: ${action}`);
+      
       const response = await axios.get(`${API_BASE}/v1/payments/usage/check`, {
         headers: { Authorization: `Bearer ${accessToken}` },
         params: { action },
@@ -75,7 +77,7 @@ export const useUsageManager = () => {
         const { canUse, remaining, message, planType } = response.data.data;
 
         console.log(
-          `✅ Check usage result: ${action} - canUse: ${canUse}, remaining: ${remaining}, plan: ${planType}`
+          `✅ useUsageManager: Check usage result: ${action} - canUse: ${canUse}, remaining: ${remaining}, plan: ${planType}`
         );
 
         if (!canUse) {
@@ -87,11 +89,11 @@ export const useUsageManager = () => {
       }
       return { canUse: false };
     } catch (error) {
-      console.error("Error checking usage:", error);
+      console.error("useUsageManager: Error checking usage:", error);
 
       // Handle 404 - Free plan
       if (error.response?.status === 404) {
-        console.log("🆓 Free plan - Handle locally");
+        console.log("🆓 useUsageManager: Free plan - Handle locally");
 
         if (action === "post") {
           const freeQuota = currentUser?.postQuota || 0;
@@ -126,19 +128,19 @@ export const useUsageManager = () => {
     if (!accessToken) return;
 
     try {
-      // Gọi API để lấy thông tin user mới nhất
+      console.log("🔄 useUsageManager: Refreshing user data...");
+      
+      // ⭐ SỬA API URL
       const response = await axios.get(`${API_BASE}/v1/user/profile`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (response.data.success) {
-        // Dispatch action để update Redux state
-        // Bạn cần tạo action này trong Redux
-        console.log("User data refreshed:", response.data.user);
-        return response.data.user;
+        console.log("✅ useUsageManager: User data refreshed:", response.data.data);
+        return response.data.data;
       }
     } catch (error) {
-      console.error("Error refreshing user data:", error);
+      console.error("useUsageManager: Error refreshing user data:", error);
     }
   };
 
@@ -147,7 +149,7 @@ export const useUsageManager = () => {
     if (!accessToken) return false;
 
     try {
-      console.log(`🔄 Updating usage for action: ${action}`);
+      console.log(`🔄 useUsageManager: Updating usage for action: ${action}`);
 
       const response = await axios.post(
         `${API_BASE}/v1/payments/usage/update`,
@@ -156,7 +158,7 @@ export const useUsageManager = () => {
       );
 
       if (response.data.success) {
-        console.log(`✅ Usage updated successfully:`, response.data.data);
+        console.log(`✅ useUsageManager: Usage updated successfully:`, response.data.data);
 
         // Refresh usage data
         await fetchCurrentUsage();
@@ -170,10 +172,10 @@ export const useUsageManager = () => {
       }
       return false;
     } catch (error) {
-      console.error("Error updating usage:", error);
+      console.error("useUsageManager: Error updating usage:", error);
 
       if (error.response?.status === 404) {
-        console.log("🆓 Free plan - Quota updated by backend");
+        console.log("🆓 useUsageManager: Free plan - Quota updated by backend");
 
         // Refresh user data để lấy postQuota mới
         await refreshUserData();
@@ -238,6 +240,7 @@ export const useUsageManager = () => {
 
   // Load usage on mount
   useEffect(() => {
+    console.log("🔍 useUsageManager: useEffect triggered with accessToken:", !!accessToken);
     fetchCurrentUsage();
   }, [accessToken]);
 

@@ -14,18 +14,28 @@ const FooterAddPost = ({
   contentData,
   isVip,
   onVipChange,
-  onPostSuccess, // ⭐ Thêm prop này để parent component báo khi đăng tin thành công
+  onPostSuccess, 
 }) => {
   const [openPreview, setOpenPreview] = useState(false);
-  const [localPostQuota, setLocalPostQuota] = useState(null); // ⭐ State local cho gói Free
+  const [localPostQuota, setLocalPostQuota] = useState(null); 
   const { currentUsage, loading } = useUsageManager();
   const currentUser = useSelector((state) => state.auth.login.currentUser);
 
-  console.log("Current User:", currentUser);
-  console.log("Current Usage:", currentUsage);
-  console.log("Local Post Quota:", localPostQuota);
+  console.log("📊 FooterAddPost Debug:", {
+    currentUser: currentUser?.username,
+    currentUserPostQuota: currentUser?.postQuota,
+    localPostQuota: localPostQuota,
+    currentUsagePlan: currentUsage?.planType,
+    currentUsageData: currentUsage?.currentUsage
+  });
 
-  // ⭐ Fetch user quota từ API (chỉ cho gói Free)
+  // ⭐ HELPER FUNCTION
+  const getPlanType = () => {
+    if (!currentUsage) return "free";
+    return currentUsage.planType || "free";
+  };
+
+  // ⭐ FETCH USER QUOTA CHO GÓI FREE
   const fetchUserQuota = async () => {
     if (!currentUser?.accessToken) return;
 
@@ -33,9 +43,8 @@ const FooterAddPost = ({
     if (planType !== "free") return;
 
     try {
-      console.log("🔄 Fetching user quota for Free plan...");
+      console.log("🔄 FooterAddPost: Fetching user quota for Free plan...");
 
-      // ⭐ Đảm bảo path đúng
       const response = await axios.get(
         `${process.env.REACT_APP_BASE_URL_API || "http://localhost:8000"}/v1/user/profile`,
         {
@@ -47,45 +56,51 @@ const FooterAddPost = ({
 
       if (response.data.success) {
         const newQuota = response.data.data.postQuota;
+        console.log(`📊 FooterAddPost QUOTA FETCH RESULT:`, {
+          oldLocalQuota: localPostQuota,
+          oldUserQuota: currentUser?.postQuota,
+          newQuotaFromAPI: newQuota,
+          responseData: response.data.data
+        });
+        
         setLocalPostQuota(newQuota);
-        console.log("✅ User quota fetched:", newQuota);
+        console.log("✅ FooterAddPost: User quota fetched and set:", newQuota);
       }
     } catch (error) {
-      console.error("Error fetching user quota:", error);
-
-      // ⭐ Fallback nếu API lỗi
-      console.log("📋 Using fallback quota from currentUser");
+      console.error("FooterAddPost: Error fetching user quota:", error);
+      console.log("📋 FooterAddPost: Using fallback quota from currentUser");
       setLocalPostQuota(currentUser?.postQuota || 3);
     }
   };
 
-  // ⭐ Effect để fetch quota lần đầu (chỉ cho gói Free)
+  // ⭐ EFFECT ĐỂ FETCH QUOTA KHI COMPONENT MOUNT
   useEffect(() => {
     const planType = getPlanType();
+    console.log("🔍 FooterAddPost: useEffect triggered - planType:", planType);
     if (planType === "free") {
       fetchUserQuota();
     }
   }, [currentUser?.accessToken, currentUsage?.planType]);
 
-  // ⭐ Effect để listen khi đăng tin thành công
+  // ⭐ EFFECT ĐỂ WRAP onSubmit (KHÔNG DÙNG - GIỮ LẠI CHO TƯƠNG LAI)
   useEffect(() => {
     if (onPostSuccess) {
-      // Override onPostSuccess để fetch quota mới
+      // Logic này có thể dùng trong tương lai nếu cần
       const originalOnSubmit = onSubmit;
 
       const wrappedOnSubmit = async (...args) => {
         try {
           await originalOnSubmit(...args);
 
-          // Sau khi đăng tin thành công, fetch quota mới cho gói Free
           const planType = getPlanType();
           if (planType === "free") {
             setTimeout(() => {
+              console.log("⏰ FooterAddPost: Auto-fetching quota after post success...");
               fetchUserQuota();
-            }, 1000); // Delay 1s để đảm bảo backend đã update
+            }, 1000);
           }
         } catch (error) {
-          console.error("Submit error:", error);
+          console.error("FooterAddPost: Submit error:", error);
           throw error;
         }
       };
@@ -108,23 +123,29 @@ const FooterAddPost = ({
     }
   };
 
-  // ⭐ Wrapper cho onSubmit để fetch quota sau khi thành công
-  const handleSubmit = async () => {
-    try {
-      await onSubmit(); // Gọi onSubmit gốc
+const handleSubmit = async () => {
+  try {
+    console.log(`🚀 FooterAddPost BEFORE SUBMIT - Local quota: ${localPostQuota}`);
+    
+    await onSubmit();
 
-      // Sau khi thành công, fetch quota mới cho gói Free
-      const planType = getPlanType();
-      if (planType === "free") {
-        setTimeout(() => {
-          fetchUserQuota();
-        }, 1500); // Delay để đảm bảo backend đã update
-      }
-    } catch (error) {
-      console.error("Submit error:", error);
-      throw error; // Rethrow để parent component xử lý
+    const planType = getPlanType();
+    console.log(`✅ FooterAddPost: Post submitted successfully, plan: ${planType}`);
+    
+    if (planType === "free") {
+      console.log("🆓 FooterAddPost: Free plan - fetching new quota from backend...");
+      
+      setTimeout(async () => {
+        await fetchUserQuota();
+      }, 1000); 
     }
-  };
+    
+  } catch (error) {
+    console.error("FooterAddPost: Submit error:", error);
+    throw error;
+  }
+};
+
 
   const formatPostData = () => {
     if (type === "edit" && editPost) {
@@ -162,25 +183,24 @@ const FooterAddPost = ({
     }
   };
 
-  // ===== HELPER FUNCTIONS =====
-  const getPlanType = () => {
-    if (!currentUsage) return "free";
-    return currentUsage.planType || "free";
-  };
-
+  // ⭐ CHECK CAN POST
   const canPost = () => {
     if (!currentUser) return false;
 
     const planType = getPlanType();
 
     if (planType === "free") {
-      // ⭐ Ưu tiên localPostQuota (data mới từ API), fallback currentUser.postQuota
+      // Gói Free: Ưu tiên localPostQuota (fetch từ API), fallback currentUser.postQuota
       const freeQuota = localPostQuota ?? currentUser?.postQuota ?? 0;
-      return freeQuota > 0;
+      const canPost = freeQuota > 0;
+      console.log(`🔍 FooterAddPost canPost check (Free): quota=${freeQuota}, canPost=${canPost}`);
+      return canPost;
     } else {
-      // Gói Pro/Plus: check từ currentUsage
+      // Gói Pro/Plus: Check từ currentUsage
       const quota = currentUsage?.currentUsage?.postsCreated || 0;
-      return quota > 0;
+      const canPost = quota > 0;
+      console.log(`🔍 FooterAddPost canPost check (${planType}): quota=${quota}, canPost=${canPost}`);
+      return canPost;
     }
   };
 
@@ -197,6 +217,7 @@ const FooterAddPost = ({
     }
   };
 
+  // ⭐ RENDER UI THEO TỪNG LOẠI GÓI
   const renderPostTypeInfo = () => {
     if (loading) {
       return <span>Đang tải...</span>;
@@ -207,7 +228,7 @@ const FooterAddPost = ({
     }
 
     const planType = getPlanType();
-    console.log("Plan Type:", planType);
+    console.log("🎨 FooterAddPost: Rendering UI - Plan Type:", planType);
 
     // ===== GÓI PRO =====
     if (planType === "pro") {
@@ -326,13 +347,19 @@ const FooterAddPost = ({
 
     // ===== GÓI FREE =====
     else {
-      // ⭐ Ưu tiên localPostQuota (data mới từ API), fallback các giá trị khác
-      const freeQuota =
-        localPostQuota ??
-        currentUser?.postQuota ??
-        currentUsage?.currentUsage?.postsCreated ??
-        3;
+      // Ưu tiên localPostQuota (data mới từ API), fallback các giá trị khác
+      const freeQuota = localPostQuota ?? currentUser?.postQuota ?? currentUsage?.currentUsage?.postsCreated ?? 3;
       const canPostFree = freeQuota > 0;
+
+      // DEBUG LOG
+      console.log(`🔍 FooterAddPost FREE QUOTA DISPLAY DEBUG:`, {
+        localPostQuota: localPostQuota,
+        currentUserPostQuota: currentUser?.postQuota,
+        currentUsagePostsCreated: currentUsage?.currentUsage?.postsCreated,
+        finalFreeQuota: freeQuota,
+        canPostFree: canPostFree,
+        planType: getPlanType()
+      });
 
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -365,12 +392,10 @@ const FooterAddPost = ({
                 }}
               >
                 (Còn lại: {freeQuota} tin)
-                {localPostQuota !== null &&
-                  localPostQuota !== currentUser?.postQuota && (
-                    <span style={{ color: "#4caf50", marginLeft: "4px" }}>
-                      📡
-                    </span>
-                  )}
+                {/* Icon 📡 khi có data mới từ API */}
+                {localPostQuota !== null && localPostQuota !== currentUser?.postQuota && (
+                  <span style={{ color: "#4caf50", marginLeft: "4px" }}>📡</span>
+                )}
               </span>
             </span>
 
@@ -414,7 +439,7 @@ const FooterAddPost = ({
           </button>
           <button
             className={`btn-submit ${!canPost() ? "disabled" : ""}`}
-            onClick={handleSubmit} // ⭐ Sử dụng wrapper function
+            onClick={handleSubmit}
             disabled={!canPost()}
           >
             {type === "edit" ? "Chỉnh sửa tin" : "Đăng tin"}

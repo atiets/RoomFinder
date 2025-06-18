@@ -139,7 +139,6 @@ exports.createPost = async (req, res) => {
       isVip = false,
     } = req.body;
 
-    // Parse isVip từ string thành boolean nếu cần
     const isVipPost = isVip === 'true' || isVip === true;
 
     console.log("🔍 CreatePost Debug:", {
@@ -162,7 +161,7 @@ exports.createPost = async (req, res) => {
       return res.status(400).json({ message: "Thiếu thông tin bắt buộc" });
     }
 
-    // Parse các trường nếu là chuỗi JSON
+    // Parse các trường
     const safeParse = (value, fallback = {}) => {
       try {
         return typeof value === "string" ? JSON.parse(value) : value;
@@ -189,8 +188,7 @@ exports.createPost = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
-    // ===== ✅ SỬA PHẦN KIỂM TRA QUOTA =====
-    // Tìm subscription trước để xác định loại gói
+    // ===== PHẦN KIỂM TRA QUOTA =====
     const userSubscription = await UserSubscription.findOne({
       userId: userId,
       isActive: true,
@@ -198,44 +196,10 @@ exports.createPost = async (req, res) => {
     });
 
     if (userSubscription) {
-      // // ===== GÓI PRO/PLUS: Sử dụng API usage =====
-      // try {
-      //   if (isVipPost) {
-      //     const vipQuotaResponse = await axios.get(
-      //       `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/check?action=vip_post`,
-      //       {
-      //         headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
-      //       }
-      //     );
-
-      //     if (!vipQuotaResponse.data.success || !vipQuotaResponse.data.data.canUse) {
-      //       return res.status(403).json({
-      //         message: "Bạn đã hết lượt đăng tin VIP trong tháng này.",
-      //       });
-      //     }
-      //   } else {
-      //     const postQuotaResponse = await axios.get(
-      //       `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/check?action=post`,
-      //       {
-      //         headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
-      //       }
-      //     );
-
-      //     if (!postQuotaResponse.data.success || !postQuotaResponse.data.data.canUse) {
-      //       return res.status(403).json({
-      //         message: "Bạn đã hết lượt đăng tin trong tháng này.",
-      //       });
-      //     }
-      //   }
-      // } catch (quotaError) {
-      //   console.error("Error checking Pro/Plus quota:", quotaError);
-      //   return res.status(500).json({
-      //     message: "Lỗi khi kiểm tra quota đăng tin",
-      //   });
-      // }
+      console.log(`📋 Pro/Plus user - skipping quota check for now`);
     } else {
       // ===== GÓI FREE: Kiểm tra trực tiếp user.postQuota =====
-      console.log(`🆓 Free plan user - postQuota: ${user.postQuota}`);
+      console.log(`🆓 BEFORE CHECK - User ${userId} postQuota: ${user.postQuota}`);
       
       if (isVipPost) {
         return res.status(403).json({
@@ -251,7 +215,6 @@ exports.createPost = async (req, res) => {
 
       console.log(`✅ Free plan user có thể đăng tin. Quota còn lại: ${user.postQuota}`);
     }
-    // ===== KẾT THÚC PHẦN KIỂM TRA QUOTA ĐÃ SỬA =====
 
     if (!req.files?.images || req.files.images.length === 0) {
       return res.status(400).json({ message: "Thiếu ảnh, vui lòng tải lên ít nhất một ảnh." });
@@ -315,34 +278,34 @@ exports.createPost = async (req, res) => {
 
     // Lưu bài đăng
     const savedPost = await newPost.save();
+    console.log(`📝 Post saved successfully with ID: ${savedPost._id}`);
 
-    // ===== ✅ SỬA PHẦN UPDATE QUOTA SAU KHI TẠO POST THÀNH CÔNG =====
+    // ===== PHẦN UPDATE QUOTA SAU KHI TẠO POST THÀNH CÔNG =====
     try {
       if (userSubscription) {
-        // // ===== GÓI PRO/PLUS: Sử dụng API usage =====
-        // const action = isVipPost ? 'vip_post' : 'post';
-        
-        // await axios.post(
-        //   `${process.env.API_BASE_URL || 'http://localhost:8000'}/v1/payments/usage/update`,
-        //   { action },
-        //   {
-        //     headers: { Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}` }
-        //   }
-        // );
-        
-        // console.log(`✅ Updated ${userSubscription.planType} usage: ${action} for user ${userId}`);
+        // GÓI PRO/PLUS - bỏ qua phần này vì đã comment
+        console.log(`📋 Pro/Plus user - skipping quota update for now`);
       } else {
         // ===== GÓI FREE: Trừ trực tiếp user.postQuota =====
-        await User.findByIdAndUpdate(
+        console.log(`🆓 BEFORE UPDATE - User ${userId} postQuota: ${user.postQuota}`);
+        
+        const updatedUser = await User.findByIdAndUpdate(
           userId,
-          { $inc: { postQuota: -1 } }
+          { $inc: { postQuota: -1 } },
+          { new: true } // ⭐ Quan trọng: trả về document sau khi update
         );
         
-        console.log(`✅ Updated Free quota: postQuota decreased for user ${userId}. New quota: ${user.postQuota - 1}`);
+        console.log(`✅ AFTER UPDATE - User ${userId} postQuota: ${updatedUser.postQuota}`);
+        console.log(`✅ Updated Free quota: postQuota decreased for user ${userId}. Old: ${user.postQuota}, New: ${updatedUser.postQuota}`);
+
+        // ⭐ Kiểm tra lại để đảm bảo đã update thành công
+        const verifyUser = await User.findById(userId);
+        console.log(`🔍 VERIFY AFTER UPDATE: User ${userId} postQuota in DB: ${verifyUser.postQuota}`);
       }
     } catch (usageError) {
       console.error("Error updating usage tracking:", usageError);
       
+      // Rollback: xóa post đã tạo nếu update quota thất bại
       await Post.findByIdAndDelete(savedPost._id);
       
       return res.status(500).json({
@@ -356,6 +319,7 @@ exports.createPost = async (req, res) => {
       post: savedPost,
     });
 
+    // Background processing for moderation (giữ nguyên)
     (async () => {
       try {
         const moderationResult = await checkPostModeration(savedPost);
@@ -413,7 +377,6 @@ exports.createPost = async (req, res) => {
     });
   }
 };
-
 
 // Hàm chung để xử lý dữ liệu quận/huyện
 const processDistrictData = async () => {

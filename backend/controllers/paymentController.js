@@ -712,7 +712,7 @@ exports.updateUsage = async (req, res) => {
         // Trừ 1 quota
         const updatedUser = await User.findByIdAndUpdate(
           userId,
-          { $inc: { postQuota: -1 } },
+          { $inc: { postQuota } },
           { new: true }
         );
 
