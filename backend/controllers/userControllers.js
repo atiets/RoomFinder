@@ -15,13 +15,12 @@ const userController = {
       res.status(500).json({ error: "An error occurred", details: err.message });
     }
   },
-  getUserProfile: async (req, res) => {
+ getUserProfile : async (req, res) => {
   try {
-    const userId = req.user.id; // Lấy từ middleware verifyToken
+    const userId = req.user.id;
     
-    console.log("🔍 Getting user profile for userId:", userId);
+    console.log("🔍 getUserProfile: Getting user profile for userId:", userId);
     
-    // Tìm user và exclude password
     const user = await User.findById(userId).select('-password');
     
     if (!user) {
@@ -31,10 +30,11 @@ const userController = {
       });
     }
     
-    console.log("✅ User profile found:", {
+    console.log("✅ getUserProfile: User profile found:", {
       id: user._id,
       username: user.username,
-      postQuota: user.postQuota
+      postQuota: user.postQuota,
+      email: user.email
     });
     
     res.status(200).json({
@@ -42,7 +42,7 @@ const userController = {
       data: user
     });
   } catch (error) {
-    console.error("Get user profile error:", error);
+    console.error("getUserProfile error:", error);
     res.status(500).json({
       success: false,
       message: "Error getting user profile",
