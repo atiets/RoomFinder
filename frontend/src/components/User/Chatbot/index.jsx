@@ -130,6 +130,7 @@ const SupportChatModal = ({ open, onClose }) => {
                             maxWidth: "75%",
                             fontSize: "0.875rem",
                             boxShadow: 1,
+                            lineHeight: 1.6,
                         }}
                     >
                         {m.content}

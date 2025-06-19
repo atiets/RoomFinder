@@ -559,7 +559,7 @@ const ManageSupport = () => {
                   {onlineUsers.includes(selectedChat.userId) ? 'Online' : 'Offline'}
                 </div>
               </div>
-              <MoreVertIcon style={{ marginLeft: 'auto', alignContent: 'center' }} />
+              {/* <MoreVertIcon style={{ marginLeft: 'auto', alignContent: 'center' }} /> */}
             </>
           ) : (
             <div className='admin-chat-card-content'>

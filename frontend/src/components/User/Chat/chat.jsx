@@ -1,5 +1,4 @@
 import AddIcon from '@mui/icons-material/Add';
-import ChatIcon from '@mui/icons-material/Chat';
 import CloseIcon from '@mui/icons-material/Close';
 import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -635,7 +634,7 @@ const Chat = () => {
                                             onClose={() => setOpenMapModal(false)}
                                             onSendLocation={(coords) => sendMessage(coords)}
                                         />
-                                        <ChatIcon sx={{ color: '#63ab45' }} />
+                                        {/* <ChatIcon sx={{ color: '#63ab45' }} /> */}
                                     </>
                                 ) : null}
                             </div>
